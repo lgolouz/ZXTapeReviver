@@ -153,12 +153,12 @@ uint WavReader::getBytesPerSample() const
     return mWavOpened ? mWavFormatHeader.significantBitsPerSample / 8 : 0;
 }
 
-WavReader::QVectorBase* const WavReader::getChannel0() const
+WavReader::QVectorBase* WavReader::getChannel0() const
 {
     return mChannel0.get();
 }
 
-WavReader::QVectorBase* const WavReader::getChannel1() const
+WavReader::QVectorBase* WavReader::getChannel1() const
 {
     return mChannel1.get();
 }

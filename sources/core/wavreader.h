@@ -167,8 +167,8 @@ public:
     uint getNumberOfChannels() const;
     uint32_t getSampleRate() const;
     uint getBytesPerSample() const;
-    QVectorBase* const getChannel0() const;
-    QVectorBase* const getChannel1() const;
+    QVectorBase* /*const*/ getChannel0() const;
+    QVectorBase* /*const*/ getChannel1() const;
 
     ErrorCodesEnum setFileName(const QString& fileName);
     ErrorCodesEnum open();

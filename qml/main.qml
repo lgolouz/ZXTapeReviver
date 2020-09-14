@@ -12,7 +12,8 @@ import QtQuick.Controls 2.15
 import QtQuick.Dialogs 1.3
 
 import WaveformControl 1.0
-
+import com.enums.zxtapereviver 1.0
+import com.models.zxtapereviver 1.0
 
 ApplicationWindow {
     id: mainWindow
@@ -53,6 +54,22 @@ ApplicationWindow {
         sidebarVisible: true
         defaultSuffix: "wav"
         nameFilters: [ "WAV files (*.wav)" ]
+
+        onAccepted: {
+            console.log("Selected WAV file: " + openFileDialog.fileUrl);
+            console.log("Open WAV file result: " + FileWorkerModel.openWavFileByUrl(openFileDialog.fileUrl));
+        }
+
+        onRejected: {
+            console.log("No WAV file selected");
+        }
+    }
+
+    Connections {
+        target: FileWorkerModel
+        function onWavFileNameChanged() {
+            waveformControl.reparse();
+        }
     }
 
     Rectangle {

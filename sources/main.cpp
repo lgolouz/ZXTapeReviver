@@ -10,6 +10,21 @@
 #include <QQmlApplicationEngine>
 #include "sources/controls/waveformcontrol.h"
 #include "sources/core/waveformparser.h"
+#include "sources/models/fileworkermodel.h"
+
+void registerTypes()
+{
+    qmlRegisterUncreatableType<FileWorkerModel>("com.enums.zxtapereviver", 1, 0, "FileWorkerResults", QString());
+    qmlRegisterUncreatableType<WavReader>("com.enums.zxtapereviver", 1, 0, "ErrorCodesEnum", QString());
+
+    qmlRegisterType<WaveformControl>("WaveformControl", 1, 0, "WaveformControl");
+    qmlRegisterSingletonType<FileWorkerModel>("com.models.zxtapereviver", 1, 0, "FileWorkerModel", [](QQmlEngine* engine, QJSEngine* scriptEngine) -> QObject* {
+        Q_UNUSED(engine)
+        Q_UNUSED(scriptEngine)
+
+        return new FileWorkerModel();
+    });
+}
 
 int main(int argc, char *argv[])
 {
@@ -20,7 +35,7 @@ int main(int argc, char *argv[])
 
     QGuiApplication app(argc, argv);
 
-    qmlRegisterType<WaveformControl>("WaveformControl", 1, 0, "WaveformControl");
+    registerTypes();
 
     //auto& r = *WavReader::instance();
     //r.setFileName("D:/123/Кассеты/ZZZ-1/тест2-2.wav");

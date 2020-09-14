@@ -10,6 +10,7 @@
 #define FILEWORKERMODEL_H
 
 #include <QObject>
+#include "sources/core/wavreader.h"
 
 class FileWorkerModel : public QObject
 {
@@ -25,18 +26,21 @@ public:
     Q_ENUM(FileWorkerResults)
 
     explicit FileWorkerModel(QObject* parent = nullptr);
-    ~FileWorkerModel() = default;
-
+    ~FileWorkerModel();
     //getters
     QString getWavFileName() const;
 
     //setters
 
     //QML invocable members
-    Q_INVOKABLE FileWorkerResults openWavFile(const QString& fileName);
+    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWavFileByUrl(const QString& fileNameUrl);
+    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWavFile(const QString& fileName);
 
 signals:
     void wavFileNameChanged();
+
+private:
+    QString m_wavFileName;
 };
 
 #endif // FILEWORKERMODEL_H

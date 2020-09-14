@@ -20,7 +20,7 @@ WaveformParser::WaveformParser(QObject* parent) :
 
 void WaveformParser::parse(uint chNum)
 {
-    WavReader::QVectorBase& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel0());
+    WavReader::QVectorBase& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
     const auto bytesPerSample = mWavReader.getBytesPerSample();
 
     QVector<WaveformPart> parsed = bytesPerSample == 1 ? parseChannel<uint8_t>(static_cast<WavReader::QWavVector<uint8_t>&>(channel)) : parseChannel<int16_t>(static_cast<WavReader::QWavVector<int16_t>&>(channel));
@@ -38,7 +38,7 @@ void WaveformParser::parse(uint chNum)
     auto currentState = SEARCH_OF_PILOT_TONE;
     auto it = parsed.begin();
     QVector<uint8_t> data;
-    WaveformSign signalDirection = POSITIVE;
+    //WaveformSign signalDirection = POSITIVE;
     uint32_t dataStart = 0;
     int8_t bitIndex = 7;
     uint8_t bit = 0;
@@ -90,7 +90,7 @@ void WaveformParser::parse(uint chNum)
                     mParsedWaveform[it->end] = synchroSignal ^ sequenceEnd;
 
                     currentState = DATA_SIGNAL;
-                    signalDirection = prevIt->sign;
+                    //signalDirection = prevIt->sign;
 
 //                    WaveformData wd;
 //                    wd.begin = std::distance(parsed.begin(), prevIt);
