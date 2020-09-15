@@ -17,6 +17,7 @@ class WaveformControl : public QQuickPaintedItem
 {
     Q_OBJECT
 
+    Q_PROPERTY(uint channelNumber READ getChannelNumber WRITE setChannelNumber NOTIFY channelNumberChanged)
     Q_PROPERTY(int wavePos READ getWavePos WRITE setWavePos NOTIFY wavePosChanged)
     Q_PROPERTY(int waveLength READ getWaveLength NOTIFY waveLengthChanged)
     Q_PROPERTY(double xScaleFactor READ getXScaleFactor WRITE setXScaleFactor NOTIFY xScaleFactorChanged)
@@ -29,12 +30,14 @@ class WaveformControl : public QQuickPaintedItem
 public:
     explicit WaveformControl(QQuickItem* parent = nullptr);
 
+    uint getChannelNumber() const;
     int32_t getWavePos() const;
     int32_t getWaveLength() const;
     double getXScaleFactor() const;
     double getYScaleFactor() const;
     bool getIsWaveformRepaired() const;
 
+    void setChannelNumber(uint chNum);
     void setWavePos(int wavPos);
     void setXScaleFactor(double xScaleFactor);
     void setYScaleFactor(double yScaleFactor);
@@ -51,6 +54,7 @@ public:
     Q_INVOKABLE void restoreWaveform();
 
 signals:
+    void channelNumberChanged();
     void wavePosChanged();
     void waveLengthChanged();
     void xScaleFactorChanged();
@@ -58,6 +62,7 @@ signals:
     void isWaveformRepairedChanged();
 
 private:
+    uint m_channelNumber;
     bool m_isWaveformRepaired;
     bool m_allowToGrabPoint;
     bool m_pointGrabbed;
@@ -65,6 +70,8 @@ private:
     int m_wavePos;
     double m_xScaleFactor;
     double m_yScaleFactor;
+
+    WavReader::QVectorBase* getChannel() const;
 };
 
 #endif // WAVEFORMCONTROL_H

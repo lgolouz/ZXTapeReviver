@@ -135,6 +135,7 @@ WavReader::ErrorCodesEnum WavReader::read()
         }
     }
 
+    emit numberOfChannelsChanged();
     return Ok;
 }
 

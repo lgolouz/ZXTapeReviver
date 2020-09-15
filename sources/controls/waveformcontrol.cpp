@@ -18,6 +18,7 @@ WaveformControl::WaveformControl(QQuickItem* parent) :
     QQuickPaintedItem(parent),
     mWavReader(*WavReader::instance()),
     mWavParser(*WaveformParser::instance()),
+    m_channelNumber(0),
     m_isWaveformRepaired(false),
     m_wavePos(0),
     m_xScaleFactor(1),
@@ -25,6 +26,11 @@ WaveformControl::WaveformControl(QQuickItem* parent) :
 {
     setAcceptedMouseButtons(Qt::AllButtons);
     setEnabled(true);
+}
+
+WavReader::QVectorBase* WaveformControl::getChannel() const
+{
+    return m_channelNumber == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1();
 }
 
 void WaveformControl::paint(QPainter* painter)
@@ -39,8 +45,8 @@ void WaveformControl::paint(QPainter* painter)
     painter->drawLine(0, halfHeight, bRect.width(), halfHeight);
     uint32_t scale = bRect.width() * getXScaleFactor();
     uint32_t pos = getWavePos();
-    const auto* ch0 = mWavReader.getChannel0();
-    if (ch0 == nullptr) {
+    const auto* channel = getChannel();
+    if (channel == nullptr) {
         return;
     }
 
@@ -51,13 +57,13 @@ void WaveformControl::paint(QPainter* painter)
     double y = py;
     const int xinc = getXScaleFactor() > 16.0 ? getXScaleFactor() / 16 : 1;
     double dx = (bRect.width() / (double) scale) * xinc;
-    const auto& parsedWaveform = mWavParser.getParsedWaveform();
+    const auto parsedWaveform = mWavParser.getParsedWaveform(m_channelNumber);
     bool printHint = false;
     m_allowToGrabPoint = dx > 2;
-    const auto chsize = ch0->size();
+    const auto chsize = channel->size();
     for (int32_t t = pos; t < pos + scale; t += xinc) {
         if (t >= 0 && t < chsize) {
-            const int val = ch0->get(t);
+            const int val = channel->get(t);
             y = halfHeight - ((double) (val) / maxy) * waveHeight;
             painter->setPen(val >= 0 ? QColor(50, 150, 0) : QColor(200, 0 , 0));
             painter->drawLine(px, py, x, y);
@@ -120,7 +126,7 @@ int32_t WaveformControl::getWavePos() const
 
 int32_t WaveformControl::getWaveLength() const
 {
-    return mWavReader.getChannel0()->size();
+    return const_cast<WaveformControl*>(this)->getChannel()->size();
 }
 
 double WaveformControl::getXScaleFactor() const
@@ -189,24 +195,24 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
 
         if (event->button() == Qt::MiddleButton) {
             const auto p = point + getWavePos();
-            const auto d = mWavReader.getChannel0()->get(p);
+            const auto d = getChannel()->get(p);
             qDebug() << "Inserting point: " << p;
-            mWavReader.getChannel0()->insert(p + (dpoint > event->x() ? 1 : -1), d);
+            getChannel()->insert(p + (dpoint > event->x() ? 1 : -1), d);
             update();
         }
         else {
             if (dpoint >= event->x() - 2.0 && dpoint <= event->x() + 2) {
                 const double maxy = getYScaleFactor();
-                double y = halfHeight - ((double) (mWavReader.getChannel0()->get(point + getWavePos())) / maxy) * waveHeight;
+                double y = halfHeight - ((double) (getChannel()->get(point + getWavePos())) / maxy) * waveHeight;
                 if (y >= event->y() - 2 && y <= event->y() + 2) {
                     if (event->button() == Qt::LeftButton) {
                         m_pointIndex = point;
                         m_pointGrabbed = true;
-                        qDebug() << "Grabbed point: " << mWavReader.getChannel0()->get(point + getWavePos());
+                        qDebug() << "Grabbed point: " << getChannel()->get(point + getWavePos());
                     }
                     else {
                         m_pointGrabbed = false;
-                        mWavReader.getChannel0()->remove(point + getWavePos());
+                        getChannel()->remove(point + getWavePos());
                         update();
                     }
                 }
@@ -244,11 +250,16 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
     switch (event->buttons()) {
     case Qt::LeftButton:
         {
+            const auto* ch = getChannel();
+            if (!ch) {
+                return;
+            }
+
             const double waveHeight = boundingRect().height() - 100;
             const double halfHeight = waveHeight / 2;
             double val = halfHeight - (0b1111111111111111 / halfHeight * event->y());
-            if (m_pointIndex + getWavePos() >= 0 && m_pointIndex + getWavePos()< mWavReader.getChannel0()->size()) {
-                mWavReader.getChannel0()->set(m_pointIndex + getWavePos(), val);
+            if (m_pointIndex + getWavePos() >= 0 && m_pointIndex + getWavePos() < ch->size()) {
+                getChannel()->set(m_pointIndex + getWavePos(), val);
             }
             qDebug() << "Setting point: " << m_pointIndex + getWavePos();
             event->accept();
@@ -262,15 +273,28 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
     }
 }
 
+uint WaveformControl::getChannelNumber() const
+{
+    return m_channelNumber;
+}
+
+void WaveformControl::setChannelNumber(uint chNum)
+{
+    if (chNum != m_channelNumber) {
+        m_channelNumber = chNum;
+        emit channelNumberChanged();
+    }
+}
+
 void WaveformControl::reparse()
 {
-    mWavParser.parse(0);
+    mWavParser.parse(m_channelNumber);
     update();
 }
 
 void WaveformControl::saveTap()
 {
-    mWavParser.saveTap();
+    mWavParser.saveTap(m_channelNumber);
 }
 
 void WaveformControl::saveWaveform()

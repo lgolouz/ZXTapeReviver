@@ -10,12 +10,18 @@
 #define WAVEFORMPARSER_H
 
 #include <iterator>
+#include <QMap>
 #include <QVector>
+#include <QVariantMap>
+#include <QVariantList>
 #include "sources/core/wavreader.h"
 
 class WaveformParser : public QObject
 {
     Q_OBJECT
+
+    Q_PROPERTY(QVariantList parsedChannel0 READ getParsedChannel0 NOTIFY parsedChannel0Changed)
+    Q_PROPERTY(QVariantList parsedChannel1 READ getParsedChannel1 NOTIFY parsedChannel1Changed)
 
 public:
 //    enum SignalValue { ZERO, ONE, PILOT, SYNCHRO };
@@ -113,11 +119,11 @@ private:
         return result;
     }
 
-    void fillParsedWaveform(const WaveformPart& p, uint8_t val);
+    void fillParsedWaveform(uint chNum, const WaveformPart& p, uint8_t val);
 
     WavReader& mWavReader;
-    QVector<uint8_t> mParsedWaveform;
-    QVector<DataBlock> mParsedData;
+    QMap<uint, QVector<uint8_t>> mParsedWaveform;
+    QMap<uint, QVector<DataBlock>> mParsedData;
 
 protected:
     explicit WaveformParser(QObject* parent = nullptr);
@@ -128,9 +134,17 @@ public:
     static WaveformParser* instance();
 
     void parse(uint chNum);
-    void saveTap();
-    void saveWaveform();
-    const QVector<uint8_t>& getParsedWaveform() const;
+    void saveTap(uint chNum);
+    void saveWaveform(uint chNum);
+    QVector<uint8_t> getParsedWaveform(uint chNum) const;
+
+    //getters
+    QVariantList getParsedChannel0() const;
+    QVariantList getParsedChannel1() const;
+
+signals:
+    void parsedChannel0Changed();
+    void parsedChannel1Changed();
 };
 
 #endif // WAVEFORMPARSER_H

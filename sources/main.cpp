@@ -21,9 +21,10 @@ void registerTypes()
     qmlRegisterSingletonType<FileWorkerModel>("com.models.zxtapereviver", 1, 0, "FileWorkerModel", [](QQmlEngine* engine, QJSEngine* scriptEngine) -> QObject* {
         Q_UNUSED(engine)
         Q_UNUSED(scriptEngine)
-
         return new FileWorkerModel();
     });
+    qmlRegisterSingletonInstance<WavReader>("com.core.zxtapereviver", 1, 0, "WavReader", WavReader::instance());
+    qmlRegisterSingletonInstance<WaveformParser>("com.core.zxtapereviver", 1, 0, "WaveformParser", WaveformParser::instance());
 }
 
 int main(int argc, char *argv[])
@@ -37,16 +38,6 @@ int main(int argc, char *argv[])
 
     registerTypes();
 
-    //auto& r = *WavReader::instance();
-    //r.setFileName("D:/123/Кассеты/ZZZ-1/тест2-2.wav");
-    //r.setFileName("D:/123/Кассеты/ZZZ-1/04 - SABOTEUR 1.wav");
-    //r.setFileName("D:/123/Кассеты/ZZZ-1/track-2.wav");
-    //r.setFileName("D:/Tapes/Agfa Fe-I 90/Side1-track1-spd.wav");
-    //r.setFileName("D:/Tapes/ZZZ-90/track-1-side-B-other.wav");
-
-    //r.open();
-    //r.read();
-
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated, &app, [url](QObject *obj, const QUrl &objUrl) {
@@ -55,9 +46,6 @@ int main(int argc, char *argv[])
         }
     }, Qt::QueuedConnection);
     engine.load(url);
-
-    //auto& p = *WaveformParser::instance();
-    //p.parse(0);
 
     return app.exec();
 }

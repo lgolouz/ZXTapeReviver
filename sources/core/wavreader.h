@@ -16,6 +16,8 @@ class WavReader : public QObject
 {
     Q_OBJECT
 
+    Q_PROPERTY(uint numberOfChannels READ getNumberOfChannels NOTIFY numberOfChannelsChanged)
+
 public:
     class QVectorBase {
     public:
@@ -180,6 +182,9 @@ public:
     void restoreWaveform();
 
     static WavReader* instance();
+
+signals:
+    void numberOfChannelsChanged();
 };
 
 #endif // WAVREADER_H
