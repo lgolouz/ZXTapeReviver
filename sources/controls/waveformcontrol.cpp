@@ -126,7 +126,7 @@ int32_t WaveformControl::getWavePos() const
 
 int32_t WaveformControl::getWaveLength() const
 {
-    return const_cast<WaveformControl*>(this)->getChannel()->size();
+    return getChannel()->size();
 }
 
 double WaveformControl::getXScaleFactor() const

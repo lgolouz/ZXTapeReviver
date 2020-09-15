@@ -173,8 +173,8 @@ void WaveformParser::parse(uint chNum)
                     currentState = END_OF_DATA;
                     if (!data.empty()) {
                         DataBlock db;
-                        db.dataStart = dataStart;
-                        db.dataEnd = std::distance(parsed.begin(), it);
+                        db.dataStart = parsed.at(dataStart).begin;
+                        db.dataEnd = parsed.at(std::distance(parsed.begin(), it)).end;
                         db.data = data;
                         parity ^= data.last(); //Removing parity byte from overal parity check sum
                         db.state = parity == data.last() ? DataState::OK : DataState::R_TAPE_LOADING_ERROR; //Should be checked with checksum
@@ -187,8 +187,8 @@ void WaveformParser::parse(uint chNum)
             }
             else if (!data.empty()) {
                 DataBlock db;
-                db.dataStart = dataStart;
-                db.dataEnd = parsed.size() - 1;
+                db.dataStart = parsed.at(dataStart).begin;
+                db.dataEnd = parsed.at(parsed.size() - 1).end;
                 db.data = data;
                 parity ^= data.last(); //Remove parity byte from overal parity check sum
                 db.state = parity == data.last() ? DataState::OK : DataState::R_TAPE_LOADING_ERROR; //Should be checked with checksum
@@ -212,7 +212,12 @@ void WaveformParser::parse(uint chNum)
 
     }
 
-    bit = 0;
+    if (chNum == 0) {
+        emit parsedChannel0Changed();
+    }
+    else {
+        emit parsedChannel1Changed();
+    }
 }
 
 void WaveformParser::saveTap(uint chNum)
@@ -247,23 +252,76 @@ QVector<uint8_t> WaveformParser::getParsedWaveform(uint chNum) const
     return mParsedWaveform[chNum];
 }
 
+QVariantList WaveformParser::getParsedChannelData(uint chNum) const
+{
+    static QMap<int, QString> blockTypes {
+        {0x00, "Program"},
+        {0x01, "Number Array"},
+        {0x02, "Character Array"},
+        {0x03, "Bytes"}
+    };
+
+    QVariantList r;
+    const auto& ch = mParsedData[chNum];
+    uint blockNumber = 1;
+
+    for (const auto& i: ch) {
+        QVariantMap m;
+
+        m.insert("blockNumber", blockNumber++);
+        if (i.data.size() > 0) {
+            auto d = i.data.at(0);
+            int blockType = -1;
+            auto btIt = blockTypes.end();
+            QString blockTypeName;
+            if (d == 0x00 && i.data.size() > 1) {
+                d = i.data.at(1);
+                btIt = blockTypes.find(d);
+                blockType = btIt == blockTypes.end() ? -1 : d;
+                blockTypeName = blockType == -1 ? QString::number(d, 16) : *btIt;
+            }
+            else {
+                blockType = -2;
+                blockTypeName = d == 0x00 ? "Header" : "Code";
+            }
+            m.insert("blockType", blockTypeName);
+            QString sizeText = QString::number(i.data.size());
+            if (i.data.size() > 13 && btIt != blockTypes.end()) {
+                sizeText += QString(" (%1)").arg(i.data.at(13) * 256 + i.data.at(12));
+            }
+            m.insert("blockSize", sizeText);
+            QString nameText;
+            if (blockType >= 0) {
+                for (auto idx = 2; idx < std::min(12, i.data.size()); ++idx) {
+                    nameText += QChar(i.data.at(idx));
+                }
+            }
+            m.insert("blockName", nameText);
+            m.insert("blockStatus", i.state == OK ? "OK" : "ERROR");
+            m.insert("state", i.state);
+        }
+        else {
+            m.insert("blockType", "Unknown");
+            m.insert("blockName", QString());
+            m.insert("blockSize", 0);
+            m.insert("blockStatus", "Unknown");
+        }
+        m.insert("dataStart", i.dataStart);
+        m.insert("dataEnd", i.dataEnd);
+        r.append(m);
+    }
+
+    return r;
+}
+
 QVariantList WaveformParser::getParsedChannel0() const
 {
-//    QVariantList r;
-//    const auto& ch = mParsedData[0];
-//    for (const auto& i: ch) {
-//        QVariantMap m;
-
-//        m.insert("blockType", i.data.size() > 0 ? i.data.at(1) : 0xff);
-//        m.insert("blockName", i.)
-//    }
-
-    return { };
+    return getParsedChannelData(0);
 }
 
 QVariantList WaveformParser::getParsedChannel1() const
 {
-    return  { };
+    return getParsedChannelData(1);
 }
 
 WaveformParser* WaveformParser::instance()

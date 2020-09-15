@@ -8,18 +8,21 @@
 
 import QtQuick 2.15
 import QtQuick.Window 2.15
-import QtQuick.Controls 2.15
+import QtQuick.Controls 1.4
 import QtQuick.Dialogs 1.3
 
 import WaveformControl 1.0
 import com.enums.zxtapereviver 1.0
 import com.models.zxtapereviver 1.0
+import com.core.zxtapereviver 1.0
 
 ApplicationWindow {
     id: mainWindow
 
+    readonly property int mainAreaWidth: width * 0.75
+
     visible: true
-    width: 1200
+    width: 1600
     height: 800
     title: qsTr("ZX Tape Reviver")
 
@@ -83,6 +86,27 @@ ApplicationWindow {
                 }
             }
         }
+
+        Menu {
+            title: "Waveform"
+
+            MenuItem {
+                text: "Restore"
+                onTriggered: {
+                    waveformControlCh0.xScaleFactor = 1;
+                    waveformControlCh0.yScaleFactor = 80000;
+                    waveformControlCh0.wavePos = 0;
+
+                    waveformControlCh1.xScaleFactor = 1;
+                    waveformControlCh1.yScaleFactor = 80000;
+                    waveformControlCh1.wavePos = 0;
+                }
+            }
+
+            MenuItem {
+                text: "Reparse"
+            }
+        }
     }
 
     FileDialog {
@@ -141,7 +165,14 @@ ApplicationWindow {
     }
 
     Rectangle {
-        anchors.fill: parent
+        id: mainArea
+
+        anchors {
+            left: parent.left
+            top: parent.top
+            bottom: parent.bottom
+        }
+        width: mainAreaWidth
         color: "black"
 
         WaveformControl {
@@ -249,23 +280,31 @@ ApplicationWindow {
         }
 
         Button {
-            id: restoreButton
+            id: shiftWaveRight
 
-            text: "Restore"
-            anchors.top: hZoomOutButton.bottom
-            anchors.right: parent.right
-            anchors.rightMargin: 5
-            anchors.topMargin: 15
-            width: hZoomOutButton.width
+            text: "<<"
+            anchors.bottom: waveformControlCh0.bottom
+            anchors.left: hZoomOutButton.left
+            width: 40
 
             onClicked: {
-                waveformControlCh0.xScaleFactor = 1;
-                waveformControlCh0.yScaleFactor = 80000;
-                waveformControlCh0.wavePos = 0;
+                waveformControlCh0.wavePos -= waveformControlCh0.width * waveformControlCh0.xScaleFactor / 2;
+                waveformControlCh1.wavePos -= waveformControlCh1.width * waveformControlCh1.xScaleFactor / 2;
+            }
+        }
 
-                waveformControlCh1.xScaleFactor = 1;
-                waveformControlCh1.yScaleFactor = 80000;
-                waveformControlCh1.wavePos = 0;
+        Button {
+            id: shiftWaveLeft
+
+            text: ">>"
+            anchors.bottom: shiftWaveRight.bottom
+            anchors.right: parent.right
+            anchors.rightMargin: 5
+            width: 40
+
+            onClicked: {
+                waveformControlCh0.wavePos += waveformControlCh0.width * waveformControlCh0.xScaleFactor / 2;
+                waveformControlCh1.wavePos += waveformControlCh1.width * waveformControlCh1.xScaleFactor / 2;
             }
         }
 
@@ -273,7 +312,7 @@ ApplicationWindow {
             id: reparseButton
 
             text: "Reparse"
-            anchors.top: restoreButton.bottom
+            anchors.top: shiftWaveLeft.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
             anchors.topMargin: 15
@@ -336,33 +375,105 @@ ApplicationWindow {
                 }
             }
         }
+    }
 
-        Button {
-            id: shiftWaveRight
+    Rectangle {
+        id: rightArea
 
-            text: "<<"
-            anchors.bottom: waveformControlCh0.bottom
-            anchors.left: restoreButton.left
-            width: 40
+        anchors {
+            left: mainArea.right
+            top: parent.top
+            bottom: parent.bottom
+        }
 
-            onClicked: {
-                waveformControlCh0.wavePos -= waveformControlCh0.width * waveformControlCh0.xScaleFactor / 2;
-                waveformControlCh1.wavePos -= waveformControlCh1.width * waveformControlCh1.xScaleFactor / 2;
+        width: parent.width - mainAreaWidth
+
+        color: "transparent"
+
+        ComboBox {
+            id: channelsComboBox
+
+            model: ["Left Channel", "Right Channel"]
+            anchors {
+                top: parent.top
+                left: parent.left
+                right: parent.right
             }
         }
 
         Button {
-            id: shiftWaveLeft
+            id: toBlockBeginningButton
 
-            text: ">>"
-            anchors.bottom: waveformControlCh0.bottom
-            anchors.right: parent.right
-            anchors.rightMargin: 5
-            width: 40
+            text: "<< To the beginning of the block"
+            anchors {
+                top: channelsComboBox.bottom
+                left: parent.left
+                rightMargin: 2
+                topMargin: 2
+                bottomMargin: 2
+            }
+            width: parent.width / 2
+        }
 
-            onClicked: {
-                waveformControlCh0.wavePos += waveformControlCh0.width * waveformControlCh0.xScaleFactor / 2;
-                waveformControlCh1.wavePos += waveformControlCh1.width * waveformControlCh1.xScaleFactor / 2;
+        Button {
+            id: toBlockEndButton
+
+            text: "To the end of the block >>"
+            anchors {
+                top: channelsComboBox.bottom
+                right: parent.right
+                left: toBlockBeginningButton.right
+                leftMargin: 2
+                topMargin: 2
+                bottomMargin: 2
+            }
+        }
+
+        TableView {
+            id: parsedDataView
+
+            anchors {
+                top: toBlockEndButton.bottom
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+                topMargin: 2
+            }
+
+            TableViewColumn {
+                title: "#"
+                width: rightArea.width * 0.07
+                role: "blockNumber"
+            }
+
+            TableViewColumn {
+                title: "Type"
+                width: rightArea.width * 0.23
+                role: "blockType"
+            }
+
+            TableViewColumn {
+                title: "Name"
+                width: rightArea.width * 0.3
+                role: "blockName"
+            }
+
+            TableViewColumn {
+                title: "Size (to be read)"
+                width: rightArea.width * 0.25
+                role: "blockSize"
+            }
+
+            TableViewColumn {
+                title: "Status"
+                width: rightArea.width * 0.15
+                role: "blockStatus"
+            }
+            model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
+            itemDelegate: Text {
+                text: styleData.value
+                color: modelData.state === 0 ? "black" : "red"
+                font.bold: modelData.state !== 0
             }
         }
     }

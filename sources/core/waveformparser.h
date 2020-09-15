@@ -127,6 +127,7 @@ private:
 
 protected:
     explicit WaveformParser(QObject* parent = nullptr);
+    QVariantList getParsedChannelData(uint chNum) const;
 
 public:
     virtual ~WaveformParser() override = default;
