@@ -20,11 +20,32 @@ ApplicationWindow {
     id: mainWindow
 
     readonly property int mainAreaWidth: width * 0.75
+    property ListModel suspiciousPoints: ListModel { }
 
     visible: true
     width: 1600
     height: 800
     title: qsTr("ZX Tape Reviver")
+
+    function getWaveShiftIndex(wfWidth, wfXScale) {
+        return wfWidth * wfXScale / 2;
+    }
+
+    function addSuspiciousPoint(idx) {
+        console.log("Adding suspicious point: " + idx);
+        for (var i = 0; i < suspiciousPoints.count; ++i) {
+            var p = suspiciousPoints.get(i).idx;
+            if (p === idx) {
+                return;
+            }
+            else if (p > idx) {
+                suspiciousPoints.insert(i, {idx: idx});
+                return;
+            }
+        }
+
+        suspiciousPoints.append({idx: idx});
+    }
 
     menuBar: MenuBar {
         Menu {
@@ -175,6 +196,8 @@ ApplicationWindow {
         width: mainAreaWidth
         color: "black"
 
+        readonly property int spacerHeight: ~~(parent.height * 0.0075);
+
         WaveformControl {
             id: waveformControlCh0
 
@@ -185,21 +208,28 @@ ApplicationWindow {
 
             channelNumber: 0
             width: parent.width - (parent.width * 0.11)
-            height: parent.height - (parent.height * 0.6)
+            height: parent.height - parent.height / 2 - parent.spacerHeight / 2
+
+            onDoubleClick: {
+                addSuspiciousPoint(idx);
+            }
         }
 
         WaveformControl {
             id: waveformControlCh1
 
-            anchors.top: waveformControlCh0.bottom
+            anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: vZoomInButton.left
             anchors.rightMargin: 5
-            anchors.topMargin: 5
 
             channelNumber: 1
             width: parent.width - (parent.width * 0.11)
-            height: parent.height - (parent.height * 0.6)
+            height: waveformControlCh0.height
+
+            onDoubleClick: {
+                addSuspiciousPoint(idx);
+            }
         }
 
         Button {
@@ -288,8 +318,8 @@ ApplicationWindow {
             width: 40
 
             onClicked: {
-                waveformControlCh0.wavePos -= waveformControlCh0.width * waveformControlCh0.xScaleFactor / 2;
-                waveformControlCh1.wavePos -= waveformControlCh1.width * waveformControlCh1.xScaleFactor / 2;
+                waveformControlCh0.wavePos -= getWaveShiftIndex(waveformControlCh0.width, waveformControlCh0.xScaleFactor);
+                waveformControlCh1.wavePos -= getWaveShiftIndex(waveformControlCh1.width, waveformControlCh1.xScaleFactor);
             }
         }
 
@@ -303,8 +333,8 @@ ApplicationWindow {
             width: 40
 
             onClicked: {
-                waveformControlCh0.wavePos += waveformControlCh0.width * waveformControlCh0.xScaleFactor / 2;
-                waveformControlCh1.wavePos += waveformControlCh1.width * waveformControlCh1.xScaleFactor / 2;
+                waveformControlCh0.wavePos += getWaveShiftIndex(waveformControlCh0.width, waveformControlCh0.xScaleFactor);
+                waveformControlCh1.wavePos += getWaveShiftIndex(waveformControlCh1.width, waveformControlCh1.xScaleFactor);
             }
         }
 
@@ -319,8 +349,11 @@ ApplicationWindow {
             width: hZoomOutButton.width
 
             onClicked: {
+                var parsedDataViewIdx = parsedDataView.currentRow;
                 waveformControlCh0.reparse();
                 waveformControlCh1.reparse();
+                parsedDataView.selection.select(parsedDataViewIdx);
+                parsedDataView.currentRow = parsedDataViewIdx;
             }
         }
 
@@ -413,6 +446,17 @@ ApplicationWindow {
                 bottomMargin: 2
             }
             width: parent.width / 2
+
+            onClicked: {
+                if (parsedDataView.currentRow !== -1) {
+                    var idx = WaveformParser.getBlockDataStart(channelsComboBox.currentIndex, parsedDataView.currentRow) - getWaveShiftIndex(waveformControlCh0.width, waveformControlCh0.xScaleFactor);
+                    if (idx < 0) {
+                        idx = 0;
+                    }
+
+                    waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx ;
+                }
+            }
         }
 
         Button {
@@ -427,16 +471,27 @@ ApplicationWindow {
                 topMargin: 2
                 bottomMargin: 2
             }
+
+            onClicked: {
+                if (parsedDataView.currentRow !== -1) {
+                    var idx = WaveformParser.getBlockDataEnd(channelsComboBox.currentIndex, parsedDataView.currentRow) - getWaveShiftIndex(waveformControlCh0.width, waveformControlCh0.xScaleFactor);
+                    if (idx < 0) {
+                        idx = 0;
+                    }
+
+                    waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx;
+                }
+            }
         }
 
         TableView {
             id: parsedDataView
 
+            height: parent.height * 0.4
             anchors {
                 top: toBlockEndButton.bottom
                 left: parent.left
                 right: parent.right
-                bottom: parent.bottom
                 topMargin: 2
             }
 
@@ -469,11 +524,88 @@ ApplicationWindow {
                 width: rightArea.width * 0.15
                 role: "blockStatus"
             }
+
+            selectionMode: SelectionMode.SingleSelection
             model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
             itemDelegate: Text {
                 text: styleData.value
                 color: modelData.state === 0 ? "black" : "red"
-                font.bold: modelData.state !== 0
+            }
+        }
+
+        Button {
+            id: gotoPointButton
+
+            anchors {
+                top: parsedDataView.bottom
+                left: parent.left
+                rightMargin: 2
+                topMargin: 2
+            }
+            width: parent.width / 2
+            text: "Goto Suspicious point"
+
+            onClicked: {
+                if (suspiciousPointsView.currentRow < 0 || suspiciousPointsView.currentRow >= suspiciousPoints.count) {
+                    return;
+                }
+
+                var idx = suspiciousPoints.get(suspiciousPointsView.currentRow).idx - getWaveShiftIndex(waveformControlCh0.width, waveformControlCh0.xScaleFactor);
+                if (idx < 0) {
+                    idx = 0;
+                }
+                console.log("Go to point: " + idx);
+
+                waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx;
+            }
+        }
+
+        Button {
+            id: removePointButton
+
+            anchors {
+                top: parsedDataView.bottom
+                left: gotoPointButton.right
+                right: parent.right
+                leftMargin: 2
+                topMargin: 2
+            }
+
+            text: "Remove Suspicious point"
+
+            onClicked: {
+                if (suspiciousPointsView.currentRow >= 0 && suspiciousPointsView.currentRow < suspiciousPoints.count) {
+                    console.log("Removing suspicious point: " + suspiciousPoints.get(suspiciousPointsView.currentRow).idx);
+                    suspiciousPoints.remove(suspiciousPointsView.currentRow);
+                }
+            }
+        }
+
+        TableView {
+            id: suspiciousPointsView
+
+            anchors {
+                top: gotoPointButton.bottom
+                bottom: parent.bottom
+                left: parent.left
+                right: parent.right
+                topMargin: 2
+            }
+
+            selectionMode: SelectionMode.SingleSelection
+            model: suspiciousPoints
+            itemDelegate: Text {
+                text: styleData.column === 0 ? styleData.row + 1 : styleData.value
+            }
+
+            TableViewColumn {
+                title: "#"
+                width: rightArea.width * 0.1
+            }
+
+            TableViewColumn {
+                title: "Position"
+                width: rightArea.width * 0.9
             }
         }
     }

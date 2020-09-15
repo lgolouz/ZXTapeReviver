@@ -252,6 +252,22 @@ QVector<uint8_t> WaveformParser::getParsedWaveform(uint chNum) const
     return mParsedWaveform[chNum];
 }
 
+int WaveformParser::getBlockDataStart(uint chNum, uint blockNum) const
+{
+    if (chNum < mParsedData.size() && blockNum < mParsedData[chNum].size()) {
+        return mParsedData[chNum][blockNum].dataStart;
+    }
+    return 0;
+}
+
+int WaveformParser::getBlockDataEnd(uint chNum, uint blockNum) const
+{
+    if (chNum < mParsedData.size() && blockNum < mParsedData[chNum].size()) {
+        return mParsedData[chNum][blockNum].dataEnd;
+    }
+    return 0;
+}
+
 QVariantList WaveformParser::getParsedChannelData(uint chNum) const
 {
     static QMap<int, QString> blockTypes {
@@ -306,8 +322,6 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
             m.insert("blockSize", 0);
             m.insert("blockStatus", "Unknown");
         }
-        m.insert("dataStart", i.dataStart);
-        m.insert("dataEnd", i.dataEnd);
         r.append(m);
     }
 

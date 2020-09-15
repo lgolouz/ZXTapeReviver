@@ -10,6 +10,7 @@
 #define WAVEFORMCONTROL_H
 
 #include <QQuickPaintedItem>
+#include <QDateTime>
 #include "sources/core/wavreader.h"
 #include "sources/core/waveformparser.h"
 
@@ -60,8 +61,16 @@ signals:
     void xScaleFactorChanged();
     void yScaleFactorChanged();
     void isWaveformRepairedChanged();
+    void doubleClick(uint idx);
 
 private:
+    enum ClickStates {
+        WaitForFirstPress,
+        WaitForSecondPress,
+        WaitForFirstRelease,
+        WaitForSecondRelease
+    };
+
     uint m_channelNumber;
     bool m_isWaveformRepaired;
     bool m_allowToGrabPoint;
@@ -70,6 +79,9 @@ private:
     int m_wavePos;
     double m_xScaleFactor;
     double m_yScaleFactor;
+    ClickStates m_clickState;
+    QDateTime m_clickTime;
+    int m_clickPosition;
 
     WavReader::QVectorBase* getChannel() const;
 };

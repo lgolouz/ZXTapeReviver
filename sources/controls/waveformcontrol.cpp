@@ -22,7 +22,9 @@ WaveformControl::WaveformControl(QQuickItem* parent) :
     m_isWaveformRepaired(false),
     m_wavePos(0),
     m_xScaleFactor(1),
-    m_yScaleFactor(80000)
+    m_yScaleFactor(80000),
+    m_clickState(WaitForFirstPress),
+    m_clickPosition(0)
 {
     setAcceptedMouseButtons(Qt::AllButtons);
     setEnabled(true);
@@ -180,24 +182,39 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
         return;
     }
 
+    //Checking for double-click
+    if (event->button() == Qt::LeftButton) {
+        if (m_clickState == WaitForFirstPress) {
+            m_clickTime = QDateTime::currentDateTime();
+            m_clickState = WaitForFirstRelease;
+        }
+        else if (m_clickState == WaitForSecondPress && m_clickTime.msecsTo(QDateTime::currentDateTime()) <= 500) {
+            m_clickState = WaitForSecondRelease;
+        }
+        else {
+            m_clickState = WaitForFirstPress;
+        }
+    }
+
     if (event->button() == Qt::LeftButton || event->button() == Qt::RightButton || event->button() == Qt::MiddleButton) {
-        event->accept();
         const int xinc = getXScaleFactor() > 16.0 ? getXScaleFactor() / 16 : 1;
         uint32_t scale = boundingRect().width() * getXScaleFactor();
         double dx = (boundingRect().width() / (double) scale) * xinc;
+        uint32_t point = std::round(event->x() / dx);
+        m_clickPosition = point + getWavePos();
+        event->accept();
         if (dx <= 2.0) {
             return;
         }
-        uint32_t point = std::round(event->x() / dx);
         double dpoint = point * dx;
         const double waveHeight = boundingRect().height() - 100;
         const double halfHeight = waveHeight / 2;
 
         if (event->button() == Qt::MiddleButton) {
-            const auto p = point + getWavePos();
-            const auto d = getChannel()->get(p);
-            qDebug() << "Inserting point: " << p;
-            getChannel()->insert(p + (dpoint > event->x() ? 1 : -1), d);
+            //const auto p = point + getWavePos();
+            const auto d = getChannel()->get(m_clickPosition);
+            qDebug() << "Inserting point: " << m_clickPosition;
+            getChannel()->insert(m_clickPosition + (dpoint > event->x() ? 1 : -1), d);
             update();
         }
         else {
@@ -230,6 +247,18 @@ void WaveformControl::mouseReleaseEvent(QMouseEvent* event)
     switch (event->button()) {
     case Qt::LeftButton:
         {
+            //Double-click handling
+            auto now = QDateTime::currentDateTime();
+            if (m_clickState == WaitForFirstRelease && m_clickTime.msecsTo(now) <= 500) {
+                m_clickState = WaitForSecondPress;
+            }
+            else if (m_clickState == WaitForSecondRelease && m_clickTime.msecsTo(now) <= 500) {
+                m_clickState = WaitForFirstPress;
+                emit doubleClick(m_clickPosition);
+            }
+            else {
+                m_clickState = WaitForFirstPress;
+            }
             m_pointGrabbed = false;
             event->accept();
         }

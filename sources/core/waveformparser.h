@@ -139,6 +139,9 @@ public:
     void saveWaveform(uint chNum);
     QVector<uint8_t> getParsedWaveform(uint chNum) const;
 
+    Q_INVOKABLE int getBlockDataStart(uint chNum, uint blockNum) const;
+    Q_INVOKABLE int getBlockDataEnd(uint chNum, uint blockNum) const;
+
     //getters
     QVariantList getParsedChannel0() const;
     QVariantList getParsedChannel1() const;
