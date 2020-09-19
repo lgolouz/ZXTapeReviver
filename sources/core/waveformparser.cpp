@@ -25,10 +25,8 @@ void WaveformParser::parse(uint chNum)
         return;
     }
 
-    WavReader::QVectorBase& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
-    const auto bytesPerSample = mWavReader.getBytesPerSample();
-
-    QVector<WaveformPart> parsed = bytesPerSample == 1 ? parseChannel<uint8_t>(static_cast<WavReader::QWavVector<uint8_t>&>(channel)) : parseChannel<int16_t>(static_cast<WavReader::QWavVector<int16_t>&>(channel));
+    QWavVector& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
+    QVector<WaveformPart> parsed = parseChannel<float>(channel);
 
     const double sampleRate = mWavReader.getSampleRate();
     auto isFreqFitsInDelta = [&sampleRate](uint32_t length, uint32_t signalFreq, double signalDelta, double deltaDivider = 1.0) -> bool {

@@ -53,8 +53,9 @@ WavReader::ErrorCodesEnum WavReader::open()
                     return InvalidWavFormat;
                 }
 
-                if (fmtHeader->compressionCode != 1 || (fmtHeader->numberOfChannels != 1 && fmtHeader->numberOfChannels != 2) ||
-                   (fmtHeader->significantBitsPerSample != 8 && fmtHeader->significantBitsPerSample != 16)) {
+                if ((fmtHeader->compressionCode != 1 && fmtHeader->compressionCode != 3) || (fmtHeader->numberOfChannels != 1 && fmtHeader->numberOfChannels != 2) ||
+                   (fmtHeader->significantBitsPerSample != 8 && fmtHeader->significantBitsPerSample != 16 && fmtHeader->significantBitsPerSample != 24 && fmtHeader->significantBitsPerSample != 32)
+                   ) {
                     mWavFile.close();
                     return UnsupportedWavFormat;
                 }
@@ -82,17 +83,45 @@ WavReader::ErrorCodesEnum WavReader::open()
     return AlreadyOpened;
 }
 
-WavReader::QVectorBase* WavReader::createVector(size_t bytesPerSample, size_t size)
+QWavVectorType WavReader::getSample(QByteArray& buf, size_t& bufIndex, uint dataSize, uint compressionCode)
 {
-    WavReader::QVectorBase* r;
-    if (bytesPerSample == 1) {
-        r = new WavReader::QWavVector<uint8_t>(static_cast<int>(size));
-    }
-    else {
-        r = new WavReader::QWavVector<int16_t>(static_cast<int>(size));
-    }
+       QWavVectorType r { };
+       void* v;
+       v = reinterpret_cast<void*>(getData(buf, bufIndex, dataSize));
 
-    return r;
+       switch (dataSize) {
+           case 1:
+               r = (*reinterpret_cast<uint8_t*>(v) - 128) * 258.;
+               break;
+
+           case 2:
+               r = *reinterpret_cast<int16_t*>(v);
+               break;
+
+           case 3:
+               {
+                   Int24* t;
+                   t = reinterpret_cast<Int24*>(v);
+                   r = ((t->b2 << 16) | (t->b1 << 8) | t->b0);
+               }
+               break;
+
+           case 4:
+               r = compressionCode == 3 ? *reinterpret_cast<float*>(v) : *reinterpret_cast<int32_t*>(v);
+               break;
+
+           default:
+               qDebug() << "Unsupported data size";
+               break;
+       }
+
+       return r;
+}
+
+QWavVector* WavReader::createVector(size_t bytesPerSample, size_t size)
+{
+    Q_UNUSED(bytesPerSample)
+    return new QWavVector(static_cast<int>(size));
 }
 
 WavReader::ErrorCodesEnum WavReader::read()
@@ -124,13 +153,7 @@ WavReader::ErrorCodesEnum WavReader::read()
             auto& channel = channelNum == 0 ? mChannel0 : mChannel1;
             auto& cbi = channelBufIndex[channelNum];
 
-            WavSample sample = bytesPerSample == 1 ? getSample<uint8_t>(buf, bufIndex) : getSample<int16_t>(buf, bufIndex);
-            if (bytesPerSample == 1) {
-                (static_cast<QWavVector<uint8_t>*>(channel.get()))->operator[](static_cast<uint>(cbi)) = *(reinterpret_cast<uint8_t*>(sample.sample));
-            }
-            else {
-                (static_cast<QWavVector<int16_t>*>(channel.get()))->operator[](static_cast<uint>(cbi)) = *(reinterpret_cast<int16_t*>(sample.sample));
-            }
+            channel->operator[](cbi) = getSample(buf, bufIndex, bytesPerSample, mWavFormatHeader.compressionCode);
             ++cbi;
         }
     }
@@ -154,12 +177,12 @@ uint WavReader::getBytesPerSample() const
     return mWavOpened ? mWavFormatHeader.significantBitsPerSample / 8 : 0;
 }
 
-WavReader::QVectorBase* WavReader::getChannel0() const
+QWavVector* WavReader::getChannel0() const
 {
     return mChannel0.get();
 }
 
-WavReader::QVectorBase* WavReader::getChannel1() const
+QWavVector* WavReader::getChannel1() const
 {
     return mChannel1.get();
 }
@@ -183,7 +206,7 @@ void WavReader::saveWaveform() const
     const auto& ch = *getChannel0();
     QByteArray b;
     for (auto i = 0; i < ch.size(); ++i) {
-        const uint16_t val = ch.get(i);
+        const QWavVectorType val = ch[i];
         b.append(reinterpret_cast<const char *>(&val), sizeof(val));
     }
     f.write(b);
@@ -192,27 +215,16 @@ void WavReader::saveWaveform() const
 
 void WavReader::repairWaveform()
 {
-    {
-        QVectorBase* v;
-        if (mWavFormatHeader.significantBitsPerSample == 8) {
-            v = new QWavVector<uint8_t>(*(static_cast<QWavVector<uint8_t>*>(mChannel0.get())));
-        }
-        else {
-            v = new QWavVector<int16_t>(*(static_cast<QWavVector<int16_t>*>(mChannel0.get())));
-        }
-
-        mStoredChannel.reset(v);
-    }
-
+    mStoredChannel.reset(new QWavVector(*mChannel0.get()));
     for (auto i = 0; i < mChannel0->size(); ++i) {
-        mChannel0->set(i, mChannel0->get(i) - 1000);
+        mChannel0->operator[](i) = mChannel0->operator[](i) - 1000;
     }
 }
 
 void WavReader::restoreWaveform()
 {
     for (auto i = 0; i < mStoredChannel->size(); ++i) {
-        mChannel0->set(i, mStoredChannel->get(i));
+        mChannel0->operator[](i) = mStoredChannel->operator[](i);
     }
 }
 
