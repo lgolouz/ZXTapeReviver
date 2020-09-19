@@ -135,7 +135,7 @@ public:
     static WaveformParser* instance();
 
     void parse(uint chNum);
-    void saveTap(uint chNum);
+    void saveTap(uint chNum, const QString& fileName = QString());
     void saveWaveform(uint chNum);
     QVector<uint8_t> getParsedWaveform(uint chNum) const;
 

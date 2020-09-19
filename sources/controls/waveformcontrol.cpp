@@ -24,20 +24,36 @@ WaveformControl::WaveformControl(QQuickItem* parent) :
     m_xScaleFactor(1),
     m_yScaleFactor(80000),
     m_clickState(WaitForFirstPress),
-    m_clickPosition(0)
+    m_clickPosition(0),
+    m_selectionMode(false),
+    m_rangeSelected(false)
 {
     setAcceptedMouseButtons(Qt::AllButtons);
     setEnabled(true);
 }
 
-WavReader::QVectorBase* WaveformControl::getChannel() const
+WavReader::QVectorBase* WaveformControl::getChannel(uint* chNum) const
 {
-    return m_channelNumber == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1();
+    const auto c = chNum ? *chNum : m_channelNumber;
+    return c == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1();
+}
+
+int WaveformControl::getWavPositionByMouseX(int x, int* point, double* dx) const
+{
+    const int xinc = getXScaleFactor() > 16.0 ? getXScaleFactor() / 16 : 1;
+    const double scale = boundingRect().width() * getXScaleFactor();
+    double tdx;
+    double& rdx = (dx ? *dx : tdx) = (boundingRect().width() / scale) * xinc;
+
+    int tpoint;
+    int& rpoint = (point ? *point : tpoint) = std::round(x / rdx);
+
+    return rpoint + getWavePos() * xinc;
 }
 
 void WaveformControl::paint(QPainter* painter)
 {
-    painter->setBackground(QBrush (QColor(7, 37, 7)));
+    painter->setBackground(QBrush (QColor(m_selectionMode ? 37 : 7, m_selectionMode ? 37 : 7, 37)));
     painter->setBackgroundMode(Qt::OpaqueMode);
     painter->setPen(QColor(11, 60, 0));
     const auto& bRect = boundingRect();
@@ -45,8 +61,8 @@ void WaveformControl::paint(QPainter* painter)
     const double halfHeight = waveHeight / 2;
     painter->fillRect(bRect, painter->background());
     painter->drawLine(0, halfHeight, bRect.width(), halfHeight);
-    uint32_t scale = bRect.width() * getXScaleFactor();
-    uint32_t pos = getWavePos();
+    int32_t scale = bRect.width() * getXScaleFactor();
+    int32_t pos = getWavePos();
     const auto* channel = getChannel();
     if (channel == nullptr) {
         return;
@@ -119,6 +135,14 @@ void WaveformControl::paint(QPainter* painter)
         py = y;
         x += dx;
     }
+
+    if (m_selectionMode && m_rangeSelected) {
+        painter->setBackground(QBrush(QColor(7, 7, 137, 128)));
+        auto bRect = boundingRect();
+        bRect.setX(m_selectionRange.first);
+        bRect.setRight(m_selectionRange.second);
+        painter->fillRect(bRect, painter->background());
+    }
 }
 
 int32_t WaveformControl::getWavePos() const
@@ -144,6 +168,11 @@ double WaveformControl::getYScaleFactor() const
 bool WaveformControl::getIsWaveformRepaired() const
 {
     return m_isWaveformRepaired;
+}
+
+bool WaveformControl::getSelectionMode() const
+{
+    return m_selectionMode;
 }
 
 void WaveformControl::setWavePos(int32_t wavePos)
@@ -176,6 +205,17 @@ void WaveformControl::setYScaleFactor(double yScaleFactor)
     }
 }
 
+void WaveformControl::setSelectionMode(bool mode)
+{
+    if (m_selectionMode != mode) {
+        m_selectionMode = mode;
+        m_rangeSelected = false;
+        update();
+
+        emit selectionModeChanged();
+    }
+}
+
 void WaveformControl::mousePressEvent(QMouseEvent* event)
 {
     if (!event) {
@@ -184,11 +224,13 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
 
     //Checking for double-click
     if (event->button() == Qt::LeftButton) {
+        auto now = QDateTime::currentDateTime();
+        qDebug() << "Click state: " << m_clickState << "; time: " << m_clickTime.msecsTo(now);
         if (m_clickState == WaitForFirstPress) {
             m_clickTime = QDateTime::currentDateTime();
             m_clickState = WaitForFirstRelease;
         }
-        else if (m_clickState == WaitForSecondPress && m_clickTime.msecsTo(QDateTime::currentDateTime()) <= 500) {
+        else if (m_clickState == WaitForSecondPress && m_clickTime.msecsTo(now) <= 500) {
             m_clickState = WaitForSecondRelease;
         }
         else {
@@ -197,12 +239,17 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
     }
 
     if (event->button() == Qt::LeftButton || event->button() == Qt::RightButton || event->button() == Qt::MiddleButton) {
-        const int xinc = getXScaleFactor() > 16.0 ? getXScaleFactor() / 16 : 1;
-        uint32_t scale = boundingRect().width() * getXScaleFactor();
-        double dx = (boundingRect().width() / (double) scale) * xinc;
-        uint32_t point = std::round(event->x() / dx);
-        m_clickPosition = point + getWavePos();
+        double dx;
+        int point;
+        m_clickPosition = getWavPositionByMouseX(event->x(), &point, &dx);
         event->accept();
+
+        if (m_selectionMode) {
+            m_rangeSelected = true;
+            m_selectionRange = { event->x(), event->x() };
+            update();
+        }
+
         if (dx <= 2.0) {
             return;
         }
@@ -210,31 +257,33 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
         const double waveHeight = boundingRect().height() - 100;
         const double halfHeight = waveHeight / 2;
 
-        if (event->button() == Qt::MiddleButton) {
-            //const auto p = point + getWavePos();
-            const auto d = getChannel()->get(m_clickPosition);
-            qDebug() << "Inserting point: " << m_clickPosition;
-            getChannel()->insert(m_clickPosition + (dpoint > event->x() ? 1 : -1), d);
-            update();
-        }
-        else {
-            if (dpoint >= event->x() - 2.0 && dpoint <= event->x() + 2) {
-                const double maxy = getYScaleFactor();
-                double y = halfHeight - ((double) (getChannel()->get(point + getWavePos())) / maxy) * waveHeight;
-                if (y >= event->y() - 2 && y <= event->y() + 2) {
-                    if (event->button() == Qt::LeftButton) {
-                        m_pointIndex = point;
-                        m_pointGrabbed = true;
-                        qDebug() << "Grabbed point: " << getChannel()->get(point + getWavePos());
-                    }
-                    else {
-                        m_pointGrabbed = false;
-                        getChannel()->remove(point + getWavePos());
-                        update();
+        if (!m_selectionMode) {
+            if (event->button() == Qt::MiddleButton ) {
+                //const auto p = point + getWavePos();
+                const auto d = getChannel()->get(m_clickPosition);
+                qDebug() << "Inserting point: " << m_clickPosition;
+                getChannel()->insert(m_clickPosition + (dpoint > event->x() ? 1 : -1), d);
+                update();
+            }
+            else {
+                if (dpoint >= event->x() - 2.0 && dpoint <= event->x() + 2) {
+                    const double maxy = getYScaleFactor();
+                    double y = halfHeight - ((double) (getChannel()->get(m_clickPosition)) / maxy) * waveHeight;
+                    if (y >= event->y() - 2 && y <= event->y() + 2) {
+                        if (event->button() == Qt::LeftButton) {
+                            m_pointIndex = point;
+                            m_pointGrabbed = true;
+                            qDebug() << "Grabbed point: " << getChannel()->get(m_clickPosition);
+                        }
+                        else {
+                            m_pointGrabbed = false;
+                            getChannel()->remove(m_clickPosition);
+                            update();
+                        }
                     }
                 }
             }
-        }
+        } // m_selectionMode
     }
 }
 
@@ -249,6 +298,12 @@ void WaveformControl::mouseReleaseEvent(QMouseEvent* event)
         {
             //Double-click handling
             auto now = QDateTime::currentDateTime();
+            qDebug() << "Click state: " << m_clickState << "; time: " << m_clickTime.msecsTo(now);
+
+            if (m_selectionMode && m_rangeSelected && m_selectionRange.first == m_selectionRange.second) {
+                m_rangeSelected = false;
+            }
+
             if (m_clickState == WaitForFirstRelease && m_clickTime.msecsTo(now) <= 500) {
                 m_clickState = WaitForSecondPress;
             }
@@ -259,6 +314,7 @@ void WaveformControl::mouseReleaseEvent(QMouseEvent* event)
             else {
                 m_clickState = WaitForFirstPress;
             }
+
             m_pointGrabbed = false;
             event->accept();
         }
@@ -277,28 +333,37 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
     }
 
     switch (event->buttons()) {
-    case Qt::LeftButton:
-        {
-            const auto* ch = getChannel();
-            if (!ch) {
-                return;
+        case Qt::LeftButton: {
+            if (m_selectionMode && m_rangeSelected) {
+                if (event->x() <= m_selectionRange.first) {
+                    m_selectionRange.first = event->x();
+                }
+                else {
+                    m_selectionRange.second = event->x();
+                }
             }
+            else {
+                const auto* ch = getChannel();
+                if (!ch) {
+                    return;
+                }
 
-            const double waveHeight = boundingRect().height() - 100;
-            const double halfHeight = waveHeight / 2;
-            double val = halfHeight - (0b1111111111111111 / halfHeight * event->y());
-            if (m_pointIndex + getWavePos() >= 0 && m_pointIndex + getWavePos() < ch->size()) {
-                getChannel()->set(m_pointIndex + getWavePos(), val);
+                const double waveHeight = boundingRect().height() - 100;
+                const double halfHeight = waveHeight / 2;
+                double val = halfHeight - (0b1111111111111111 / halfHeight * event->y());
+                if (m_pointIndex + getWavePos() >= 0 && m_pointIndex + getWavePos() < ch->size()) {
+                    getChannel()->set(m_pointIndex + getWavePos(), val);
+                }
+                qDebug() << "Setting point: " << m_pointIndex + getWavePos();
             }
-            qDebug() << "Setting point: " << m_pointIndex + getWavePos();
             event->accept();
             update();
         }
         break;
 
-    default:
-        event->ignore();
-        break;
+        default:
+            event->ignore();
+            break;
     }
 }
 
@@ -321,9 +386,10 @@ void WaveformControl::reparse()
     update();
 }
 
-void WaveformControl::saveTap()
+void WaveformControl::saveTap(const QString& fileUrl)
 {
-    mWavParser.saveTap(m_channelNumber);
+    QString fileName = fileUrl.isEmpty() ? fileUrl : QUrl(fileUrl).toLocalFile();
+    mWavParser.saveTap(m_channelNumber, fileName);
 }
 
 void WaveformControl::saveWaveform()
@@ -348,5 +414,18 @@ void WaveformControl::restoreWaveform()
         update();
         m_isWaveformRepaired = false;
         emit isWaveformRepairedChanged();
+    }
+}
+
+void WaveformControl::copySelectedToAnotherChannel()
+{
+    if (m_selectionMode && m_rangeSelected) {
+        uint destChNum = getChannelNumber() == 0 ? 1 : 0;
+        const auto sourceChannel = getChannel();
+        const auto destChannel = getChannel(&destChNum);
+        const auto endIdx = getWavPositionByMouseX(m_selectionRange.second);
+        for (auto i = getWavPositionByMouseX(m_selectionRange.first); i <= endIdx; ++i) {
+            destChannel->set(i, sourceChannel->get(i));
+        }
     }
 }

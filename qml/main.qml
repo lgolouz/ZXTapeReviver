@@ -165,10 +165,10 @@ ApplicationWindow {
         onAccepted: {
             if (saveParsed) {
                 if (channelNumber == 0) {
-                    waveformControlCh0.saveTap();
+                    waveformControlCh0.saveTap(saveFileDialog.fileUrl);
                 }
                 else {
-                    waveformControlCh1.saveTap();
+                    waveformControlCh1.saveTap(saveFileDialog.fileUrl);
                 }
             }
             else {
@@ -406,6 +406,56 @@ ApplicationWindow {
                 else {
                     waveformControlCh0.repairWaveform();
                 }
+            }
+        }
+
+        Button {
+            id: selectionModeToggleButton
+
+            text: "Selection mode"
+            anchors.right: parent.right
+            anchors.bottom: waveformControlCh1.bottom
+            anchors.bottomMargin: 5
+            anchors.rightMargin: 5
+            width: hZoomOutButton.width
+            checkable: true
+
+            onCheckedChanged: {
+                waveformControlCh0.selectionMode = waveformControlCh1.selectionMode = checked;
+            }
+        }
+
+        Button {
+            id: copyFromRigthToLeftChannel
+
+            anchors.right: parent.right
+            anchors.bottom: selectionModeToggleButton.top
+            anchors.bottomMargin: 15
+            anchors.rightMargin: 5
+            width: hZoomOutButton.width
+
+            text: "Copy from R to L (­▲)"
+            visible: selectionModeToggleButton.checked
+            onClicked: {
+                waveformControlCh1.copySelectedToAnotherChannel();
+                waveformControlCh0.update();
+            }
+        }
+
+        Button {
+            id: copyFromLeftToRightChannel
+
+            anchors.right: parent.right
+            anchors.bottom: copyFromRigthToLeftChannel.top
+            anchors.bottomMargin: 5
+            anchors.rightMargin: 5
+            width: hZoomOutButton.width
+
+            text: "Copy from L to R (▼)"
+            visible: selectionModeToggleButton.checked
+            onClicked: {
+                waveformControlCh0.copySelectedToAnotherChannel();
+                waveformControlCh1.update();
             }
         }
     }

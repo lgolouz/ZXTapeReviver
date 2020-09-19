@@ -169,6 +169,7 @@ WavReader::ErrorCodesEnum WavReader::close()
     if (!mWavOpened) {
         return NotOpened;
     }
+    mWavOpened = false;
 
     mWavFile.close();
     return Ok;

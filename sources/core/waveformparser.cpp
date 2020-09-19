@@ -20,6 +20,11 @@ WaveformParser::WaveformParser(QObject* parent) :
 
 void WaveformParser::parse(uint chNum)
 {
+    if (chNum >= mWavReader.getNumberOfChannels()) {
+        qDebug() << "Trying to parse channel that exceeds overall number of channels";
+        return;
+    }
+
     WavReader::QVectorBase& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
     const auto bytesPerSample = mWavReader.getBytesPerSample();
 
@@ -220,9 +225,9 @@ void WaveformParser::parse(uint chNum)
     }
 }
 
-void WaveformParser::saveTap(uint chNum)
+void WaveformParser::saveTap(uint chNum, const QString& fileName)
 {
-    QFile f(QString("tape_%1_%2.tap").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")).arg(chNum ? "R" : "L"));
+    QFile f(fileName.isEmpty() ? QString("tape_%1_%2.tap").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")).arg(chNum ? "R" : "L") : fileName);
     f.open(QIODevice::ReadWrite);
 
     auto& parsedData = mParsedData[chNum];
@@ -313,7 +318,7 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
                 }
             }
             m.insert("blockName", nameText);
-            m.insert("blockStatus", i.state == OK ? "OK" : "ERROR");
+            m.insert("blockStatus", i.state == OK ? "Ok" : "Error");
             m.insert("state", i.state);
         }
         else {
