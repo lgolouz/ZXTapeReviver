@@ -92,7 +92,7 @@ private:
     bool m_rangeSelected;
     QPair<int, int> m_selectionRange;
 
-    WavReader::QVectorBase* getChannel(uint* chNum = nullptr) const;
+    QWavVector* getChannel(uint* chNum = nullptr) const;
     int getWavPositionByMouseX(int x, int* point = nullptr, double* dx = nullptr) const;
 };
 
