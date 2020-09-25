@@ -47,6 +47,10 @@ ApplicationWindow {
         suspiciousPoints.append({idx: idx});
     }
 
+    function getSelectedWaveform() {
+        return channelsComboBox.currentIndex == 0 ? waveformControlCh0 : waveformControlCh1;
+    }
+
     menuBar: MenuBar {
         Menu {
             title: "File"
@@ -392,7 +396,7 @@ ApplicationWindow {
         Button {
             id: repairRestoreButton
 
-            text: "%1 waveform".arg(waveformControlCh0.isWaveformRepaired ? "Restore" : "Repair")
+            text: "%1 waveform".arg(getSelectedWaveform().isWaveformRepaired ? "Restore" : "Repair")
             anchors.top: saveParsedDataButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -400,12 +404,29 @@ ApplicationWindow {
             width: hZoomOutButton.width
 
             onClicked: {
-                if (waveformControlCh0.isWaveformRepaired) {
-                    waveformControlCh0.restoreWaveform();
+                if (getSelectedWaveform().isWaveformRepaired) {
+                    getSelectedWaveform().restoreWaveform();
                 }
                 else {
-                    waveformControlCh0.repairWaveform();
+                    getSelectedWaveform().repairWaveform();
                 }
+            }
+        }
+
+        Button {
+            id: shiftWaveform
+
+            text: "Shift waveform"
+            anchors {
+                top: repairRestoreButton.bottom
+                topMargin: 5
+                right: parent.right
+                rightMargin: 5
+            }
+            width: hZoomOutButton.width
+
+            onClicked: {
+                getSelectedWaveform().shiftWaveform();
             }
         }
 

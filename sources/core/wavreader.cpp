@@ -213,18 +213,118 @@ void WavReader::saveWaveform() const
     f.close();
 }
 
-void WavReader::repairWaveform()
+void WavReader::shiftWaveform(uint chNum)
 {
-    mStoredChannel.reset(new QWavVector(*mChannel0.get()));
+    if (chNum >= mWavFormatHeader.numberOfChannels) {
+        qDebug() << "Channel number exceeds number of channels";
+        return;
+    }
+
+    auto& storedCh = mStoredChannels[chNum];
+    auto& ch = chNum == 0 ? mChannel0 : mChannel1;
+    storedCh.reset(new QWavVector(*ch.get()));
     for (auto i = 0; i < mChannel0->size(); ++i) {
-        mChannel0->operator[](i) = mChannel0->operator[](i) - 1000;
+        ch->operator[](i) -= 1000;
     }
 }
 
-void WavReader::restoreWaveform()
+void WavReader::storeWaveform(uint chNum)
 {
-    for (auto i = 0; i < mStoredChannel->size(); ++i) {
-        mChannel0->operator[](i) = mStoredChannel->operator[](i);
+    if (chNum >= mWavFormatHeader.numberOfChannels) {
+        qDebug() << "Channel number exceeds number of channels";
+        return;
+    }
+
+    auto& ch = chNum == 0 ? mChannel0 : mChannel1;
+    mStoredChannels[chNum].reset(new QWavVector(*ch));
+}
+
+void WavReader::restoreWaveform(uint chNum)
+{
+    if (chNum >= mWavFormatHeader.numberOfChannels) {
+        qDebug() << "Channel number exceeds number of channels";
+        return;
+    }
+
+    auto& ch = chNum == 0 ? mChannel0 : mChannel1;
+    auto& storedCh = mStoredChannels[chNum];
+    if (storedCh.isNull()) {
+        storedCh.reset(new QWavVector());
+    }
+
+    ch.reset(new QWavVector(*mStoredChannels[chNum]));
+}
+
+void WavReader::normalizeWaveform(uint chNum)
+{
+    if (chNum >= mWavFormatHeader.numberOfChannels) {
+        qDebug() << "Channel number exceeds number of channels";
+        return;
+    }
+
+    auto& ch = *(chNum == 0 ? mChannel0 : mChannel1).get();
+    auto haveSameSign = [](QWavVectorType o1, QWavVectorType o2) {
+        return lessThanZero(o1) == lessThanZero(o2);
+    };
+
+    //Trying to find a sine
+    auto bIt = ch.begin();
+
+    while (bIt != ch.end()) {
+        //qDebug() << "bIt: " << std::distance(ch.begin(), bIt) << "; end: " << std::distance(ch.begin(), ch.end());
+//        auto itPos = std::distance(ch.begin(), bIt);
+//        auto prc = ((float) itPos / ch.size()) * 100;
+//        qDebug() << "Total: " << (int) prc;
+
+        auto prevIt = bIt;
+        auto it = std::next(prevIt);
+        QMap<int, QVector<QWavVectorType>::iterator> peaks {{0, bIt}};
+
+        for (int i = 1; i < 4; ++i) {
+            //down-to-up part when i == 1, 3
+            //up-to-down part when i == 2
+            bool finished = true;
+            for (; it != ch.end();) {
+                if (haveSameSign(*prevIt, *it)) {
+                    if ((i == 2 ? std::abs(*prevIt) >= std::abs(*it) : std::abs(*prevIt) <= std::abs(*it))) {
+                        prevIt = it;
+                        it = std::next(it);
+                    }
+                    else {
+                        peaks[i] = it;
+                        break;
+                    }
+                }
+                else {
+                    bIt = it;
+                    finished = false;
+                    it = ch.end();
+                }
+            }
+
+            //Signal crosses zero level - not ours case
+            if (it == ch.end()) {
+                if (finished) {
+                    bIt = it;
+                }
+                break;
+            }
+        }
+
+        //Looks like we've found a sine, normalizing it
+        if (it != ch.end()) {
+            bIt = it;
+            for (auto i = 0; i < 3; ++i) {
+                auto middlePoint = std::distance(peaks[i], peaks[i + 1]) / 2;
+                auto middleIt = std::next(peaks[i], middlePoint);
+                auto middleVal = *middleIt;
+                auto incVal = QWavVectorType(-1) * middleVal;
+                std::for_each(i == 1 ? middleIt : peaks[i], i == 1 ? peaks[i + 1] : middleIt, [incVal](QWavVectorType& i) {
+//                    qDebug() << "Old: " << i << "; new: " << (i+incVal);
+                    i += incVal;
+                });
+            }
+        }
     }
 }
 

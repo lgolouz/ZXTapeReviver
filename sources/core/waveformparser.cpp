@@ -26,7 +26,7 @@ void WaveformParser::parse(uint chNum)
     }
 
     QWavVector& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
-    QVector<WaveformPart> parsed = parseChannel<float>(channel);
+    QVector<WaveformPart> parsed = parseChannel<QWavVectorType>(channel);
 
     const double sampleRate = mWavReader.getSampleRate();
     auto isFreqFitsInDelta = [&sampleRate](uint32_t length, uint32_t signalFreq, double signalDelta, double deltaDivider = 1.0) -> bool {
