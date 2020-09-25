@@ -8,6 +8,7 @@
 
 #include "waveformcontrol.h"
 #include <cmath>
+#include <climits>
 #include <QColor>
 #include <QBrush>
 #include <QPen>
@@ -350,7 +351,8 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
 
                 const double waveHeight = boundingRect().height() - 100;
                 const double halfHeight = waveHeight / 2;
-                double val = halfHeight - (0b1111111111111111 / halfHeight * event->y());
+                const auto pointerPos = halfHeight - event->y();
+                double val = halfHeight + (m_yScaleFactor / waveHeight * pointerPos);
                 if (m_pointIndex + getWavePos() >= 0 && m_pointIndex + getWavePos() < ch->size()) {
                     getChannel()->operator[](m_pointIndex + getWavePos()) = val;
                 }
@@ -400,21 +402,30 @@ void WaveformControl::saveWaveform()
 void WaveformControl::repairWaveform()
 {
     if (!m_isWaveformRepaired) {
-        mWavReader.repairWaveform();
+        //mWavReader.repairWaveform(m_channelNumber);
+        mWavReader.normalizeWaveform(0);
         update();
         m_isWaveformRepaired = true;
         emit isWaveformRepairedChanged();
     }
 }
 
+
+
 void WaveformControl::restoreWaveform()
 {
     if (m_isWaveformRepaired) {
-        mWavReader.restoreWaveform();
+        mWavReader.restoreWaveform(m_channelNumber);
         update();
         m_isWaveformRepaired = false;
         emit isWaveformRepairedChanged();
     }
+}
+
+void WaveformControl::shiftWaveform()
+{
+    mWavReader.shiftWaveform(m_channelNumber);
+    update();
 }
 
 void WaveformControl::copySelectedToAnotherChannel()

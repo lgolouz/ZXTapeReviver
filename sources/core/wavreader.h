@@ -11,9 +11,8 @@
 
 #include <QObject>
 #include <QFile>
-
-using QWavVectorType = float;
-using QWavVector = QVector<QWavVectorType>;
+#include <QMap>
+#include "sources/defines.h"
 
 class WavReader : public QObject
 {
@@ -107,7 +106,7 @@ private:
     QFile mWavFile;
     QScopedPointer<QWavVector> mChannel0;
     QScopedPointer<QWavVector> mChannel1;
-    QScopedPointer<QWavVector> mStoredChannel;
+    QMap<uint, QSharedPointer<QWavVector>> mStoredChannels;
 
 protected:
     explicit WavReader(QObject* parent = nullptr);
@@ -139,8 +138,10 @@ public:
     ErrorCodesEnum close();
 
     void saveWaveform() const;
-    void repairWaveform();
-    void restoreWaveform();
+    void shiftWaveform(uint chNum);
+    void storeWaveform(uint chNum);
+    void restoreWaveform(uint chNum);
+    void normalizeWaveform(uint chNum);
 
     static WavReader* instance();
 

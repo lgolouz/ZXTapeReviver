@@ -22,6 +22,7 @@ SOURCES += \
         sources/core/wavreader.cpp
 
 HEADERS += \
+    sources/defines.h \
     sources/models/fileworkermodel.h \
     sources/controls/waveformcontrol.h \
     sources/core/waveformparser.h \

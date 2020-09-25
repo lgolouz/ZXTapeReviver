@@ -15,6 +15,7 @@
 #include <QVariantMap>
 #include <QVariantList>
 #include "sources/core/wavreader.h"
+#include "sources/defines.h"
 
 class WaveformParser : public QObject
 {
@@ -97,12 +98,11 @@ private:
             return result;
         }
 
-        auto lessThanZero = [](const T t) -> bool { return t < 0; };
         auto it = ch.begin();
         auto val = *it;
         while(it != ch.end()) {
             auto prevIt = it;
-            it = std::find_if(it, ch.end(), [&val, &lessThanZero](const T& i) { return lessThanZero(val) != lessThanZero(i); });
+            it = std::find_if(it, ch.end(), [&val](const T& i) { return lessThanZero(val) != lessThanZero(i); });
             WaveformPart part;
             part.begin = std::distance(ch.begin(), prevIt);
             part.end = std::distance(ch.begin(), std::prev(it));
