@@ -42,6 +42,36 @@ FileWorkerModel::FileWorkerModel(QObject* parent) :
     return result;
 }
 
+/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::openWaveformFileByUrl(const QString& fileNameUrl)
+{
+    QUrl u(fileNameUrl);
+    return openWaveformFile(u.toLocalFile());
+}
+
+/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::openWaveformFile(const QString& fileName)
+{
+    auto& r = *WavReader::instance();
+    r.close();
+
+    r.loadWaveform(fileName);
+    m_wavFileName = fileName;
+    emit wavFileNameChanged();
+    return WavReader::Ok;
+}
+
+/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::saveWaveformFileByUrl(const QString& fileNameUrl)
+{
+    QUrl u(fileNameUrl);
+    return saveWaveformFile(u.toLocalFile());
+}
+
+/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::saveWaveformFile(const QString& fileName)
+{
+    auto& r = *WavReader::instance();
+    r.saveWaveform(fileName);
+    return WavReader::Ok;
+}
+
 QString FileWorkerModel::getWavFileName() const
 {
     return m_wavFileName;

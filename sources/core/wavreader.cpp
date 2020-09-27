@@ -7,6 +7,7 @@
 //*******************************************************************************
 
 #include "wavreader.h"
+#include "sources/models/suspiciouspointsmodel.h"
 #include <QVariant>
 #include <QVariantList>
 #include <QDateTime>
@@ -83,7 +84,7 @@ WavReader::ErrorCodesEnum WavReader::open()
     return AlreadyOpened;
 }
 
-QWavVectorType WavReader::getSample(QByteArray& buf, size_t& bufIndex, uint dataSize, uint compressionCode)
+QWavVectorType WavReader::getSample(QByteArray& buf, size_t& bufIndex, uint dataSize, uint compressionCode) const
 {
        QWavVectorType r { };
        void* v;
@@ -198,17 +199,66 @@ WavReader::ErrorCodesEnum WavReader::close()
     return Ok;
 }
 
-void WavReader::saveWaveform() const
+void WavReader::loadWaveform(const QString& fname)
 {
-    QFile f(QString("waveform_%1.wfm").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")));
+    QFile f(fname);
+    f.open(QIODevice::ReadOnly);
+    QByteArray b(f.read(f.size()));
+    size_t idx = 0;
+    //Get header
+    mWavFormatHeader = *getData<WavFmt>(b, idx);
+    for (auto i = 0; i < mWavFormatHeader.numberOfChannels; ++i) {
+        //Get channel length
+        const int32_t l { *getData<int32_t>(b, idx) };
+        auto& ch = i == 0 ? mChannel0 : mChannel1;
+        ch.reset(new QWavVector(l));
+        //Fill channel data
+        for (auto& v: *ch.get()) {
+            v = *getData<QWavVectorType>(b, idx);
+        }
+    }
+
+    //Restore suspicious points
+    const int32_t l { *getData<int32_t>(b, idx) };
+    QVariantList sp;
+    for (auto i = 0; i < l; ++i) {
+        sp.append(*getData<uint32_t>(b, idx));
+    }
+    SuspiciousPointsModel::instance()->setSuspiciousPoints(sp);
+
+    f.close();
+    mWavOpened = true;
+}
+
+void WavReader::saveWaveform(const QString& fname) const
+{
+    QFile f(fname.isEmpty() ? QString("waveform_%1.wfm").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")) : fname);
     f.open(QIODevice::ReadWrite);
 
-    const auto& ch = *getChannel0();
+    //Store header
     QByteArray b;
-    for (auto i = 0; i < ch.size(); ++i) {
-        const QWavVectorType val = ch[i];
-        b.append(reinterpret_cast<const char *>(&val), sizeof(val));
+    appendData(b, mWavFormatHeader);
+
+    for (auto i = 0; i < mWavFormatHeader.numberOfChannels; ++i) {
+        const auto& ch = i == 0 ? *getChannel0() : *getChannel1();
+        //Store channel length
+        const int32_t l = ch.length();
+        appendData(b, l);
+        //Store channel
+        for (const auto& v: ch) {
+            appendData(b, v);
+        }
     }
+
+    //Store suspicious points
+    const auto s = SuspiciousPointsModel::instance()->getSuspiciousPoints();
+    const int32_t l = s.length();
+    appendData(b, l);
+    for (const auto& p: s) {
+        uint32_t sp = p.toUInt();
+        appendData(b, sp);
+    }
+
     f.write(b);
     f.close();
 }
@@ -224,7 +274,7 @@ void WavReader::shiftWaveform(uint chNum)
     auto& ch = chNum == 0 ? mChannel0 : mChannel1;
     storedCh.reset(new QWavVector(*ch.get()));
     for (auto i = 0; i < mChannel0->size(); ++i) {
-        ch->operator[](i) -= 1000;
+        ch->operator[](i) -= 1300;
     }
 }
 
@@ -323,6 +373,89 @@ void WavReader::normalizeWaveform(uint chNum)
 //                    qDebug() << "Old: " << i << "; new: " << (i+incVal);
                     i += incVal;
                 });
+            }
+        }
+    }
+}
+
+void WavReader::normalizeWaveform2(uint chNum)
+{
+    if (chNum >= mWavFormatHeader.numberOfChannels) {
+        qDebug() << "Channel number exceeds number of channels";
+        return;
+    }
+
+    auto& ch = *(chNum == 0 ? mChannel0 : mChannel1).get();
+    auto haveSameSign = [](QWavVectorType o1, QWavVectorType o2) {
+        return lessThanZero(o1) == lessThanZero(o2);
+    };
+
+    //Trying to find a sine
+    auto bIt = ch.begin();
+
+    while (bIt != ch.end()) {
+        auto prevIt = bIt;
+        auto it = std::next(prevIt);
+        QMap<int, QVector<QWavVectorType>::iterator> peaks {{0, bIt}};
+
+        for (int i = 1; i < 4; ++i) {
+            //down-to-up part when i == 1, 3
+            //up-to-down part when i == 2
+            bool finished = true;
+            for (; it != ch.end();) {
+                if (haveSameSign(*prevIt, *it)) {
+                    if ((i == 2 ? std::abs(*prevIt) >= std::abs(*it) : std::abs(*prevIt) <= std::abs(*it))) {
+                        prevIt = it;
+                        it = std::next(it);
+                    }
+                    else {
+                        auto itNext = std::next(it);
+                        if (itNext != ch.end() && ((i == 2 ? std::abs(*prevIt) >= std::abs(*itNext) : std::abs(*prevIt) <= std::abs(*itNext)))) {
+                            prevIt = it;
+                            it = itNext;
+                        }
+                        else {
+                            peaks[i] = it;
+                            break;
+                        }
+                    }
+                }
+                else {
+                    bIt = it;
+                    finished = false;
+                    it = ch.end();
+                }
+            }
+
+            //Signal crosses zero level - not ours case
+            if (it == ch.end()) {
+                if (finished) {
+                    bIt = it;
+                }
+                break;
+            }
+        }
+
+        //Looks like we've found a sine, normalizing it
+        if (it != ch.end()) {
+            bIt = it;
+            double freq = getSampleRate() / std::distance(peaks[0], peaks[3]);
+            if (freq <= ZERO_HALF_FREQ) {
+                auto it = peaks[2];
+                for (int i = 0; i < 2 && it != ch.end(); ++i, ++it) {
+                    auto val = *it;
+                    *it = val >= 0 ? -1000 : 1000;
+                }
+//                for (auto i = 0; i < 3; ++i) {
+//                    auto middlePoint = std::distance(peaks[i], peaks[i + 1]) / 2;
+//                    auto middleIt = std::next(peaks[i], middlePoint);
+//                    auto middleVal = *middleIt;
+//                    auto incVal = QWavVectorType(-1) * middleVal;
+//                    std::for_each(i == 1 ? middleIt : peaks[i], i == 1 ? peaks[i + 1] : middleIt, [incVal](QWavVectorType& i) {
+//                        //qDebug() << "Old: " << i << "; new: " << (i+incVal);
+//                        i += incVal;
+//                    });
+//                }
             }
         }
     }

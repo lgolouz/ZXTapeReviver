@@ -11,6 +11,7 @@
 #include "sources/controls/waveformcontrol.h"
 #include "sources/core/waveformparser.h"
 #include "sources/models/fileworkermodel.h"
+#include "sources/models/suspiciouspointsmodel.h"
 
 void registerTypes()
 {
@@ -23,6 +24,7 @@ void registerTypes()
         Q_UNUSED(scriptEngine)
         return new FileWorkerModel();
     });
+    qmlRegisterSingletonInstance<SuspiciousPointsModel>("com.models.zxtapereviver", 1, 0, "SuspiciousPointsModel", SuspiciousPointsModel::instance());
     qmlRegisterSingletonInstance<WavReader>("com.core.zxtapereviver", 1, 0, "WavReader", WavReader::instance());
     qmlRegisterSingletonInstance<WaveformParser>("com.core.zxtapereviver", 1, 0, "WaveformParser", WaveformParser::instance());
 }

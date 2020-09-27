@@ -20,7 +20,7 @@ ApplicationWindow {
     id: mainWindow
 
     readonly property int mainAreaWidth: width * 0.75
-    property ListModel suspiciousPoints: ListModel { }
+    property var suspiciousPoints: SuspiciousPointsModel.suspiciousPoints
 
     visible: true
     width: 1600
@@ -31,24 +31,18 @@ ApplicationWindow {
         return wfWidth * wfXScale / 2;
     }
 
-    function addSuspiciousPoint(idx) {
-        console.log("Adding suspicious point: " + idx);
-        for (var i = 0; i < suspiciousPoints.count; ++i) {
-            var p = suspiciousPoints.get(i).idx;
-            if (p === idx) {
-                return;
-            }
-            else if (p > idx) {
-                suspiciousPoints.insert(i, {idx: idx});
-                return;
-            }
-        }
-
-        suspiciousPoints.append({idx: idx});
-    }
-
     function getSelectedWaveform() {
         return channelsComboBox.currentIndex == 0 ? waveformControlCh0 : waveformControlCh1;
+    }
+
+    function restoreWaveformView() {
+        waveformControlCh0.xScaleFactor = 1;
+        waveformControlCh0.yScaleFactor = 80000;
+        waveformControlCh0.wavePos = 0;
+
+        waveformControlCh1.xScaleFactor = 1;
+        waveformControlCh1.yScaleFactor = 80000;
+        waveformControlCh1.wavePos = 0;
     }
 
     menuBar: MenuBar {
@@ -59,6 +53,16 @@ ApplicationWindow {
                 text: "Open WAV file..."
                 onTriggered: {
                     console.log("Opening WAV file");
+                    openFileDialog.isWavOpening = true;
+                    openFileDialog.open();
+                }
+            }
+
+            MenuItem {
+                text: "Open Waveform file..."
+                onTriggered:  {
+                    console.log("Opening Waveform file");
+                    openFileDialog.isWavOpening = false;
                     openFileDialog.open();
                 }
             }
@@ -116,15 +120,9 @@ ApplicationWindow {
             title: "Waveform"
 
             MenuItem {
-                text: "Restore"
+                text: "Restore view"
                 onTriggered: {
-                    waveformControlCh0.xScaleFactor = 1;
-                    waveformControlCh0.yScaleFactor = 80000;
-                    waveformControlCh0.wavePos = 0;
-
-                    waveformControlCh1.xScaleFactor = 1;
-                    waveformControlCh1.yScaleFactor = 80000;
-                    waveformControlCh1.wavePos = 0;
+                    restoreWaveformView();
                 }
             }
 
@@ -137,15 +135,27 @@ ApplicationWindow {
     FileDialog {
         id: openFileDialog
 
+        property bool isWavOpening: true
+
         title: "Please choose WAV file"
         selectMultiple: false
         sidebarVisible: true
-        defaultSuffix: "wav"
-        nameFilters: [ "WAV files (*.wav)" ]
+        defaultSuffix: isWavOpening ? "wav" : "wfm"
+        nameFilters: isWavOpening ? [ "WAV files (*.wav)" ] : [ "Waveform files (*.wfm)" ]
 
         onAccepted: {
-            console.log("Selected WAV file: " + openFileDialog.fileUrl);
-            console.log("Open WAV file result: " + FileWorkerModel.openWavFileByUrl(openFileDialog.fileUrl));
+            var filetype = isWavOpening ? "WAV" : "Waveform";
+            console.log("Selected %1 file: ".arg(filetype) + openFileDialog.fileUrl);
+            var res = (isWavOpening
+                        ? FileWorkerModel.openWavFileByUrl(openFileDialog.fileUrl)
+                        : FileWorkerModel.openWaveformFileByUrl(openFileDialog.fileUrl));
+            console.log("Open %1 file result: ".arg(filetype) + res);
+            if (res === 0) {
+                if (isWavOpening) {
+                    SuspiciousPointsModel.clearSuspiciousPoints();
+                }
+                restoreWaveformView();
+            }
         }
 
         onRejected: {
@@ -174,9 +184,11 @@ ApplicationWindow {
                 else {
                     waveformControlCh1.saveTap(saveFileDialog.fileUrl);
                 }
+                console.log("Tap saved: " + saveFileDialog.fileUrl)
             }
             else {
-                //wavReader.saveWaveform();
+                FileWorkerModel.saveWaveformFileByUrl(saveFileDialog.fileUrl);
+                console.log("Waveform saved: " + saveFileDialog.fileUrl);
             }
         }
     }
@@ -215,7 +227,7 @@ ApplicationWindow {
             height: parent.height - parent.height / 2 - parent.spacerHeight / 2
 
             onDoubleClick: {
-                addSuspiciousPoint(idx);
+                SuspiciousPointsModel.addSuspiciousPoint(idx);
             }
         }
 
@@ -232,7 +244,7 @@ ApplicationWindow {
             height: waveformControlCh0.height
 
             onDoubleClick: {
-                addSuspiciousPoint(idx);
+                SuspiciousPointsModel.addSuspiciousPoint(idx);
             }
         }
 
@@ -431,6 +443,23 @@ ApplicationWindow {
         }
 
         Button {
+            id: gotoAddressButton
+
+            text: "Goto address..."
+            anchors {
+                top: shiftWaveform.bottom
+                topMargin: 5
+                right: parent.right
+                rightMargin: 5
+            }
+            width: hZoomOutButton.width
+
+            onClicked: {
+                gotoAddressDialogLoader.item.open();
+            }
+        }
+
+        Button {
             id: selectionModeToggleButton
 
             text: "Selection mode"
@@ -525,7 +554,7 @@ ApplicationWindow {
                         idx = 0;
                     }
 
-                    waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx ;
+                    waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx;
                 }
             }
         }
@@ -617,11 +646,11 @@ ApplicationWindow {
             text: "Goto Suspicious point"
 
             onClicked: {
-                if (suspiciousPointsView.currentRow < 0 || suspiciousPointsView.currentRow >= suspiciousPoints.count) {
+                if (suspiciousPointsView.currentRow < 0 || suspiciousPointsView.currentRow >= SuspiciousPointsModel.size) {
                     return;
                 }
 
-                var idx = suspiciousPoints.get(suspiciousPointsView.currentRow).idx - getWaveShiftIndex(waveformControlCh0.width, waveformControlCh0.xScaleFactor);
+                var idx = SuspiciousPointsModel.getSuspiciousPoint(suspiciousPointsView.currentRow) - getWaveShiftIndex(waveformControlCh0.width, waveformControlCh0.xScaleFactor);
                 if (idx < 0) {
                     idx = 0;
                 }
@@ -645,9 +674,9 @@ ApplicationWindow {
             text: "Remove Suspicious point"
 
             onClicked: {
-                if (suspiciousPointsView.currentRow >= 0 && suspiciousPointsView.currentRow < suspiciousPoints.count) {
-                    console.log("Removing suspicious point: " + suspiciousPoints.get(suspiciousPointsView.currentRow).idx);
-                    suspiciousPoints.remove(suspiciousPointsView.currentRow);
+                if (suspiciousPointsView.currentRow >= 0 && suspiciousPointsView.currentRow < SuspiciousPointsModel.size) {
+                    console.log("Removing suspicious point: " + SuspiciousPointsModel.getSuspiciousPoint(suspiciousPointsView.currentRow));
+                    SuspiciousPointsModel.removeSuspiciousPoint(suspiciousPointsView.currentRow);
                 }
             }
         }
@@ -677,6 +706,27 @@ ApplicationWindow {
             TableViewColumn {
                 title: "Position"
                 width: rightArea.width * 0.9
+            }
+        }
+    }
+
+    Loader {
+        id: gotoAddressDialogLoader
+        source: "GoToAddress.qml"
+    }
+
+    Connections {
+        target: gotoAddressDialogLoader.item
+        function onGotoAddress(adr) {
+            console.log("Goto address: " + adr);
+            var pos = WaveformParser.getPositionByAddress(channelsComboBox.currentIndex, parsedDataView.currentRow, adr);
+            if (pos !== 0) {
+                var idx = pos - getWaveShiftIndex(waveformControlCh0.width, waveformControlCh0.xScaleFactor);
+                if (idx < 0) {
+                    idx = 0;
+                }
+
+                waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx;
             }
         }
     }

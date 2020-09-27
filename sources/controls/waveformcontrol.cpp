@@ -403,7 +403,7 @@ void WaveformControl::repairWaveform()
 {
     if (!m_isWaveformRepaired) {
         //mWavReader.repairWaveform(m_channelNumber);
-        mWavReader.normalizeWaveform(0);
+        mWavReader.normalizeWaveform2(m_channelNumber);
         update();
         m_isWaveformRepaired = true;
         emit isWaveformRepairedChanged();
