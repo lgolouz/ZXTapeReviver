@@ -7,6 +7,7 @@
 //*******************************************************************************
 
 #include "wavreader.h"
+#include "sources/models/suspiciouspointsmodel.h"
 #include <QVariant>
 #include <QVariantList>
 #include <QDateTime>
@@ -83,7 +84,7 @@ WavReader::ErrorCodesEnum WavReader::open()
     return AlreadyOpened;
 }
 
-QWavVectorType WavReader::getSample(QByteArray& buf, size_t& bufIndex, uint dataSize, uint compressionCode)
+QWavVectorType WavReader::getSample(QByteArray& buf, size_t& bufIndex, uint dataSize, uint compressionCode) const
 {
        QWavVectorType r { };
        void* v;
@@ -198,17 +199,66 @@ WavReader::ErrorCodesEnum WavReader::close()
     return Ok;
 }
 
-void WavReader::saveWaveform() const
+void WavReader::loadWaveform(const QString& fname)
 {
-    QFile f(QString("waveform_%1.wfm").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")));
+    QFile f(fname);
+    f.open(QIODevice::ReadOnly);
+    QByteArray b(f.read(f.size()));
+    size_t idx = 0;
+    //Get header
+    mWavFormatHeader = *getData<WavFmt>(b, idx);
+    for (auto i = 0; i < mWavFormatHeader.numberOfChannels; ++i) {
+        //Get channel length
+        const int32_t l { *getData<int32_t>(b, idx) };
+        auto& ch = i == 0 ? mChannel0 : mChannel1;
+        ch.reset(new QWavVector(l));
+        //Fill channel data
+        for (auto& v: *ch.get()) {
+            v = *getData<QWavVectorType>(b, idx);
+        }
+    }
+
+    //Restore suspicious points
+    const int32_t l { *getData<int32_t>(b, idx) };
+    QVariantList sp;
+    for (auto i = 0; i < l; ++i) {
+        sp.append(*getData<uint32_t>(b, idx));
+    }
+    SuspiciousPointsModel::instance()->setSuspiciousPoints(sp);
+
+    f.close();
+    mWavOpened = true;
+}
+
+void WavReader::saveWaveform(const QString& fname) const
+{
+    QFile f(fname.isEmpty() ? QString("waveform_%1.wfm").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")) : fname);
     f.open(QIODevice::ReadWrite);
 
-    const auto& ch = *getChannel0();
+    //Store header
     QByteArray b;
-    for (auto i = 0; i < ch.size(); ++i) {
-        const QWavVectorType val = ch[i];
-        b.append(reinterpret_cast<const char *>(&val), sizeof(val));
+    appendData(b, mWavFormatHeader);
+
+    for (auto i = 0; i < mWavFormatHeader.numberOfChannels; ++i) {
+        const auto& ch = i == 0 ? *getChannel0() : *getChannel1();
+        //Store channel length
+        const int32_t l = ch.length();
+        appendData(b, l);
+        //Store channel
+        for (const auto& v: ch) {
+            appendData(b, v);
+        }
     }
+
+    //Store suspicious points
+    const auto s = SuspiciousPointsModel::instance()->getSuspiciousPoints();
+    const int32_t l = s.length();
+    appendData(b, l);
+    for (const auto& p: s) {
+        uint32_t sp = p.toUInt();
+        appendData(b, sp);
+    }
+
     f.write(b);
     f.close();
 }

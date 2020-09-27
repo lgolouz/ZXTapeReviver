@@ -1,3 +1,11 @@
+//*******************************************************************************
+// ZX Tape Reviver
+//-----------------
+//
+// Author: Leonid Golouz
+// E-mail: lgolouz@list.ru
+//*******************************************************************************
+
 import QtQuick 2.3
 import QtQuick.Controls 1.3
 import QtQuick.Dialogs 1.3

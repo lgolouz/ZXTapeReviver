@@ -19,14 +19,16 @@ SOURCES += \
         sources/models/fileworkermodel.cpp \
         sources/controls/waveformcontrol.cpp \
         sources/core/waveformparser.cpp \
-        sources/core/wavreader.cpp
+        sources/core/wavreader.cpp \
+        sources/models/suspiciouspointsmodel.cpp
 
 HEADERS += \
     sources/defines.h \
     sources/models/fileworkermodel.h \
     sources/controls/waveformcontrol.h \
     sources/core/waveformparser.h \
-    sources/core/wavreader.h
+    sources/core/wavreader.h \
+    sources/models/suspiciouspointsmodel.h
 
 RESOURCES += qml/qml.qrc
 
