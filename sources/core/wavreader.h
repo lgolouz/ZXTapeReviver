@@ -142,6 +142,7 @@ public:
     void storeWaveform(uint chNum);
     void restoreWaveform(uint chNum);
     void normalizeWaveform(uint chNum);
+    void normalizeWaveform2(uint chNum);
 
     static WavReader* instance();
 

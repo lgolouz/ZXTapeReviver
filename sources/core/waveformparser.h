@@ -57,23 +57,7 @@ const uint8_t sequenceEnd    = 0b00000001; //end of signal sequence
 private:
     enum WaveformSign { POSITIVE, NEGATIVE };
     enum StateType { SEARCH_OF_PILOT_TONE, PILOT_TONE, SYNCHRO_SIGNAL, DATA_SIGNAL, END_OF_DATA, NO_MORE_DATA };
-    enum SignalFrequencies {
-        PILOT_HALF_FREQ = 1620,
-        PILOT_FREQ = 810,
-        SYNCHRO_FIRST_HALF_FREQ = 4900,
-        SYNCHRO_SECOND_HALF = 5500,
-        SYNCHRO_FREQ = 2600,
-        ZERO_HALF_FREQ = 4090,
-        ZERO_FREQ = 2050,
-        ONE_HALF_FREQ = 2045,
-        ONE_FREQ = 1023
-    };
     enum DataState { OK, R_TAPE_LOADING_ERROR };
-
-    const double pilotDelta = 0.1;
-    const double synchroDelta = 0.3;
-    const double zeroDelta = 0.3;//0.3;//0.18;
-    const double oneDelta = 0.25;//0.25;//0.1;
 
     struct WaveformPart
     {
@@ -88,6 +72,7 @@ private:
         uint32_t dataStart;
         uint32_t dataEnd;
         QVector<uint8_t> data;
+        QVector<WaveformPart> waveformData;
         DataState state;
     };
 
@@ -141,7 +126,7 @@ public:
 
     Q_INVOKABLE int getBlockDataStart(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getBlockDataEnd(uint chNum, uint blockNum) const;
-
+    Q_INVOKABLE int getPositionByAddress(uint chNum, uint blockNum, uint addr) const;
     //getters
     QVariantList getParsedChannel0() const;
     QVariantList getParsedChannel1() const;
