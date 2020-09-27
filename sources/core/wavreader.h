@@ -81,13 +81,18 @@ private:
     }
 
     template <typename T>
-    T* getData(QByteArray& buf, size_t& bufIndex) {
+    T* getData(QByteArray& buf, size_t& bufIndex) const {
         T* res = reinterpret_cast<T*>(buf.data() + bufIndex);
         bufIndex += sizeof(T);
         return res;
     }
 
-    uint8_t* getData(QByteArray& buf, size_t& bufIndex, uint dataSize) {
+    template <typename T>
+    void appendData(QByteArray& buf, const T& data) const {
+        buf.append(reinterpret_cast<const char*>(&data), sizeof(T));
+    }
+
+    uint8_t* getData(QByteArray& buf, size_t& bufIndex, uint dataSize) const {
         if (dataSize == 0) {
             return nullptr;
         }
@@ -97,7 +102,7 @@ private:
         return t;
     }
 
-    QWavVectorType getSample(QByteArray& buf, size_t& bufIndex, uint dataSize, uint compressionCode);
+    QWavVectorType getSample(QByteArray& buf, size_t& bufIndex, uint dataSize, uint compressionCode) const;
     QWavVector* createVector(size_t bytesPerSample, size_t size);
 
     WavFmt mWavFormatHeader;
@@ -137,7 +142,8 @@ public:
     ErrorCodesEnum read();
     ErrorCodesEnum close();
 
-    void saveWaveform() const;
+    void loadWaveform(const QString& fname);
+    void saveWaveform(const QString& fname = QString()) const;
     void shiftWaveform(uint chNum);
     void storeWaveform(uint chNum);
     void restoreWaveform(uint chNum);

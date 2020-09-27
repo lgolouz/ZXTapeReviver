@@ -32,9 +32,13 @@ public:
 
     //setters
 
-    //QML invocable members
+    //QML invokable members
     Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWavFileByUrl(const QString& fileNameUrl);
     Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWavFile(const QString& fileName);
+    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWaveformFileByUrl(const QString& fileNameUrl);
+    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWaveformFile(const QString& fileName);
+    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int saveWaveformFileByUrl(const QString& fileNameUrl);
+    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int saveWaveformFile(const QString& fileName);
 
 signals:
     void wavFileNameChanged();
