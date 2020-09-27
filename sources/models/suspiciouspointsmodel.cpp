@@ -56,6 +56,13 @@ uint SuspiciousPointsModel::getSuspiciousPoint(int idx)
     return 0;
 }
 
+void SuspiciousPointsModel::clearSuspiciousPoints()
+{
+    mSuspiciousPoints.clear();
+    emit suspiciousPointsChanged();
+    emit sizeChanged();
+}
+
 int SuspiciousPointsModel::getSize() const
 {
     return mSuspiciousPoints.size();

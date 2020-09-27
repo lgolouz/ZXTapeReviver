@@ -35,6 +35,16 @@ ApplicationWindow {
         return channelsComboBox.currentIndex == 0 ? waveformControlCh0 : waveformControlCh1;
     }
 
+    function restoreWaveformView() {
+        waveformControlCh0.xScaleFactor = 1;
+        waveformControlCh0.yScaleFactor = 80000;
+        waveformControlCh0.wavePos = 0;
+
+        waveformControlCh1.xScaleFactor = 1;
+        waveformControlCh1.yScaleFactor = 80000;
+        waveformControlCh1.wavePos = 0;
+    }
+
     menuBar: MenuBar {
         Menu {
             title: "File"
@@ -110,15 +120,9 @@ ApplicationWindow {
             title: "Waveform"
 
             MenuItem {
-                text: "Restore"
+                text: "Restore view"
                 onTriggered: {
-                    waveformControlCh0.xScaleFactor = 1;
-                    waveformControlCh0.yScaleFactor = 80000;
-                    waveformControlCh0.wavePos = 0;
-
-                    waveformControlCh1.xScaleFactor = 1;
-                    waveformControlCh1.yScaleFactor = 80000;
-                    waveformControlCh1.wavePos = 0;
+                    restoreWaveformView();
                 }
             }
 
@@ -142,9 +146,16 @@ ApplicationWindow {
         onAccepted: {
             var filetype = isWavOpening ? "WAV" : "Waveform";
             console.log("Selected %1 file: ".arg(filetype) + openFileDialog.fileUrl);
-            console.log("Open %1 file result: ".arg(filetype) + (isWavOpening
-                                                                 ? FileWorkerModel.openWavFileByUrl(openFileDialog.fileUrl)
-                                                                 : FileWorkerModel.openWaveformFileByUrl(openFileDialog.fileUrl)));
+            var res = (isWavOpening
+                        ? FileWorkerModel.openWavFileByUrl(openFileDialog.fileUrl)
+                        : FileWorkerModel.openWaveformFileByUrl(openFileDialog.fileUrl));
+            console.log("Open %1 file result: ".arg(filetype) + res);
+            if (res === 0) {
+                if (isWavOpening) {
+                    SuspiciousPointsModel.clearSuspiciousPoints();
+                }
+                restoreWaveformView();
+            }
         }
 
         onRejected: {

@@ -33,6 +33,7 @@ public:
     Q_INVOKABLE bool addSuspiciousPoint(uint idx);
     Q_INVOKABLE bool removeSuspiciousPoint(int idx);
     Q_INVOKABLE uint getSuspiciousPoint(int idx);
+    Q_INVOKABLE void clearSuspiciousPoints();
 
 signals:
     void suspiciousPointsChanged();
