@@ -431,6 +431,23 @@ ApplicationWindow {
         }
 
         Button {
+            id: gotoAddressButton
+
+            text: "Goto address..."
+            anchors {
+                top: shiftWaveform.bottom
+                topMargin: 5
+                right: parent.right
+                rightMargin: 5
+            }
+            width: hZoomOutButton.width
+
+            onClicked: {
+                gotoAddressDialogLoader.item.open();
+            }
+        }
+
+        Button {
             id: selectionModeToggleButton
 
             text: "Selection mode"
@@ -525,7 +542,7 @@ ApplicationWindow {
                         idx = 0;
                     }
 
-                    waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx ;
+                    waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx;
                 }
             }
         }
@@ -677,6 +694,27 @@ ApplicationWindow {
             TableViewColumn {
                 title: "Position"
                 width: rightArea.width * 0.9
+            }
+        }
+    }
+
+    Loader {
+        id: gotoAddressDialogLoader
+        source: "GoToAddress.qml"
+    }
+
+    Connections {
+        target: gotoAddressDialogLoader.item
+        function onGotoAddress(adr) {
+            console.log("Goto address: " + adr);
+            var pos = WaveformParser.getPositionByAddress(channelsComboBox.currentIndex, parsedDataView.currentRow, adr);
+            if (pos !== 0) {
+                var idx = pos - getWaveShiftIndex(waveformControlCh0.width, waveformControlCh0.xScaleFactor);
+                if (idx < 0) {
+                    idx = 0;
+                }
+
+                waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx;
             }
         }
     }

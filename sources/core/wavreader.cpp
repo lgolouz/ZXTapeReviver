@@ -224,7 +224,7 @@ void WavReader::shiftWaveform(uint chNum)
     auto& ch = chNum == 0 ? mChannel0 : mChannel1;
     storedCh.reset(new QWavVector(*ch.get()));
     for (auto i = 0; i < mChannel0->size(); ++i) {
-        ch->operator[](i) -= 1000;
+        ch->operator[](i) -= 1300;
     }
 }
 
@@ -323,6 +323,89 @@ void WavReader::normalizeWaveform(uint chNum)
 //                    qDebug() << "Old: " << i << "; new: " << (i+incVal);
                     i += incVal;
                 });
+            }
+        }
+    }
+}
+
+void WavReader::normalizeWaveform2(uint chNum)
+{
+    if (chNum >= mWavFormatHeader.numberOfChannels) {
+        qDebug() << "Channel number exceeds number of channels";
+        return;
+    }
+
+    auto& ch = *(chNum == 0 ? mChannel0 : mChannel1).get();
+    auto haveSameSign = [](QWavVectorType o1, QWavVectorType o2) {
+        return lessThanZero(o1) == lessThanZero(o2);
+    };
+
+    //Trying to find a sine
+    auto bIt = ch.begin();
+
+    while (bIt != ch.end()) {
+        auto prevIt = bIt;
+        auto it = std::next(prevIt);
+        QMap<int, QVector<QWavVectorType>::iterator> peaks {{0, bIt}};
+
+        for (int i = 1; i < 4; ++i) {
+            //down-to-up part when i == 1, 3
+            //up-to-down part when i == 2
+            bool finished = true;
+            for (; it != ch.end();) {
+                if (haveSameSign(*prevIt, *it)) {
+                    if ((i == 2 ? std::abs(*prevIt) >= std::abs(*it) : std::abs(*prevIt) <= std::abs(*it))) {
+                        prevIt = it;
+                        it = std::next(it);
+                    }
+                    else {
+                        auto itNext = std::next(it);
+                        if (itNext != ch.end() && ((i == 2 ? std::abs(*prevIt) >= std::abs(*itNext) : std::abs(*prevIt) <= std::abs(*itNext)))) {
+                            prevIt = it;
+                            it = itNext;
+                        }
+                        else {
+                            peaks[i] = it;
+                            break;
+                        }
+                    }
+                }
+                else {
+                    bIt = it;
+                    finished = false;
+                    it = ch.end();
+                }
+            }
+
+            //Signal crosses zero level - not ours case
+            if (it == ch.end()) {
+                if (finished) {
+                    bIt = it;
+                }
+                break;
+            }
+        }
+
+        //Looks like we've found a sine, normalizing it
+        if (it != ch.end()) {
+            bIt = it;
+            double freq = getSampleRate() / std::distance(peaks[0], peaks[3]);
+            if (freq <= ZERO_HALF_FREQ) {
+                auto it = peaks[2];
+                for (int i = 0; i < 2 && it != ch.end(); ++i, ++it) {
+                    auto val = *it;
+                    *it = val >= 0 ? -1000 : 1000;
+                }
+//                for (auto i = 0; i < 3; ++i) {
+//                    auto middlePoint = std::distance(peaks[i], peaks[i + 1]) / 2;
+//                    auto middleIt = std::next(peaks[i], middlePoint);
+//                    auto middleVal = *middleIt;
+//                    auto incVal = QWavVectorType(-1) * middleVal;
+//                    std::for_each(i == 1 ? middleIt : peaks[i], i == 1 ? peaks[i + 1] : middleIt, [incVal](QWavVectorType& i) {
+//                        //qDebug() << "Old: " << i << "; new: " << (i+incVal);
+//                        i += incVal;
+//                    });
+//                }
             }
         }
     }
