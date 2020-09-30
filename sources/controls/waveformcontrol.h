@@ -24,12 +24,21 @@ class WaveformControl : public QQuickPaintedItem
     Q_PROPERTY(double xScaleFactor READ getXScaleFactor WRITE setXScaleFactor NOTIFY xScaleFactorChanged)
     Q_PROPERTY(double yScaleFactor READ getYScaleFactor WRITE setYScaleFactor NOTIFY yScaleFactorChanged)
     Q_PROPERTY(bool isWaveformRepaired READ getIsWaveformRepaired NOTIFY isWaveformRepairedChanged)
-    Q_PROPERTY(bool selectionMode READ getSelectionMode WRITE setSelectionMode NOTIFY selectionModeChanged)
+    Q_PROPERTY(WaveformControlOperationModes operationMode READ getOperationMode WRITE setOperationMode NOTIFY operationModeChanged)
 
     WavReader& mWavReader;
     WaveformParser& mWavParser;
 
+    QColor getBackgroundColor() const;
+
 public:
+    enum WaveformControlOperationModes {
+        WaveformRepairMode,
+        WaveformSelectionMode,
+        WaveformMeasurementMode
+    };
+    Q_ENUM(WaveformControlOperationModes)
+
     explicit WaveformControl(QQuickItem* parent = nullptr);
 
     uint getChannelNumber() const;
@@ -38,13 +47,13 @@ public:
     double getXScaleFactor() const;
     double getYScaleFactor() const;
     bool getIsWaveformRepaired() const;
-    bool getSelectionMode() const;
+    WaveformControlOperationModes getOperationMode() const;
 
     void setChannelNumber(uint chNum);
     void setWavePos(int wavPos);
     void setXScaleFactor(double xScaleFactor);
     void setYScaleFactor(double yScaleFactor);
-    void setSelectionMode(bool mode);
+    void setOperationMode(WaveformControlOperationModes mode);
 
     virtual void paint(QPainter* painter) override;
     virtual void mousePressEvent(QMouseEvent* event) override;
@@ -66,9 +75,11 @@ signals:
     void xScaleFactorChanged();
     void yScaleFactorChanged();
     void isWaveformRepairedChanged();
-    void selectionModeChanged();
+    void operationModeChanged();
 
     void doubleClick(int idx);
+    void cannotSetMeasurementPoint();
+    void frequency(int freq);
 
 private:
     enum ClickStates {
@@ -89,9 +100,10 @@ private:
     ClickStates m_clickState;
     QDateTime m_clickTime;
     int m_clickPosition;
-    bool m_selectionMode;
+    WaveformControlOperationModes m_operationMode;
     bool m_rangeSelected;
     QPair<int, int> m_selectionRange;
+    int m_clickCount;
 
     QWavVector* getChannel(uint* chNum = nullptr) const;
     int getWavPositionByMouseX(int x, int* point = nullptr, double* dx = nullptr) const;
