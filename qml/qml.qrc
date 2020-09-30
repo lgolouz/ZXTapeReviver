@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>main.qml</file>
         <file>GoToAddress.qml</file>
+        <file>Frequency.qml</file>
     </qresource>
 </RCC>

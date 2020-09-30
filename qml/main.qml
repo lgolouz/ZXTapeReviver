@@ -455,7 +455,7 @@ ApplicationWindow {
             width: hZoomOutButton.width
 
             onClicked: {
-                gotoAddressDialogLoader.item.open();
+                gotoAddressDialog.open();
             }
         }
 
@@ -469,9 +469,37 @@ ApplicationWindow {
             anchors.rightMargin: 5
             width: hZoomOutButton.width
             checkable: true
+            visible: !measurementModeToggleButton.checked
 
             onCheckedChanged: {
-                waveformControlCh0.selectionMode = waveformControlCh1.selectionMode = checked;
+                waveformControlCh0.operationMode = waveformControlCh1.operationMode = checked ? WaveformControlOperationModes.WaveformSelectionMode : WaveformControlOperationModes.WaveformRepairMode;
+            }
+        }
+
+        Button {
+            id: measurementModeToggleButton
+
+            text: "Measurement mode"
+            anchors {
+                right: parent.right
+                rightMargin: 5
+                bottom: selectionModeToggleButton.top
+                bottomMargin: 5
+            }
+            width: hZoomOutButton.width
+            checkable: true
+            visible: !selectionModeToggleButton.checked
+
+            onCheckedChanged: {
+                waveformControlCh0.operationMode = waveformControlCh1.operationMode = checked ? WaveformControlOperationModes.WaveformMeasurementMode : WaveformControlOperationModes.WaveformRepairMode;
+            }
+        }
+
+        states: State {
+            when: measurementModeToggleButton.checked
+            AnchorChanges {
+                target: measurementModeToggleButton
+                anchors.bottom: waveformControlCh1.bottom
             }
         }
 
@@ -710,14 +738,9 @@ ApplicationWindow {
         }
     }
 
-    Loader {
-        id: gotoAddressDialogLoader
-        source: "GoToAddress.qml"
-    }
-
-    Connections {
-        target: gotoAddressDialogLoader.item
-        function onGotoAddress(adr) {
+    GoToAddress {
+        id: gotoAddressDialog
+        onGotoAddress: {
             console.log("Goto address: " + adr);
             var pos = WaveformParser.getPositionByAddress(channelsComboBox.currentIndex, parsedDataView.currentRow, adr);
             if (pos !== 0) {
@@ -728,6 +751,15 @@ ApplicationWindow {
 
                 waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx;
             }
+        }
+    }
+
+    Frequency {
+        id: frequencyDialog
+        Component.onCompleted: {
+            var func = function(fr) { frequency = fr; frequencyDialog.open(); };
+            waveformControlCh0.frequency.connect(func);
+            waveformControlCh1.frequency.connect(func);
         }
     }
 }

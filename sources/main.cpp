@@ -17,6 +17,7 @@ void registerTypes()
 {
     qmlRegisterUncreatableType<FileWorkerModel>("com.enums.zxtapereviver", 1, 0, "FileWorkerResults", QString());
     qmlRegisterUncreatableType<WavReader>("com.enums.zxtapereviver", 1, 0, "ErrorCodesEnum", QString());
+    qmlRegisterUncreatableType<WaveformControl>("com.enums.zxtapereviver", 1, 0, "WaveformControlOperationModes", QString());
 
     qmlRegisterType<WaveformControl>("WaveformControl", 1, 0, "WaveformControl");
     qmlRegisterSingletonType<FileWorkerModel>("com.models.zxtapereviver", 1, 0, "FileWorkerModel", [](QQmlEngine* engine, QJSEngine* scriptEngine) -> QObject* {
