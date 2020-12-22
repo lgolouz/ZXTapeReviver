@@ -82,6 +82,6 @@ void SuspiciousPointsModel::setSuspiciousPoints(const QVariantList& m)
 
 SuspiciousPointsModel* SuspiciousPointsModel::instance()
 {
-    static SuspiciousPointsModel m;
-    return &m;
+    static QScopedPointer<SuspiciousPointsModel> m { new SuspiciousPointsModel() };
+    return m.get();
 }
