@@ -8,6 +8,7 @@
 
 #include "wavreader.h"
 #include "sources/models/suspiciouspointsmodel.h"
+#include "sources/models/parsersettingsmodel.h"
 #include <QVariant>
 #include <QVariantList>
 #include <QDateTime>
@@ -390,6 +391,8 @@ void WavReader::normalizeWaveform2(uint chNum)
         return lessThanZero(o1) == lessThanZero(o2);
     };
 
+    const auto& parserSettings = ParserSettingsModel::instance()->getParserSettings();
+
     //Trying to find a sine
     auto bIt = ch.begin();
 
@@ -440,7 +443,7 @@ void WavReader::normalizeWaveform2(uint chNum)
         if (it != ch.end()) {
             bIt = it;
             double freq = getSampleRate() / std::distance(peaks[0], peaks[3]);
-            if (freq <= ZERO_HALF_FREQ) {
+            if (freq <= parserSettings.zeroHalfFreq) {
                 auto it = peaks[2];
                 for (int i = 0; i < 2 && it != ch.end(); ++i, ++it) {
                     auto val = *it;
@@ -470,6 +473,6 @@ WavReader::~WavReader()
 
 WavReader* WavReader::instance()
 {
-    static WavReader w;
-    return &w;
+    static QScopedPointer<WavReader> w { new WavReader() };
+    return w.get();
 }

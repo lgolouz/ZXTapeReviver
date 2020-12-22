@@ -24,7 +24,7 @@ Dialog {
 
     Text {
         id: textWithField
-        text: "Measured frequency: "
+        text: "Measured frequency:"
     }
 
     TextField {

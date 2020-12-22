@@ -20,6 +20,7 @@ SOURCES += \
         sources/controls/waveformcontrol.cpp \
         sources/core/waveformparser.cpp \
         sources/core/wavreader.cpp \
+        sources/models/parsersettingsmodel.cpp \
         sources/models/suspiciouspointsmodel.cpp
 
 HEADERS += \
@@ -28,6 +29,7 @@ HEADERS += \
     sources/controls/waveformcontrol.h \
     sources/core/waveformparser.h \
     sources/core/wavreader.h \
+    sources/models/parsersettingsmodel.h \
     sources/models/suspiciouspointsmodel.h
 
 RESOURCES += qml/qml.qrc

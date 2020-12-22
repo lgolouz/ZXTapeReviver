@@ -3,5 +3,6 @@
         <file>main.qml</file>
         <file>GoToAddress.qml</file>
         <file>Frequency.qml</file>
+        <file>ParserSettings.qml</file>
     </qresource>
 </RCC>

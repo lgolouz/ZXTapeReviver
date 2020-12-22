@@ -21,7 +21,7 @@ enum SignalFrequencies {
     PILOT_HALF_FREQ = 1620,
     PILOT_FREQ = 810,
     SYNCHRO_FIRST_HALF_FREQ = 4900,
-    SYNCHRO_SECOND_HALF = 5500,
+    SYNCHRO_SECOND_HALF_FREQ = 5500,
     SYNCHRO_FREQ = 2600,
     ZERO_HALF_FREQ = 4090,
     ZERO_FIRST_HALF_FREQ = 0,
@@ -30,6 +30,8 @@ enum SignalFrequencies {
     ONE_HALF_FREQ = 2045,
     ONE_FREQ = 1023
 };
+
+const bool checkForAbnormalSine = true;
 
 const double pilotDelta = 0.1;
 const double synchroDelta = 0.3;

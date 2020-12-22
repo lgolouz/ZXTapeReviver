@@ -129,6 +129,15 @@ ApplicationWindow {
             MenuItem {
                 text: "Reparse"
             }
+
+            MenuSeparator { }
+
+            MenuItem {
+                text: "Parser settings..."
+                onTriggered: {
+                    parserSettingsDialog.open();
+                }
+            }
         }
     }
 
@@ -752,6 +761,10 @@ ApplicationWindow {
                 waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx;
             }
         }
+    }
+
+    ParserSettings {
+        id: parserSettingsDialog
     }
 
     Frequency {
