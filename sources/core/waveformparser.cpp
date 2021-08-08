@@ -4,6 +4,11 @@
 //
 // Author: Leonid Golouz
 // E-mail: lgolouz@list.ru
+// YouTube channel: https://www.youtube.com/channel/UCz_ktTqWVekT0P4zVW8Xgcg
+// YouTube channel e-mail: computerenthusiasttips@mail.ru
+//
+// Code modification and distribution of any kind is not allowed without direct
+// permission of the Author.
 //*******************************************************************************
 
 #include "waveformparser.h"
@@ -11,6 +16,7 @@
 #include <QDebug>
 #include <QDateTime>
 #include <QByteArray>
+#include <algorithm>
 
 WaveformParser::WaveformParser(QObject* parent) :
     QObject(parent),
@@ -330,7 +336,16 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
             m.insert("blockSize", sizeText);
             QString nameText;
             if (blockType >= 0) {
-                for (auto idx = 2; idx < std::min(12, i.data.size()); ++idx) {
+                const auto loopRange { std::min(
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+                    (int)
+#else
+                    (qsizetype)
+#endif
+                    12, i.data.size())
+                };
+
+                for (auto idx = 2; idx < loopRange; ++idx) {
                     nameText += QChar(i.data.at(idx));
                 }
             }
