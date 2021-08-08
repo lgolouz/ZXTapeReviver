@@ -1,6 +1,17 @@
-QT += quick gui quickcontrols2
+#*******************************************************************************
+# ZX Tape Reviver
+#-----------------
+#
+# Author: Leonid Golouz
+# E-mail: lgolouz@list.ru
+# YouTube channel: https://www.youtube.com/channel/UCz_ktTqWVekT0P4zVW8Xgcg
+# YouTube channel e-mail: computerenthusiasttips@mail.ru
+#
+# Code modification and distribution of any kind is not allowed without direct
+# permission of the Author.
+#*******************************************************************************
 
-CONFIG += c++11
+QT += quick gui quickcontrols2
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
