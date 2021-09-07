@@ -144,6 +144,17 @@ ApplicationWindow {
                 }
             }
         }
+
+        Menu {
+            title: "Help"
+
+            MenuItem {
+                text: "About..."
+                onTriggered: {
+                    aboutDialog.open();
+                }
+            }
+        }
     }
 
     FileDialog {
@@ -766,6 +777,10 @@ ApplicationWindow {
                 waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx;
             }
         }
+    }
+
+    About {
+        id: aboutDialog
     }
 
     ParserSettings {
