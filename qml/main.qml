@@ -13,8 +13,9 @@
 
 import QtQuick 2.15
 import QtQuick.Window 2.15
-import QtQuick.Controls 1.4
-import QtQuick.Dialogs 1.3
+import QtQuick.Controls
+import QtQuick.Dialogs
+import Qt.labs.qmlmodels
 
 import WaveformControl 1.0
 import com.enums.zxtapereviver 1.0
@@ -163,8 +164,8 @@ ApplicationWindow {
         property bool isWavOpening: true
 
         title: "Please choose WAV file"
-        selectMultiple: false
-        sidebarVisible: true
+        //selectMultiple: false
+        //sidebarVisible: true
         defaultSuffix: isWavOpening ? "wav" : "wfm"
         nameFilters: isWavOpening ? [ "WAV files (*.wav)" ] : [ "Waveform files (*.wfm)" ]
 
@@ -195,9 +196,9 @@ ApplicationWindow {
         property int channelNumber: 0
 
         title: saveParsed ? "Save TAP file..." : "Save WFM file..."
-        selectExisting: false
-        selectMultiple: false
-        sidebarVisible: true
+        //selectExisting: false
+        //selectMultiple: false
+        //sidebarVisible: true
         defaultSuffix: saveParsed ? "tap" : "wfm"
         nameFilters: saveParsed ? [ "TAP tape files (*.tap)" ] : [ "WFM waveform files (*.wfm)" ]
 
@@ -251,7 +252,7 @@ ApplicationWindow {
             width: parent.width - (parent.width * 0.11)
             height: parent.height - parent.height / 2 - parent.spacerHeight / 2
 
-            onDoubleClick: {
+            onDoubleClick: (idx) => {
                 SuspiciousPointsModel.addSuspiciousPoint(idx);
             }
         }
@@ -268,7 +269,7 @@ ApplicationWindow {
             width: parent.width - (parent.width * 0.11)
             height: waveformControlCh0.height
 
-            onDoubleClick: {
+            onDoubleClick: (idx) => {
                 SuspiciousPointsModel.addSuspiciousPoint(idx);
             }
         }
@@ -640,7 +641,7 @@ ApplicationWindow {
         TableView {
             id: parsedDataView
 
-            height: parent.height * 0.4
+//            height: parent.height * 0.4
             anchors {
                 top: toBlockEndButton.bottom
                 left: parent.left
@@ -648,42 +649,42 @@ ApplicationWindow {
                 topMargin: 2
             }
 
-            TableViewColumn {
-                title: "#"
-                width: rightArea.width * 0.07
-                role: "blockNumber"
+            TableModelColumn {
+                display: "#"
+//                width: rightArea.width * 0.07
+//                role: "blockNumber"
             }
 
-            TableViewColumn {
-                title: "Type"
-                width: rightArea.width * 0.23
-                role: "blockType"
+            TableModelColumn {
+                display: "Type"
+//                width: rightArea.width * 0.23
+//                role: "blockType"
             }
 
-            TableViewColumn {
-                title: "Name"
-                width: rightArea.width * 0.3
-                role: "blockName"
+            TableModelColumn {
+                display: "Name"
+//                width: rightArea.width * 0.3
+//                role: "blockName"
             }
 
-            TableViewColumn {
-                title: "Size (to be read)"
-                width: rightArea.width * 0.25
-                role: "blockSize"
+            TableModelColumn {
+                display: "Size (to be read)"
+//                width: rightArea.width * 0.25
+//                role: "blockSize"
             }
 
-            TableViewColumn {
-                title: "Status"
-                width: rightArea.width * 0.15
-                role: "blockStatus"
+            TableModelColumn {
+                display: "Status"
+//                width: rightArea.width * 0.15
+//                role: "blockStatus"
             }
 
-            selectionMode: SelectionMode.SingleSelection
+//            selectionMode: SelectionMode.SingleSelection
             model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
-            itemDelegate: Text {
-                text: styleData.value
-                color: modelData.state === 0 ? "black" : "red"
-            }
+//            itemDelegate: Text {
+//                text: styleData.value
+//                color: modelData.state === 0 ? "black" : "red"
+//            }
         }
 
         Button {
@@ -745,20 +746,42 @@ ApplicationWindow {
                 topMargin: 2
             }
 
-            selectionMode: SelectionMode.SingleSelection
+            //selectionMode: SelectionMode.SingleSelection
             model: suspiciousPoints
-            itemDelegate: Text {
-                text: styleData.column === 0 ? styleData.row + 1 : styleData.value
-            }
+//            itemDelegate: Text {
+//                text: styleData.column === 0 ? styleData.row + 1 : styleData.value
+//            }
 
-            TableViewColumn {
-                title: "#"
-                width: rightArea.width * 0.1
-            }
+//            TableModelColumn {
+//                display: "row" //"#"
+////                width: rightArea.width * 0.1
+//            }
 
-            TableViewColumn {
-                title: "Position"
-                width: rightArea.width * 0.9
+//            TableModelColumn {
+//                display: "value" //"Position"
+////                width: rightArea.width * 0.9
+//            }
+
+            delegate: DelegateChooser {
+                role: "row"
+                DelegateChoice {
+                    row: 0
+                    delegate: Text {
+                        text: {
+     //                       console.warn("row: " + data);
+                            return "row" // modelData.data
+                        }
+                    }
+                }
+                DelegateChoice {
+                    row: 1
+                    delegate: Text {
+                        text: {
+//                            console.warn("value: " + data)
+                            return "value" //modelData.data
+                        }
+                    }
+                }
             }
         }
     }

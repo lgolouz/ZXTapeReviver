@@ -12,9 +12,9 @@
 //*******************************************************************************
 
 import QtQuick 2.3
-import QtQuick.Controls 1.3
-import QtQuick.Dialogs 1.3
-import QtQuick.Layouts 1.15
+import QtQuick.Controls
+import QtQuick.Dialogs
+import QtQuick.Layouts
 
 Dialog {
     id: aboutDialog
@@ -22,7 +22,7 @@ Dialog {
     visible: false
     title: "About..."
     standardButtons: StandardButton.Ok
-    modality: Qt.WindowModal
+    //modality: Qt.WindowModal
     width: 300
     height: 140
 

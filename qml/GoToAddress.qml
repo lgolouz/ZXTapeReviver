@@ -12,8 +12,8 @@
 //*******************************************************************************
 
 import QtQuick 2.3
-import QtQuick.Controls 1.3
-import QtQuick.Dialogs 1.3
+import QtQuick.Controls
+import QtQuick.Dialogs
 
 Dialog {
     id: gotoAddressDialog
@@ -23,7 +23,7 @@ Dialog {
     visible: false
     title: "Go to address..."
     standardButtons: StandardButton.Ok | StandardButton.Cancel
-    modality: Qt.WindowModal
+    //modality: Qt.WindowModal
     width: 200
     height: 120
 
