@@ -651,7 +651,29 @@ ApplicationWindow {
             TableViewColumn {
                 title: "#"
                 width: rightArea.width * 0.07
-                role: "blockNumber"
+                role: "block"
+                delegate: Item {
+                    property bool blkSelected: styleData.value.blockSelected
+                    property int blkNumber: styleData.value.blockNumber
+
+                    Rectangle {
+                        anchors.fill: parent
+                        border.width: 0
+                        color: parent.blkSelected ? "#A00000FF" : "transparent"
+                        Text {
+                            anchors.centerIn: parent
+                            color: parent.parent.blkSelected ? "white" : "black"
+                            text: blkNumber
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            WaveformParser.toggleBlockSelection(blkNumber - 1);
+                        }
+                    }
+                }
             }
 
             TableViewColumn {

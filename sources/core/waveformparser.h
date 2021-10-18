@@ -114,6 +114,7 @@ private:
     WavReader& mWavReader;
     QMap<uint, QVector<uint8_t>> mParsedWaveform;
     QMap<uint, QVector<DataBlock>> mParsedData;
+    mutable QVector<bool> mSelectedBlocks;
 
 protected:
     explicit WaveformParser(QObject* parent = nullptr);
@@ -129,6 +130,7 @@ public:
     void saveWaveform(uint chNum);
     QVector<uint8_t> getParsedWaveform(uint chNum) const;
 
+    Q_INVOKABLE void toggleBlockSelection(int blockNum);
     Q_INVOKABLE int getBlockDataStart(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getBlockDataEnd(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getPositionByAddress(uint chNum, uint blockNum, uint addr) const;
