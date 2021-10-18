@@ -16,6 +16,7 @@
 #include <QDebug>
 #include <QDateTime>
 #include <QByteArray>
+#include <QVariantMap>
 #include <algorithm>
 
 WaveformParser::WaveformParser(QObject* parent) :
@@ -229,7 +230,6 @@ void WaveformParser::parse(uint chNum)
         if (it == parsed.end()) {
             currentState = NO_MORE_DATA;
         }
-
     }
 
     if (chNum == 0) {
@@ -247,12 +247,15 @@ void WaveformParser::saveTap(uint chNum, const QString& fileName)
 
     auto& parsedData = mParsedData[chNum];
     for (auto i = 0; i < parsedData.size(); ++i) {
-        QByteArray b;
-        const uint16_t size = parsedData.at(i).data.size();
-        b.append(reinterpret_cast<const char *>(&size), sizeof(size));
-        for (uint8_t c: parsedData.at(i).data) {
-            b.append(c);
+        if (i < mSelectedBlocks.size() && !mSelectedBlocks[i]) {
+            continue;
         }
+
+        QByteArray b;
+        const auto& data { parsedData.at(i).data };
+        const uint16_t size = data.size();
+        b.append(reinterpret_cast<const char *>(&size), sizeof(size));
+        b.append(reinterpret_cast<const char *>(data.data()), size);
         f.write(b);
     }
 
@@ -270,6 +273,16 @@ void WaveformParser::fillParsedWaveform(uint chNum, const WaveformPart& p, uint8
 QVector<uint8_t> WaveformParser::getParsedWaveform(uint chNum) const
 {
     return mParsedWaveform[chNum];
+}
+
+void WaveformParser::toggleBlockSelection(int blockNum) {
+    if (blockNum < mSelectedBlocks.size()) {
+        auto& blk = mSelectedBlocks[blockNum];
+        blk = !blk;
+
+        emit parsedChannel0Changed();
+        emit parsedChannel1Changed();
+    }
 }
 
 int WaveformParser::getBlockDataStart(uint chNum, uint blockNum) const
@@ -307,12 +320,12 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
 
     QVariantList r;
     const auto& ch = mParsedData[chNum];
-    uint blockNumber = 1;
+    uint blockNumber = 0;
 
     for (const auto& i: ch) {
         QVariantMap m;
 
-        m.insert("blockNumber", blockNumber++);
+        m.insert("block", QVariantMap { {"blockSelected", blockNumber < (unsigned) mSelectedBlocks.size() ? mSelectedBlocks[blockNumber] : (mSelectedBlocks.append(true), true)}, {"blockNumber", (++blockNumber, blockNumber)} });
         if (i.data.size() > 0) {
             auto d = i.data.at(0);
             int blockType = -1;
@@ -345,9 +358,7 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
                     12, i.data.size())
                 };
 
-                for (auto idx = 2; idx < loopRange; ++idx) {
-                    nameText += QChar(i.data.at(idx));
-                }
+                nameText = QByteArray((const char*) &i.data.data()[2], loopRange > 1 ? loopRange - 2 : 0);
             }
             m.insert("blockName", nameText);
             m.insert("blockStatus", i.state == OK ? "Ok" : "Error");
