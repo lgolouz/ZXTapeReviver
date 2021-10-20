@@ -68,6 +68,9 @@ WavReader::ErrorCodesEnum WavReader::open()
                 }
 
                 mWavFormatHeader = *fmtHeader;
+
+                //File pos aligning according to header data
+                mWavFile.seek(mWavFile.pos() + (fmtHeader->chunk.chunkDataSize - (sizeof (WavFmt) - sizeof (WavChunk))));
             }
 
             {

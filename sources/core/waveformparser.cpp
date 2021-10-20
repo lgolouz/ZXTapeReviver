@@ -325,7 +325,7 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
     for (const auto& i: ch) {
         QVariantMap m;
 
-        m.insert("block", QVariantMap { {"blockSelected", blockNumber < (unsigned) mSelectedBlocks.size() ? mSelectedBlocks[blockNumber] : (mSelectedBlocks.append(true), true)}, {"blockNumber", (++blockNumber, blockNumber)} });
+        m.insert("block", QVariantMap { {"blockSelected", blockNumber < (unsigned) mSelectedBlocks.size() ? mSelectedBlocks[blockNumber] : (mSelectedBlocks.append(true), true)}, {"blockNumber", blockNumber++} });
         if (i.data.size() > 0) {
             auto d = i.data.at(0);
             int blockType = -1;
