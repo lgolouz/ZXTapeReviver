@@ -26,6 +26,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++14
 
 SOURCES += \
+        sources/actions/actionbase.cpp \
         sources/main.cpp \
         sources/models/fileworkermodel.cpp \
         sources/controls/waveformcontrol.cpp \
@@ -35,6 +36,7 @@ SOURCES += \
         sources/models/suspiciouspointsmodel.cpp
 
 HEADERS += \
+    sources/actions/actionbase.h \
     sources/defines.h \
     sources/models/fileworkermodel.h \
     sources/controls/waveformcontrol.h \

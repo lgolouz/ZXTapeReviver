@@ -663,14 +663,14 @@ ApplicationWindow {
                         Text {
                             anchors.centerIn: parent
                             color: parent.parent.blkSelected ? "white" : "black"
-                            text: blkNumber
+                            text: blkNumber + 1
                         }
                     }
 
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            WaveformParser.toggleBlockSelection(blkNumber - 1);
+                            WaveformParser.toggleBlockSelection(blkNumber);
                         }
                     }
                 }
