@@ -276,7 +276,13 @@ ApplicationWindow {
         Button {
             id: vZoomInButton
 
-            text: "Vertical Zoom IN"
+            Shortcut {
+                sequence: "w"
+                autoRepeat: false
+                onActivated: vZoomInButton.clicked()
+            }
+
+            text: "Vertical Zoom IN (w)"
             anchors.top: parent.top
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -299,7 +305,13 @@ ApplicationWindow {
         Button {
             id: vZoomOutButton
 
-            text: "Vertical Zoom OUT"
+            Shortcut {
+                sequence: "s"
+                autoRepeat: false
+                onActivated: vZoomOutButton.clicked()
+            }
+
+            text: "Vertical Zoom OUT (s)"
             anchors.top: vZoomInButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -322,7 +334,13 @@ ApplicationWindow {
         Button {
             id: hZoomInButton
 
-            text: "Horizontal Zoom IN"
+            Shortcut {
+                sequence: "e"
+                autoRepeat: false
+                onActivated: hZoomInButton.clicked()
+            }
+
+            text: "Horizontal Zoom IN (e)"
             anchors.top: vZoomOutButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -338,7 +356,13 @@ ApplicationWindow {
         Button {
             id: hZoomOutButton
 
-            text: "Horizontal Zoom OUT"
+            Shortcut {
+                sequence: "q"
+                autoRepeat: false
+                onActivated: hZoomOutButton.clicked()
+            }
+
+            text: "Horizontal Zoom OUT (q)"
             anchors.top: hZoomInButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -353,7 +377,13 @@ ApplicationWindow {
         Button {
             id: shiftWaveRight
 
-            text: "<<"
+            Shortcut {
+                sequence: "a"
+                autoRepeat: true
+                onActivated: shiftWaveRight.clicked()
+            }
+
+            text: "<< (a)"
             anchors.bottom: waveformControlCh0.bottom
             anchors.left: hZoomOutButton.left
             width: 40
@@ -367,7 +397,13 @@ ApplicationWindow {
         Button {
             id: shiftWaveLeft
 
-            text: ">>"
+            Shortcut {
+                sequence: "d"
+                autoRepeat: true
+                onActivated: shiftWaveLeft.clicked()
+            }
+
+            text: ">> (d)"
             anchors.bottom: shiftWaveRight.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -590,6 +626,12 @@ ApplicationWindow {
         Button {
             id: toBlockBeginningButton
 
+            Shortcut {
+                sequence: "Shift+a"
+                autoRepeat: true
+                onActivated: toBlockBeginningButton.clicked()
+            }
+
             text: "<< To the beginning of the block"
             anchors {
                 top: channelsComboBox.bottom
@@ -614,6 +656,12 @@ ApplicationWindow {
 
         Button {
             id: toBlockEndButton
+
+            Shortcut {
+                sequence: "Shift+d"
+                autoRepeat: true
+                onActivated: toBlockEndButton.clicked()
+            }
 
             text: "To the end of the block >>"
             anchors {
@@ -651,29 +699,7 @@ ApplicationWindow {
             TableViewColumn {
                 title: "#"
                 width: rightArea.width * 0.07
-                role: "block"
-                delegate: Item {
-                    property bool blkSelected: styleData.value.blockSelected
-                    property int blkNumber: styleData.value.blockNumber
-
-                    Rectangle {
-                        anchors.fill: parent
-                        border.width: 0
-                        color: parent.blkSelected ? "#A00000FF" : "transparent"
-                        Text {
-                            anchors.centerIn: parent
-                            color: parent.parent.blkSelected ? "white" : "black"
-                            text: blkNumber + 1
-                        }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {
-                            WaveformParser.toggleBlockSelection(blkNumber);
-                        }
-                    }
-                }
+                role: "blockNumber"
             }
 
             TableViewColumn {
