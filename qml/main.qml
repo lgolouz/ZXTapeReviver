@@ -403,7 +403,7 @@ ApplicationWindow {
                 onActivated: shiftWaveLeft.clicked()
             }
 
-            text: ">> (d)"
+            text: "(d) >>"
             anchors.bottom: shiftWaveRight.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
