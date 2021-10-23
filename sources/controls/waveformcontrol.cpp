@@ -380,10 +380,10 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
                 update();
             }
             else {
-                if (dpoint >= event->x() - 2.0 && dpoint <= event->x() + 2) {
+                if (dpoint >= (event->x() - dx/2) && dpoint <= (event->x() + dx/2)) {
                     const double maxy = getYScaleFactor();
-                    double y = halfHeight - ((double) (getChannel()->operator[](m_clickPosition)) / maxy) * waveHeight;
-                    if (y >= event->y() - 2 && y <= event->y() + 2) {
+                    //double y = halfHeight - ((double) (getChannel()->operator[](m_clickPosition)) / maxy) * waveHeight;
+                    //if (y >= event->y() - 2 && y <= event->y() + 2) {
                         if (event->button() == Qt::LeftButton) {
                             m_pointIndex = point;
                             m_pointGrabbed = true;
@@ -394,7 +394,7 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
                             getChannel()->remove(m_clickPosition);
                             update();
                         }
-                    }
+                    //}
                 }
             }
         } // m_operationMode
