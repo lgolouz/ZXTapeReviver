@@ -19,6 +19,8 @@
 #include "sources/core/wavreader.h"
 #include "sources/core/waveformparser.h"
 
+
+
 class WaveformControl : public QQuickPaintedItem
 {
     Q_OBJECT
@@ -35,6 +37,14 @@ class WaveformControl : public QQuickPaintedItem
     WaveformParser& mWavParser;
 
     QColor getBackgroundColor() const;
+
+    int bgColorDefaultRed, bgColorDefaultGreen, bgColorDefaultBlue,
+        bgColorSelectionRed, bgColorSelectionGreen, bgColorSelectionBlue,
+        bgColorMeasuringRed, bgColorMeasuringGreen, bgColorMeasuringBlue,
+        waveColorPenUpRed, waveColorPenUpGreen, waveColorPenUpBlue,
+        waveColorPenDownRed, waveColorPenDownGreen, waveColorPenDownBlue,
+        textColorRed, textColorGreen, textColorBlue,
+        wavePenWidth, waveCircleRadius;
 
 public:
     enum WaveformControlOperationModes {

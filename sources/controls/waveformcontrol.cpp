@@ -19,6 +19,8 @@
 #include <QPen>
 #include <QPainter>
 #include <QDebug>
+#include <QSettings>
+#include <QFileInfo>
 
 WaveformControl::WaveformControl(QQuickItem* parent) :
     QQuickPaintedItem(parent),
@@ -37,6 +39,62 @@ WaveformControl::WaveformControl(QQuickItem* parent) :
 {
     setAcceptedMouseButtons(Qt::AllButtons);
     setEnabled(true);
+
+    // UI settings
+    QSettings ini("config.ini", QSettings::IniFormat);
+    QFileInfo ini_file("config.ini");
+    if (!ini_file.exists() or !ini_file.isFile()) {
+        // If no INI file - create new one
+        ini.setValue("COLOR/bgColorDefaultRed", 200);
+        ini.setValue("COLOR/bgColorDefaultGreen", 200);
+        ini.setValue("COLOR/bgColorDefaultBlue", 200);
+        ini.setValue("COLOR/bgColorSelectionRed", 185);
+        ini.setValue("COLOR/bgColorSelectionGreen", 220);
+        ini.setValue("COLOR/bgColorSelectionBlue", 185);
+        ini.setValue("COLOR/bgColorMeasuringRed", 220);
+        ini.setValue("COLOR/bgColorMeasuringGreen", 220);
+        ini.setValue("COLOR/bgColorMeasuringBlue", 185);
+        ini.setValue("COLOR/waveColorPenUpRed", 0);
+        ini.setValue("COLOR/waveColorPenUpGreen", 75);
+        ini.setValue("COLOR/waveColorPenUpBlue", 150);
+        ini.setValue("COLOR/waveColorPenDownRed", 0);
+        ini.setValue("COLOR/waveColorPenDownGreen", 150);
+        ini.setValue("COLOR/waveColorPenDownBlue", 75);
+        ini.setValue("COLOR/textColorRed", 0);
+        ini.setValue("COLOR/textColorGreen", 0);
+        ini.setValue("COLOR/textColorBlue", 0);
+        ini.setValue("STYLE/wavePenWidth", 1);
+        ini.setValue("STYLE/waveCircleRadius", 2);
+    }
+    // Read settings from INI file
+    // Background color: default mode
+    bgColorDefaultRed = ini.value("COLOR/bgColorDefaultRed", 200).toInt();
+    bgColorDefaultGreen = ini.value("COLOR/bgColorDefaultGreen", 200).toInt();
+    bgColorDefaultBlue = ini.value("COLOR/bgColorDefaultBlue", 200).toInt();
+    // Background color: selection mode
+    bgColorSelectionRed = ini.value("COLOR/bgColorSelectionRed", 185).toInt();
+    bgColorSelectionGreen = ini.value("COLOR/bgColorSelectionGreen", 220).toInt();
+    bgColorSelectionBlue = ini.value("COLOR/bgColorSelectionBlue", 185).toInt();
+    // Background color: measurement mode
+    bgColorMeasuringRed = ini.value("COLOR/bgColorMeasuringRed", 220).toInt();
+    bgColorMeasuringGreen = ini.value("COLOR/bgColorMeasuringGreen", 220).toInt();
+    bgColorMeasuringBlue = ini.value("COLOR/bgColorMeasuringBlue", 185).toInt();
+    // Upper halfwave pen color
+    waveColorPenUpRed = ini.value("COLOR/waveColorPenUpRed", 0).toInt();
+    waveColorPenUpGreen = ini.value("COLOR/waveColorPenUpGreen", 75).toInt();
+    waveColorPenUpBlue = ini.value("COLOR/waveColorPenUpBlue", 150).toInt();
+    // Lower halfwave pen color
+    waveColorPenDownRed = ini.value("COLOR/waveColorPenDownRed", 0).toInt();
+    waveColorPenDownGreen = ini.value("COLOR/waveColorPenDownGreen", 150).toInt();
+    waveColorPenDownBlue = ini.value("COLOR/waveColorPenDownBlue", 75).toInt();
+    // Text color
+    textColorRed = ini.value("COLOR/textColorRed", 0).toInt();
+    textColorGreen = ini.value("COLOR/textColorGreen", 0).toInt();
+    textColorBlue = ini.value("COLOR/textColorBlue", 0).toInt();
+    // Wave pen width
+    wavePenWidth = ini.value("STYLE/wavePenWidth", 1).toInt();
+    // Wave circle radius
+    waveCircleRadius = ini.value("STYLE/waveCircleRadius", 2).toInt();
 }
 
 QColor WaveformControl::getBackgroundColor() const
@@ -45,15 +103,15 @@ QColor WaveformControl::getBackgroundColor() const
     switch (m_operationMode)
     {
         case WaveformSelectionMode:
-            r = QColor(37, 37, 37);
+            r = QColor(bgColorSelectionRed, bgColorSelectionGreen, bgColorSelectionBlue);
             break;
 
         case WaveformMeasurementMode:
-            r = QColor(0, 17, 17);
+            r = QColor(bgColorMeasuringRed, bgColorMeasuringGreen, bgColorMeasuringBlue);
             break;
 
         default:
-            r = QColor(7, 7, 36);
+            r = QColor(bgColorDefaultRed, bgColorDefaultGreen, bgColorDefaultBlue);
             break;
     }
 
@@ -81,6 +139,7 @@ int WaveformControl::getWavPositionByMouseX(int x, int* point, double* dx) const
 
 void WaveformControl::paint(QPainter* painter)
 {
+    auto p = painter->pen();
     painter->setBackground(QBrush(getBackgroundColor()));
     painter->setBackgroundMode(Qt::OpaqueMode);
     painter->setPen(QColor(11, 60, 0));
@@ -111,15 +170,38 @@ void WaveformControl::paint(QPainter* painter)
         if (t >= 0 && t < chsize) {
             const int val = channel->operator[](t);
             y = halfHeight - ((double) (val) / maxy) * waveHeight;
-            painter->setPen(val >= 0 ? QColor(50, 150, 0) : QColor(200, 0 , 0));
+            p.setWidth(wavePenWidth);
+            p.setColor(val >= 0 ? QColor(waveColorPenUpRed, waveColorPenUpGreen, waveColorPenUpBlue) : QColor(waveColorPenDownRed, waveColorPenDownGreen , waveColorPenDownBlue));
+            painter->setPen(p);
             painter->drawLine(px, py, x, y);
             if (m_allowToGrabPoint) {
-                painter->drawEllipse(QPoint(x, y), 2, 2);
+                painter->drawEllipse(QPoint(x, y), waveCircleRadius, waveCircleRadius);
             }
+
+            // Time Marker
+            p.setColor(QColor(textColorRed, textColorGreen, textColorBlue));
+            painter->setPen(p);
+            uint32_t sampleRate = mWavReader.getSampleRate();
+            double posStartSec = (double)pos / sampleRate;
+            double posMidSec = (double)(pos + scale/2) / sampleRate;
+            double posEndSec = (double)(pos + scale) / sampleRate;
+            painter->drawText(3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, QString::number(posStartSec, 'f', 3) + " sec");
+            painter->drawText((int)bRect.width()/2 + 3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, QString::number(posMidSec, 'f', 3) + " sec");
+            painter->drawText((int)bRect.width() - 100, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignRight, QString::number(posEndSec, 'f', 3) + " sec");
+            p.setColor(QColor(waveColorPenDownRed, waveColorPenDownGreen , waveColorPenDownBlue));
+            p.setWidth(1);
+            p.setStyle(Qt::DotLine);
+            painter->setPen(p);
+            painter->drawLine((int)bRect.width()/2, 0, (int)bRect.width()/2, (int)bRect.height()/2);
+            p.setColor(QColor(waveColorPenUpRed, waveColorPenUpGreen, waveColorPenUpBlue));
+            painter->setPen(p);
+            painter->drawLine((int)bRect.width()/2, (int)bRect.height()/2+1, (int)bRect.width()/2, (int)bRect.height());
+            p.setStyle(Qt::SolidLine);
+            painter->setPen(p);
+
 
             const auto pwf = parsedWaveform[t];
             if (pwf & mWavParser.sequenceMiddle) {
-                auto p = painter->pen();
                 p.setWidth(3);
                 painter->setPen(p);
                 painter->drawLine(px, bRect.height() - 15, x, bRect.height() - 15);
@@ -138,7 +220,7 @@ void WaveformControl::paint(QPainter* painter)
                                 ? "\"0\""
                                 : "\"1\"";
                     p.setWidth(1);
-                    p.setColor(QColor(255, 255, 255));
+                    p.setColor(QColor(textColorRed, textColorGreen, textColorBlue));
                     painter->setPen(p);
                     painter->drawText(x + 3, bRect.height() - 15 - 10, text);
                     printHint = false;
@@ -298,10 +380,10 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
                 update();
             }
             else {
-                if (dpoint >= event->x() - 2.0 && dpoint <= event->x() + 2) {
+                if (dpoint >= (event->x() - dx/2) && dpoint <= (event->x() + dx/2)) {
                     const double maxy = getYScaleFactor();
-                    double y = halfHeight - ((double) (getChannel()->operator[](m_clickPosition)) / maxy) * waveHeight;
-                    if (y >= event->y() - 2 && y <= event->y() + 2) {
+                    //double y = halfHeight - ((double) (getChannel()->operator[](m_clickPosition)) / maxy) * waveHeight;
+                    //if (y >= event->y() - 2 && y <= event->y() + 2) {
                         if (event->button() == Qt::LeftButton) {
                             m_pointIndex = point;
                             m_pointGrabbed = true;
@@ -312,7 +394,7 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
                             getChannel()->remove(m_clickPosition);
                             update();
                         }
-                    }
+                    //}
                 }
             }
         } // m_operationMode
@@ -406,6 +488,25 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
             update();
         }
         break;
+        // Smooth drawing at Repair mode
+        case Qt::RightButton: {
+            if (m_operationMode == WaveformRepairMode) {
+                const auto* ch = getChannel();
+                if (!ch) {
+                    return;
+                }
+                double dx;
+                int point;
+                m_clickPosition = getWavPositionByMouseX(event->x(), &point, &dx);
+                const double waveHeight = boundingRect().height() - 100;
+                const double halfHeight = waveHeight / 2;
+                const auto pointerPosY = halfHeight - event->y();
+                double val = halfHeight + (m_yScaleFactor / waveHeight * pointerPosY);
+                getChannel()->operator[](m_clickPosition) = val;
+            }
+            event->accept();
+            update();
+        }
 
         default:
             event->ignore();
