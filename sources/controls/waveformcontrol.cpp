@@ -488,6 +488,25 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
             update();
         }
         break;
+        // Smooth drawing at Repair mode
+        case Qt::RightButton: {
+            if (m_operationMode == WaveformRepairMode) {
+                const auto* ch = getChannel();
+                if (!ch) {
+                    return;
+                }
+                double dx;
+                int point;
+                m_clickPosition = getWavPositionByMouseX(event->x(), &point, &dx);
+                const double waveHeight = boundingRect().height() - 100;
+                const double halfHeight = waveHeight / 2;
+                const auto pointerPosY = halfHeight - event->y();
+                double val = halfHeight + (m_yScaleFactor / waveHeight * pointerPosY);
+                getChannel()->operator[](m_clickPosition) = val;
+            }
+            event->accept();
+            update();
+        }
 
         default:
             event->ignore();
