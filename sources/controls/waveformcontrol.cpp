@@ -392,10 +392,12 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
                         }
                         else {
                             if (QGuiApplication::queryKeyboardModifiers() != Qt::ShiftModifier)
-                            m_pointGrabbed = false;
-                            qDebug() << "Deleting point";
-                            getChannel()->remove(m_clickPosition);
-                            update();
+                            {
+                                m_pointGrabbed = false;
+                                qDebug() << "Deleting point";
+                                getChannel()->remove(m_clickPosition);
+                                update();
+                            }
                         }
                     //}
                 }
