@@ -20,6 +20,7 @@
 #include <QPen>
 #include <QPainter>
 #include <QDebug>
+#include <QGuiApplication>
 
 WaveformControl::WaveformControl(QQuickItem* parent) :
     QQuickPaintedItem(parent),
@@ -325,9 +326,13 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
                             qDebug() << "Grabbed point: " << getChannel()->operator[](m_clickPosition);
                         }
                         else {
-                            m_pointGrabbed = false;
-                            getChannel()->remove(m_clickPosition);
-                            update();
+                            if (QGuiApplication::queryKeyboardModifiers() != Qt::ShiftModifier)
+                            {
+                                m_pointGrabbed = false;
+                                qDebug() << "Deleting point";
+                                getChannel()->remove(m_clickPosition);
+                                update();
+                            }
                         }
                     }
                 }
@@ -426,7 +431,7 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
 
         // Smooth drawing at Repair mode
         case Qt::RightButton: {
-            if (m_operationMode == WaveformRepairMode) {
+            if (m_operationMode == WaveformRepairMode && QGuiApplication::queryKeyboardModifiers() == Qt::ShiftModifier) {
                 const auto* ch = getChannel();
                 if (!ch) {
                     return;
