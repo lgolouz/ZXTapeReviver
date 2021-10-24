@@ -26,22 +26,26 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++14
 
 SOURCES += \
+        sources/controls/waveformcustomization.cpp \
         sources/main.cpp \
         sources/models/fileworkermodel.cpp \
         sources/controls/waveformcontrol.cpp \
         sources/core/waveformparser.cpp \
         sources/core/wavreader.cpp \
         sources/models/parsersettingsmodel.cpp \
-        sources/models/suspiciouspointsmodel.cpp
+        sources/models/suspiciouspointsmodel.cpp \
+        sources/util/enummetainfo.cpp
 
 HEADERS += \
+    sources/controls/waveformcustomization.h \
     sources/defines.h \
     sources/models/fileworkermodel.h \
     sources/controls/waveformcontrol.h \
     sources/core/waveformparser.h \
     sources/core/wavreader.h \
     sources/models/parsersettingsmodel.h \
-    sources/models/suspiciouspointsmodel.h
+    sources/models/suspiciouspointsmodel.h \
+    sources/util/enummetainfo.h
 
 RESOURCES += qml/qml.qrc
 

@@ -18,8 +18,8 @@
 #include <QDateTime>
 #include "sources/core/wavreader.h"
 #include "sources/core/waveformparser.h"
-
-
+#include "sources/controls/waveformcustomization.h"
+#include "sources/util/enummetainfo.h"
 
 class WaveformControl : public QQuickPaintedItem
 {
@@ -35,16 +35,9 @@ class WaveformControl : public QQuickPaintedItem
 
     WavReader& mWavReader;
     WaveformParser& mWavParser;
+    WaveformCustomization m_customData;
 
     QColor getBackgroundColor() const;
-
-    int bgColorDefaultRed, bgColorDefaultGreen, bgColorDefaultBlue,
-        bgColorSelectionRed, bgColorSelectionGreen, bgColorSelectionBlue,
-        bgColorMeasuringRed, bgColorMeasuringGreen, bgColorMeasuringBlue,
-        waveColorPenUpRed, waveColorPenUpGreen, waveColorPenUpBlue,
-        waveColorPenDownRed, waveColorPenDownGreen, waveColorPenDownBlue,
-        textColorRed, textColorGreen, textColorBlue,
-        wavePenWidth, waveCircleRadius;
 
 public:
     enum WaveformControlOperationModes {
