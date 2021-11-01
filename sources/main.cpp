@@ -37,6 +37,7 @@ void registerTypes()
     qmlRegisterSingletonInstance<WavReader>("com.core.zxtapereviver", 1, 0, "WavReader", WavReader::instance());
     qmlRegisterSingletonInstance<WaveformParser>("com.core.zxtapereviver", 1, 0, "WaveformParser", WaveformParser::instance());
     qmlRegisterSingletonInstance<ParserSettingsModel>("com.models.zxtapereviver", 1, 0, "ParserSettingsModel", ParserSettingsModel::instance());
+    qmlRegisterSingletonInstance<ConfigurationManager>("com.models.zxtapereviver", 1, 0, "ConfigurationManager", ConfigurationManager::instance());
 }
 
 int main(int argc, char *argv[])

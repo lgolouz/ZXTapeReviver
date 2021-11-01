@@ -227,6 +227,15 @@ ConfigurationManager::~ConfigurationManager()
     writeConfiguration();
 }
 
+QString ConfigurationManager::getZxTapeReviverVersion() const {
+    const auto split { getZxTapeReviverBuildTag().split('_', Qt::SkipEmptyParts) };
+    return split.isEmpty() ? QString() : split.last();
+}
+
+QString ConfigurationManager::getZxTapeReviverBuildTag() const {
+    return ZXTAPEREVIVER_VERSION;
+}
+
 QString ConfigurationManager::getSettingKey(INISections section, INIKeys key) const {
     return getEnumName(section) + "/" + getEnumName(key);
 }

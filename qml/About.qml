@@ -16,6 +16,7 @@ import QtQuick.Controls 1.3
 import QtQuick.Dialogs 1.3
 import QtQuick.Layouts 1.15
 
+import com.models.zxtapereviver 1.0
 import "."
 
 Dialog {
@@ -30,7 +31,7 @@ Dialog {
 
     Text {
         id: zxTapeReviverText
-        text: 'ZX Tape Reviver (c) 2020-2021 <a href="mailto:lgolouz@list.ru">Leonid Golouz</a>'
+        text: '<b>ZX Tape Reviver</b> <i>%1</i> (c) 2020-2021 <a href="mailto:lgolouz@list.ru">Leonid Golouz</a>'.arg(ConfigurationManager.zxTapeReviverVersion)
         onLinkActivated: Qt.openUrlExternally(link)
     }
     Text {
