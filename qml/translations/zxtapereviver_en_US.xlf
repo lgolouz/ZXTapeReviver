@@ -1,0 +1,110 @@
+<!--
+*******************************************************************************
+ ZX Tape Reviver
+
+ Author: Leonid Golouz
+ E-mail: lgolouz@list.ru
+ YouTube channel: https://www.youtube.com/channel/UCz_ktTqWVekT0P4zVW8Xgcg
+ YouTube channel e-mail: computerenthusiasttips@mail.ru
+
+ Code modification and distribution of any kind is not allowed without direct
+ permission of the Author.
+*******************************************************************************
+-->
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+ <file source-language="en-US" target-language="en-US">
+  <body>
+<trans-unit id="id_timeline_sec"><source>%1 sec</source><target>%1 sec</target></trans-unit>
+<trans-unit id="id_about_window_header"><source>About</source><target>About</target></trans-unit>
+<trans-unit id="id_email_link"><source>E-mail: %1</source><target>E-mail: %1</target></trans-unit>
+<trans-unit id="id_youtube_channel_link"><source>YouTube channel: %1</source><target>YouTube channel: %1</target></trans-unit>
+<trans-unit id="id_youtube_channel_name"><source>Computer Enthusiast Tips</source><target>Computer Enthusiast Tips</target></trans-unit>
+<trans-unit id="id_donations_link"><source>Donate to program development: %1</source><target>Donate program development: %1</target></trans-unit>
+<trans-unit id="id_please_click_to_open_link"><source>Please click the highlighted links to open</source><target>Please click the highlighted links to open</target></trans-unit>
+<trans-unit id="id_measured_frequency_window_header"><source>Measured frequency</source><target>Measured frequency</target></trans-unit>
+<trans-unit id="id_measured_frequency"><source>Measured frequency:</source><target>Measured frequency:</target></trans-unit>
+<trans-unit id="id_goto_address_window_header"><source>Go to address</source><target>Go to address</target></trans-unit>
+<trans-unit id="id_please_enter_address"><source>Please enter address:</source><target>Please enter address:</target></trans-unit>
+<trans-unit id="id_hexadecimal"><source>Hexadecimal</source><target>Hexadecimal</target></trans-unit>
+<trans-unit id="id_file_menu_item"><source>File</source><target>File</target></trans-unit>
+<trans-unit id="id_open_wav_file_menu_item"><source>Open WAV file...</source><target>Open WAV file...</target></trans-unit>
+<trans-unit id="id_open_waveform_file_menu_item"><source>Open Waveform file...</source><target>Open Waveform file...</target></trans-unit>
+<trans-unit id="id_save_menu_item"><source>Save</source><target>Save</target></trans-unit>
+<trans-unit id="id_save_parsed_menu_item"><source>Parsed</source><target>Parsed</target></trans-unit>
+<trans-unit id="id_left_channel_menu_item"><source>Left channel...</source><target>Left channel...</target></trans-unit>
+<trans-unit id="id_right_channel_menu_item"><source>Right channel...</source><target>Right channel...</target></trans-unit>
+<trans-unit id="id_save_waveform_menu_item"><source>Waveform...</source><target>Waveform...</target></trans-unit>
+<trans-unit id="id_exit_menu_item"><source>Exit</source><target>Exit</target></trans-unit>
+<trans-unit id="id_waveform_menu_item"><source>Waveform</source><target>Waveform</target></trans-unit>
+<trans-unit id="id_restore_view_menu_item"><source>Restore view</source><target>Restore view</target></trans-unit>
+<trans-unit id="id_reparse_menu_item"><source>Reparse</source><target>Reparse</target></trans-unit>
+<trans-unit id="id_parser_settings_menu_item"><source>Parser settings...</source><target>Parser settings...</target></trans-unit>
+<trans-unit id="id_help_menu_item"><source>Help</source><target>Help</target></trans-unit>
+<trans-unit id="id_about_menu_item"><source>About...</source><target>About...</target></trans-unit>
+<trans-unit id="id_parser_settings_window_header"><source>Parser settings</source><target>Parset settings</target></trans-unit>
+<trans-unit id="id_pilot_tone_settings"><source>Pilot-tone settings:</source><target>Pilot-tone settings:</target></trans-unit>
+<trans-unit id="id_pilot_half_frequency"><source>Pilot half frequency:</source><target>Pilot half frequency:</target></trans-unit>
+<trans-unit id="id_pilot_frequency"><source>Pilot frequency:</source><target>Pilot frequency:</target></trans-unit>
+<trans-unit id="id_pilot_delta"><source>Pilot delta:</source><target>Pilot delta:</target></trans-unit>
+<trans-unit id="id_synchro_signal_settings"><source>Synchro signal settigns:</source><target>Synchro signal settigns:</target></trans-unit>
+<trans-unit id="id_synchro_first_half_frequency"><source>Synchro first half frequency:</source><target>Synchro first half frequency:</target></trans-unit>
+<trans-unit id="id_synchro_second_half_frequency"><source>Synchro second half frequency:</source><target>Synchro second half frequency:</target></trans-unit>
+<trans-unit id="id_synchro_frequency"><source>Synchro frequency:</source><target>Synchro frequency:</target></trans-unit>
+<trans-unit id="id_synchro_delta"><source>Synchro delta:</source><target>Synchro delta:</target></trans-unit>
+<trans-unit id="id_zero_digit_settings"><source>Zero digit settings:</source><target>Zero digit settings:</target></trans-unit>
+<trans-unit id="id_zero_half_frequency"><source>Zero half frequency:</source><target>Zero half frequency:</target></trans-unit>
+<trans-unit id="id_zero_frequency"><source>Zero frequency:</source><target>Zero frequency:</target></trans-unit>
+<trans-unit id="id_zero_delta"><source>Zero delta:</source><target>Zero delta:</target></trans-unit>
+<trans-unit id="id_one_digit_settings"><source>One digit settings:</source><target>One digit settings:</target></trans-unit>
+<trans-unit id="id_one_half_frequency"><source>One half frequency:</source><target>One half frequency:</target></trans-unit>
+<trans-unit id="id_one_frequency"><source>One frequency:</source><target>One frequency:</target></trans-unit>
+<trans-unit id="id_one_delta"><source>One delta:</source><target>One delta:</target></trans-unit>
+<trans-unit id="id_check_for_abnormal_sine_when_parsing"><source>Check for abnormal sine when parsing</source><target>Check for abnormal sine when parsing</target></trans-unit>
+<trans-unit id="id_please_choose_wav_file"><source>Please choose WAV file</source><target>Please choose WAV file</target></trans-unit>
+<trans-unit id="id_please_choose_wfm_file"><source>Please choose WFM file</source><target>Please choose WFM file</target></trans-unit>
+<trans-unit id="id_wav_files"><source>WAV files (%1)</source><target>WAV files (%1)</target></trans-unit>
+<trans-unit id="id_wfm_files"><source>Waveform files (%1)</source><target>Waveform files (%1)</target></trans-unit>
+<trans-unit id="id_tap_files"><source>TAP files (%1)</source><target>TAP files (%1)</target></trans-unit>
+<trans-unit id="id_save_tap_file"><source>Save TAP file...</source><target>Save TAP file...</target></trans-unit>
+<trans-unit id="id_save_wfm_file"><source>Save WFM file...</source><target>Save WFM file...</target></trans-unit>
+<trans-unit id="id_vertical_zoom_in"><source>Vertical Zoom IN</source><target>Vertical Zoom IN</target></trans-unit>
+<trans-unit id="id_vertical_zoom_out"><source>Vertical Zoom OUT</source><target>Vertical Zoom OUT</target></trans-unit>
+<trans-unit id="id_horizontal_zoom_in"><source>Horizontal Zoom IN</source><target>Horizontal Zoom IN</target></trans-unit>
+<trans-unit id="id_horizontal_zoom_out"><source>Horizontal Zoom OUT</source><target>Horizontal Zoom OUT</target></trans-unit>
+<trans-unit id="id_waveform_shift_left"><source>&gt;&gt;</source><target>&gt;&gt;</target></trans-unit>
+<trans-unit id="id_waveform_shift_right"><source>&lt;&lt;</source><target>&lt;&lt;</target></trans-unit>
+<trans-unit id="id_reparse"><source>Reparse</source><target>Reparse</target></trans-unit>
+<trans-unit id="id_save_parsed"><source>Save parsed</source><target>Save parsed</target></trans-unit>
+<trans-unit id="id_save_waveform"><source>Save waveform</source><target>Save waveform</target></trans-unit>
+<trans-unit id="id_restore_waveform"><source>Restore waveform</source><target>Restore waveform</target></trans-unit>
+<trans-unit id="id_repair_waveform"><source>Repair waveform</source><target>Repair waveform</target></trans-unit>
+<trans-unit id="id_shift_waveform"><source>Shift waveform</source><target>Shift waveform</target></trans-unit>
+<trans-unit id="id_goto_address"><source>Goto address...</source><target>Goto address...</target></trans-unit>
+<trans-unit id="id_selection_mode"><source>Selection mode</source><target>Selection mode</target></trans-unit>
+<trans-unit id="id_measurement_mode"><source>Measurement mode</source><target>Measurement mode</target></trans-unit>
+<trans-unit id="id_copy_from_r_to_l"><source>Copy from R to L (&#x25b2;)</source><target>Copy from R to L (&#x25b2;)</target></trans-unit>
+<trans-unit id="id_copy_from_l_to_r"><source>Copy from L to R (&#x25bc;)</source><target>Copy from L to R (&#x25bc;)</target></trans-unit>
+<trans-unit id="id_left_channel"><source>Left Channel</source><target>Left Channel</target></trans-unit>
+<trans-unit id="id_right_channel"><source>Right Channel</source><target>Right Channel</target></trans-unit>
+<trans-unit id="id_to_the_beginning_of_the_block"><source>&lt;&lt; To the beginning of the block</source><target>&lt;&lt; To the beginning of the block</target></trans-unit>
+<trans-unit id="id_to_the_end_of_the_block"><source>To the end of the block &gt;&gt;</source><target>To the end of the block &gt;&gt;</target></trans-unit>
+<trans-unit id="id_block_number"><source>#</source><target>#</target></trans-unit>
+<trans-unit id="id_block_type"><source>Type</source><target>Type</target></trans-unit>
+<trans-unit id="id_block_name"><source>Name</source><target>Name</target></trans-unit>
+<trans-unit id="id_block_size"><source>Size (to be read)</source><target>Size (to be read)</target></trans-unit>
+<trans-unit id="id_block_status"><source>Status</source><target>Status</target></trans-unit>
+<trans-unit id="id_goto_suspicious_point"><source>Goto Suspicious point</source><target>Goto Suspicious point</target></trans-unit>
+<trans-unit id="id_remove_suspicious_point"><source>Remove Suspicious point</source><target>Remove Suspicious point</target></trans-unit>
+<trans-unit id="id_suspicious_point_number"><source>#</source><target>#</target></trans-unit>
+<trans-unit id="id_suspicious_point_position"><source>Position</source><target>Position</target></trans-unit>
+<trans-unit id="id_ok"><source>Ok</source><target>Ok</target></trans-unit>
+<trans-unit id="id_error"><source>Error</source><target>Error</target></trans-unit>
+<trans-unit id="id_unknown"><source>Unknown</source><target>Unknown</target></trans-unit>
+<trans-unit id="id_header"><source>Header</source><target>Header</target></trans-unit>
+<trans-unit id="id_code"><source>Code</source><target>Code</target></trans-unit>
+<trans-unit id="id_language_menu_item"><source>Language</source><target>Language</target></trans-unit>
+<trans-unit id="id_english_language"><source>English</source><target>English</target></trans-unit>
+<trans-unit id="id_russian_language"><source>Russian</source><target>Russian</target></trans-unit>
+  </body>
+ </file>
+</xliff>

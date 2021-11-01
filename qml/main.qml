@@ -21,6 +21,8 @@ import com.enums.zxtapereviver 1.0
 import com.models.zxtapereviver 1.0
 import com.core.zxtapereviver 1.0
 
+import "."
+
 ApplicationWindow {
     id: mainWindow
 
@@ -30,7 +32,7 @@ ApplicationWindow {
     visible: true
     width: 1600
     height: 800
-    title: qsTr("ZX Tape Reviver")
+    title: "ZX Tape Reviver"
 
     function getWaveShiftIndex(wfWidth, wfXScale) {
         return wfWidth * wfXScale / 2;
@@ -52,10 +54,10 @@ ApplicationWindow {
 
     menuBar: MenuBar {
         Menu {
-            title: "File"
+            title: Translations.id_file_menu_item
 
             MenuItem {
-                text: "Open WAV file..."
+                text: Translations.id_open_wav_file_menu_item
                 onTriggered: {
                     console.log("Opening WAV file");
                     openFileDialog.isWavOpening = true;
@@ -64,7 +66,7 @@ ApplicationWindow {
             }
 
             MenuItem {
-                text: "Open Waveform file..."
+                text: Translations.id_open_waveform_file_menu_item
                 onTriggered:  {
                     console.log("Opening Waveform file");
                     openFileDialog.isWavOpening = false;
@@ -75,13 +77,13 @@ ApplicationWindow {
             MenuSeparator { }
 
             Menu {
-                title: "Save"
+                title: Translations.id_save_menu_item
 
                 Menu {
-                    title: "Parsed"
+                    title: Translations.id_save_parsed_menu_item
 
                     MenuItem {
-                        text: "Left channel..."
+                        text: Translations.id_left_channel_menu_item
 
                         onTriggered: {
                             saveFileDialog.saveParsed = true;
@@ -91,7 +93,7 @@ ApplicationWindow {
                     }
 
                     MenuItem {
-                        text: "Right channel..."
+                        text: Translations.id_right_channel_menu_item
 
                         onTriggered: {
                             saveFileDialog.saveParsed = true;
@@ -102,7 +104,7 @@ ApplicationWindow {
                 }
 
                 MenuItem {
-                    text: "Waveform..."
+                    text: Translations.id_save_waveform_menu_item
 
                     onTriggered: {
                         saveFileDialog.saveParsed = false;
@@ -114,7 +116,7 @@ ApplicationWindow {
             MenuSeparator { }
 
             MenuItem {
-                text: "Exit"
+                text: Translations.id_exit_menu_item
                 onTriggered: {
                     mainWindow.close();
                 }
@@ -122,23 +124,23 @@ ApplicationWindow {
         }
 
         Menu {
-            title: "Waveform"
+            title: Translations.id_waveform_menu_item
 
             MenuItem {
-                text: "Restore view"
+                text: Translations.id_restore_view_menu_item
                 onTriggered: {
                     restoreWaveformView();
                 }
             }
 
             MenuItem {
-                text: "Reparse"
+                text: Translations.id_reparse_menu_item
             }
 
             MenuSeparator { }
 
             MenuItem {
-                text: "Parser settings..."
+                text: Translations.id_parser_settings_menu_item
                 onTriggered: {
                     parserSettingsDialog.open();
                 }
@@ -146,10 +148,37 @@ ApplicationWindow {
         }
 
         Menu {
-            title: "Help"
+            id: languageMenu
+            title: Translations.id_language_menu_item
+
+            Instantiator  {
+                id: menuInstantiator
+
+                model: TranslationManager.languages
+                MenuItem {
+                    readonly property int countryCode: modelData.countryCode
+
+                    text: modelData.language
+                    onTriggered: {
+                        //Refreshing the mainWindow to update main menu translation
+                        mainWindow.hide();
+                        TranslationManager.setTranslation(countryCode);
+                        mainWindow.show();
+                        //Re-assign the menu items binding
+                        menuInstantiator.model = Qt.binding(function() { return TranslationManager.languages; });
+                    }
+                }
+
+                onObjectAdded: languageMenu.insertItem(index, object)
+                onObjectRemoved: languageMenu.removeItem(object)
+            }
+        }
+
+        Menu {
+            title: Translations.id_help_menu_item
 
             MenuItem {
-                text: "About..."
+                text: Translations.id_about_menu_item
                 onTriggered: {
                     aboutDialog.open();
                 }
@@ -162,11 +191,11 @@ ApplicationWindow {
 
         property bool isWavOpening: true
 
-        title: "Please choose WAV file"
+        title: isWavOpening ? Translations.id_please_choose_wav_file : Translations.id_please_choose_wfm_file
         selectMultiple: false
         sidebarVisible: true
-        defaultSuffix: isWavOpening ? "wav" : "wfm"
-        nameFilters: isWavOpening ? [ "WAV files (*.wav)" ] : [ "Waveform files (*.wfm)" ]
+        defaultSuffix: isWavOpening ? Translations.wav_file_suffix : Translations.wfm_file_suffix
+        nameFilters: isWavOpening ? [ Translations.id_wav_files ] : [ Translations.id_wfm_files ]
 
         onAccepted: {
             var filetype = isWavOpening ? "WAV" : "Waveform";
@@ -194,12 +223,12 @@ ApplicationWindow {
         property bool saveParsed: true
         property int channelNumber: 0
 
-        title: saveParsed ? "Save TAP file..." : "Save WFM file..."
+        title: saveParsed ? Translations.id_save_tap_file : Translations.id_save_wfm_file
         selectExisting: false
         selectMultiple: false
         sidebarVisible: true
-        defaultSuffix: saveParsed ? "tap" : "wfm"
-        nameFilters: saveParsed ? [ "TAP tape files (*.tap)" ] : [ "WFM waveform files (*.wfm)" ]
+        defaultSuffix: saveParsed ? Translations.tap_file_suffix : Translations.wfm_file_suffix
+        nameFilters: saveParsed ? [ Translations.id_tap_files ] : [ Translations.id_wfm_files ]
 
         onAccepted: {
             if (saveParsed) {
@@ -238,6 +267,7 @@ ApplicationWindow {
         color: "black"
 
         readonly property int spacerHeight: ~~(parent.height * 0.0075);
+        readonly property string hotkeyHint: " (%1)"
 
         WaveformControl {
             id: waveformControlCh0
@@ -277,12 +307,14 @@ ApplicationWindow {
             id: vZoomInButton
 
             Shortcut {
+                id: shortcut_vZoomIn
+
                 sequence: "w"
                 autoRepeat: false
                 onActivated: vZoomInButton.clicked()
             }
 
-            text: "Vertical Zoom IN (w)"
+            text: Translations.id_vertical_zoom_in + mainArea.hotkeyHint.arg(shortcut_vZoomIn.sequence)
             anchors.top: parent.top
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -306,12 +338,14 @@ ApplicationWindow {
             id: vZoomOutButton
 
             Shortcut {
+                id: shortcut_vZoomOut
+
                 sequence: "s"
                 autoRepeat: false
                 onActivated: vZoomOutButton.clicked()
             }
 
-            text: "Vertical Zoom OUT (s)"
+            text: Translations.id_vertical_zoom_out + mainArea.hotkeyHint.arg(shortcut_vZoomOut.sequence)
             anchors.top: vZoomInButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -335,12 +369,14 @@ ApplicationWindow {
             id: hZoomInButton
 
             Shortcut {
+                id: shortcut_hZoomIn
+
                 sequence: "e"
                 autoRepeat: false
                 onActivated: hZoomInButton.clicked()
             }
 
-            text: "Horizontal Zoom IN (e)"
+            text: Translations.id_horizontal_zoom_in + mainArea.hotkeyHint.arg(shortcut_hZoomIn.sequence)
             anchors.top: vZoomOutButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -357,12 +393,14 @@ ApplicationWindow {
             id: hZoomOutButton
 
             Shortcut {
+                id: shortcut_hZoomOut
+
                 sequence: "q"
                 autoRepeat: false
                 onActivated: hZoomOutButton.clicked()
             }
 
-            text: "Horizontal Zoom OUT (q)"
+            text: Translations.id_horizontal_zoom_out + mainArea.hotkeyHint.arg(shortcut_hZoomOut.sequence)
             anchors.top: hZoomInButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -378,12 +416,14 @@ ApplicationWindow {
             id: shiftWaveRight
 
             Shortcut {
+                id: shortcut_shiftWaveRight
+
                 sequence: "a"
                 autoRepeat: true
                 onActivated: shiftWaveRight.clicked()
             }
 
-            text: "<< (a)"
+            text: Translations.id_waveform_shift_right + mainArea.hotkeyHint.arg(shortcut_shiftWaveRight.sequence)
             anchors.bottom: waveformControlCh0.bottom
             anchors.left: hZoomOutButton.left
             width: 40
@@ -398,12 +438,14 @@ ApplicationWindow {
             id: shiftWaveLeft
 
             Shortcut {
+                id: shortcut_shiftWaveLeft
+
                 sequence: "d"
                 autoRepeat: true
                 onActivated: shiftWaveLeft.clicked()
             }
 
-            text: "(d) >>"
+            text: Translations.id_waveform_shift_left + mainArea.hotkeyHint.arg(shortcut_shiftWaveLeft.sequence)
             anchors.bottom: shiftWaveRight.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -418,7 +460,7 @@ ApplicationWindow {
         Button {
             id: reparseButton
 
-            text: "Reparse"
+            text: Translations.id_reparse
             anchors.top: shiftWaveLeft.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -437,7 +479,7 @@ ApplicationWindow {
         Button {
             id: saveParsedDataButton
 
-            text: "Save parsed"
+            text: Translations.id_save_parsed
             anchors.top: reparseButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -445,15 +487,18 @@ ApplicationWindow {
             width: hZoomOutButton.width
 
             onClicked: {
-                waveformControlCh0.saveTap();
-                //waveformControlCh1.saveTap();
+                if (channelsComboBox.currentIndex == 0) {
+                    waveformControlCh0.saveTap();
+                } else {
+                    waveformControlCh1.saveTap();
+                }
             }
         }
 
         Button {
             id: saveWaveformButton
 
-            text: "Save waveform"
+            text: Translations.id_save_waveform
             anchors.top: saveParsedDataButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -469,7 +514,7 @@ ApplicationWindow {
         Button {
             id: repairRestoreButton
 
-            text: "%1 waveform".arg(getSelectedWaveform().isWaveformRepaired ? "Restore" : "Repair")
+            text: getSelectedWaveform().isWaveformRepaired ? Translations.id_restore_waveform : Translations.id_repair_waveform
             anchors.top: saveParsedDataButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -489,7 +534,7 @@ ApplicationWindow {
         Button {
             id: shiftWaveform
 
-            text: "Shift waveform"
+            text: Translations.id_shift_waveform
             anchors {
                 top: repairRestoreButton.bottom
                 topMargin: 5
@@ -506,7 +551,7 @@ ApplicationWindow {
         Button {
             id: gotoAddressButton
 
-            text: "Goto address..."
+            text: Translations.id_goto_address
             anchors {
                 top: shiftWaveform.bottom
                 topMargin: 5
@@ -523,7 +568,7 @@ ApplicationWindow {
         Button {
             id: selectionModeToggleButton
 
-            text: "Selection mode"
+            text: Translations.id_selection_mode
             anchors.right: parent.right
             anchors.bottom: waveformControlCh1.bottom
             anchors.bottomMargin: 5
@@ -540,7 +585,7 @@ ApplicationWindow {
         Button {
             id: measurementModeToggleButton
 
-            text: "Measurement mode"
+            text: Translations.id_measurement_mode
             anchors {
                 right: parent.right
                 rightMargin: 5
@@ -573,7 +618,7 @@ ApplicationWindow {
             anchors.rightMargin: 5
             width: hZoomOutButton.width
 
-            text: "Copy from R to L (­▲)"
+            text: Translations.id_copy_from_r_to_l
             visible: selectionModeToggleButton.checked
             onClicked: {
                 waveformControlCh1.copySelectedToAnotherChannel();
@@ -590,7 +635,7 @@ ApplicationWindow {
             anchors.rightMargin: 5
             width: hZoomOutButton.width
 
-            text: "Copy from L to R (▼)"
+            text: Translations.id_copy_from_l_to_r
             visible: selectionModeToggleButton.checked
             onClicked: {
                 waveformControlCh0.copySelectedToAnotherChannel();
@@ -615,7 +660,7 @@ ApplicationWindow {
         ComboBox {
             id: channelsComboBox
 
-            model: ["Left Channel", "Right Channel"]
+            model: [Translations.id_left_channel, Translations.id_right_channel]
             anchors {
                 top: parent.top
                 left: parent.left
@@ -627,12 +672,14 @@ ApplicationWindow {
             id: toBlockBeginningButton
 
             Shortcut {
+                id: shortcut_toBlockBeginning
+
                 sequence: "Shift+a"
                 autoRepeat: true
                 onActivated: toBlockBeginningButton.clicked()
             }
 
-            text: "<< To the beginning of the block"
+            text: Translations.id_to_the_beginning_of_the_block
             anchors {
                 top: channelsComboBox.bottom
                 left: parent.left
@@ -658,12 +705,14 @@ ApplicationWindow {
             id: toBlockEndButton
 
             Shortcut {
+                id: shortcut_toBlockEnd
+
                 sequence: "Shift+d"
                 autoRepeat: true
                 onActivated: toBlockEndButton.clicked()
             }
 
-            text: "To the end of the block >>"
+            text: Translations.id_to_the_end_of_the_block
             anchors {
                 top: channelsComboBox.bottom
                 right: parent.right
@@ -697,7 +746,7 @@ ApplicationWindow {
             }
 
             TableViewColumn {
-                title: "#"
+                title: Translations.id_block_number
                 width: rightArea.width * 0.07
                 role: "block"
                 delegate: Item {
@@ -725,25 +774,25 @@ ApplicationWindow {
             }
 
             TableViewColumn {
-                title: "Type"
+                title: Translations.id_block_type
                 width: rightArea.width * 0.23
                 role: "blockType"
             }
 
             TableViewColumn {
-                title: "Name"
+                title: Translations.id_block_name
                 width: rightArea.width * 0.3
                 role: "blockName"
             }
 
             TableViewColumn {
-                title: "Size (to be read)"
+                title: Translations.id_block_size
                 width: rightArea.width * 0.25
                 role: "blockSize"
             }
 
             TableViewColumn {
-                title: "Status"
+                title: Translations.id_block_status
                 width: rightArea.width * 0.15
                 role: "blockStatus"
             }
@@ -766,7 +815,7 @@ ApplicationWindow {
                 topMargin: 2
             }
             width: parent.width / 2
-            text: "Goto Suspicious point"
+            text: Translations.id_goto_suspicious_point
 
             onClicked: {
                 if (suspiciousPointsView.currentRow < 0 || suspiciousPointsView.currentRow >= SuspiciousPointsModel.size) {
@@ -794,7 +843,7 @@ ApplicationWindow {
                 topMargin: 2
             }
 
-            text: "Remove Suspicious point"
+            text: Translations.id_remove_suspicious_point
 
             onClicked: {
                 if (suspiciousPointsView.currentRow >= 0 && suspiciousPointsView.currentRow < SuspiciousPointsModel.size) {
@@ -822,12 +871,12 @@ ApplicationWindow {
             }
 
             TableViewColumn {
-                title: "#"
+                title: Translations.id_suspicious_point_number
                 width: rightArea.width * 0.1
             }
 
             TableViewColumn {
-                title: "Position"
+                title: Translations.id_suspicious_point_position
                 width: rightArea.width * 0.9
             }
         }

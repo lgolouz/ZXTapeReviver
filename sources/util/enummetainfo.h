@@ -31,6 +31,12 @@ protected:
         auto s = QMetaEnum::fromType<T>().valueToKey(static_cast<int>(state));
         return s ? s : "Undefined";
     }
+
+    template <typename T> T static getEnumValue(const QString& name, T def = T { }) {
+        bool ok;
+        auto v = static_cast<T>(QMetaEnum::fromType<T>().keyToValue(name.toStdString().c_str(), &ok));
+        return ok ? v : def;
+    }
 };
 
 #endif // ENUMMETAINFO_H

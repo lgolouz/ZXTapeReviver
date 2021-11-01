@@ -21,11 +21,13 @@
 #include <QPainter>
 #include <QDebug>
 #include <QGuiApplication>
+#include "sources/translations/translations.h"
 
 WaveformControl::WaveformControl(QQuickItem* parent) :
     QQuickPaintedItem(parent),
     mWavReader(*WavReader::instance()),
     mWavParser(*WaveformParser::instance()),
+    m_customData(*ConfigurationManager::instance()->getWaveformCustomization()),
     m_channelNumber(0),
     m_isWaveformRepaired(false),
     m_wavePos(0),
@@ -76,7 +78,6 @@ int WaveformControl::getWavPositionByMouseX(int x, int* point, double* dx) const
 void WaveformControl::paint(QPainter* painter)
 {
     auto p = painter->pen();
- //   const auto paintXAxis = [painter, this]() {};
     painter->setBackground(QBrush(getBackgroundColor()));
     painter->setBackgroundMode(Qt::OpaqueMode);
     painter->setPen(m_customData.xAxisColor());
@@ -100,9 +101,9 @@ void WaveformControl::paint(QPainter* painter)
     double posStartSec = (double) pos / sampleRate;
     double posMidSec = (double) (pos + scale / 2) / sampleRate;
     double posEndSec = (double) (pos + scale) / sampleRate;
-    painter->drawText(3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, QString::number(posStartSec, 'f', 3) + " sec");
-    painter->drawText((int) bRect.width() / 2 + 3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, QString::number(posMidSec, 'f', 3) + " sec");
-    painter->drawText((int) bRect.width() - 100, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignRight, QString::number(posEndSec, 'f', 3) + " sec");
+    painter->drawText(3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posStartSec, 'f', 3)));
+    painter->drawText((int) bRect.width() / 2 + 3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posMidSec, 'f', 3)));
+    painter->drawText((int) bRect.width() - 100, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignRight, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posEndSec, 'f', 3)));
     p.setColor(m_customData.yAxisColor());
     p.setWidth(1);
     p.setStyle(Qt::DashLine);
@@ -326,8 +327,7 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
                             qDebug() << "Grabbed point: " << getChannel()->operator[](m_clickPosition);
                         }
                         else {
-                            if (QGuiApplication::queryKeyboardModifiers() != Qt::ShiftModifier)
-                            {
+                            if (QGuiApplication::queryKeyboardModifiers() != Qt::ShiftModifier) {
                                 m_pointGrabbed = false;
                                 qDebug() << "Deleting point";
                                 getChannel()->remove(m_clickPosition);

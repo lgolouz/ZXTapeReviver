@@ -25,8 +25,52 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 CONFIG += c++14
 
+#Dynamically generate translation names and country codes based on AVAILABLE_TRANSLATIONS variable
+AVAILABLE_TRANSLATIONS = English:en_US Russian:ru_RU
+
+TRANSLATION_FILENAME = zxtapereviver_
+TRANSLATIONS_PATH = ./qml/translations/
+
+for (T, AVAILABLE_TRANSLATIONS) {
+    S = $$split(T, ":")
+    TRANSLATION_LANGUAGE = $$take_first(S)
+    COUNTRY_CODE = $$take_last(S)
+
+    TRANSLATION_ID = ID_$${TRANSLATION_LANGUAGE}_LANGUAGE
+    TRANSLATION_ID_UPPER = $$upper($${TRANSLATION_ID})
+    TRANSLATION_ID_LOWER = $$lower($${TRANSLATION_ID})
+    TRANSLATION_ID_HEADER = "extern const char* $${TRANSLATION_ID_UPPER};"
+    TRANSLATION_ID_CODE = "const char* $${TRANSLATION_ID_UPPER}=QT_TRID_NOOP(\"$${TRANSLATION_ID_LOWER}\");"
+
+    isEmpty(DEFINED_TRANSLATIONS) {
+        COUNTRY_CODES = $${COUNTRY_CODE}
+        DEFINED_TRANSLATIONS = $${T}
+    }
+    else {
+        COUNTRY_CODES = $${COUNTRY_CODES},$${COUNTRY_CODE}
+        DEFINED_TRANSLATIONS = $${DEFINED_TRANSLATIONS};$${T}
+    }
+    TRANSLATION_IDS_HEADER = $${TRANSLATION_IDS_HEADER} $${TRANSLATION_ID_HEADER}
+    TRANSLATION_IDS_CODE = $${TRANSLATION_IDS_CODE} $${TRANSLATION_ID_CODE}
+
+    system($$[QT_INSTALL_BINS]/lrelease -idbased $${TRANSLATIONS_PATH}/$${TRANSLATION_FILENAME}$${COUNTRY_CODE}.xlf -qm $${TRANSLATIONS_PATH}/$${TRANSLATION_FILENAME}$${COUNTRY_CODE}.qm)
+}
+DEFINES += AVAILABLE_TRANSLATIONS=\\\"$${DEFINED_TRANSLATIONS}\\\" \
+           COUNTRY_CODES=$${COUNTRY_CODES}
+
+TRANSLATIONS_GENERATED_FILENAME = $${PWD}/generated/translations_generated
+TRANSLATIONS_GENERATED_FILENAME_H = $${TRANSLATIONS_GENERATED_FILENAME}.h
+TRANSLATIONS_GENERATED_FILENAME_CPP = $${TRANSLATIONS_GENERATED_FILENAME}.cpp
+
+write_file($${TRANSLATIONS_GENERATED_FILENAME_H}, TRANSLATION_IDS_HEADER)
+write_file($${TRANSLATIONS_GENERATED_FILENAME_CPP}, TRANSLATION_IDS_CODE)
+
+
+DEFINES += TRANSLATION_IDS_HEADER="\\\"$${TRANSLATIONS_GENERATED_FILENAME_H}\\\"" \
+           TRANSLATION_IDS_CODE="\\\"$${TRANSLATIONS_GENERATED_FILENAME_CPP}\\\""
+
+
 SOURCES += \
-        sources/controls/waveformcustomization.cpp \
         sources/main.cpp \
         sources/models/fileworkermodel.cpp \
         sources/controls/waveformcontrol.cpp \
@@ -34,10 +78,12 @@ SOURCES += \
         sources/core/wavreader.cpp \
         sources/models/parsersettingsmodel.cpp \
         sources/models/suspiciouspointsmodel.cpp \
-        sources/util/enummetainfo.cpp
+        sources/translations/translationmanager.cpp \
+        sources/translations/translations.cpp \
+        sources/util/enummetainfo.cpp \
+        sources/configuration/configurationmanager.cpp
 
 HEADERS += \
-    sources/controls/waveformcustomization.h \
     sources/defines.h \
     sources/models/fileworkermodel.h \
     sources/controls/waveformcontrol.h \
@@ -45,7 +91,10 @@ HEADERS += \
     sources/core/wavreader.h \
     sources/models/parsersettingsmodel.h \
     sources/models/suspiciouspointsmodel.h \
-    sources/util/enummetainfo.h
+    sources/translations/translationmanager.h \
+    sources/translations/translations.h \
+    sources/util/enummetainfo.h \
+    sources/configuration/configurationmanager.h
 
 RESOURCES += qml/qml.qrc
 

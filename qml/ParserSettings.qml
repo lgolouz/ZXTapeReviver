@@ -17,25 +17,28 @@ import QtQuick.Dialogs 1.3
 import QtQuick.Layouts 1.15
 
 import com.models.zxtapereviver 1.0
+import "."
 
 Dialog {
     id: parserSettingsDialog
 
     visible: false
-    title: "Parser settings"
+    title: Translations.id_parser_settings_window_header
     standardButtons: StandardButton.Ok | StandardButton.RestoreDefaults
     modality: Qt.WindowModal
+    width: grid.width * 1.02
 
     Grid {
         id: grid
         columns: 4
+        anchors.horizontalCenter: parent.horizontalCenter
 
         GroupBox {
-            title: "Pilot-tone settings:"
+            title: Translations.id_pilot_tone_settings
             ColumnLayout {
                 Layout.fillHeight: true
                 Text {
-                    text: "Pilot half frequency:"
+                    text: Translations.id_pilot_half_frequency
                 }
 
                 TextField {
@@ -46,7 +49,7 @@ Dialog {
                 }
 
                 Text {
-                    text: "Pilot frequency:"
+                    text: Translations.id_pilot_frequency
                 }
 
                 TextField {
@@ -57,7 +60,7 @@ Dialog {
                 }
 
                 Text {
-                    text: "Pilot delta:"
+                    text: Translations.id_pilot_delta
                 }
 
                 TextField {
@@ -70,10 +73,10 @@ Dialog {
         }
 
         GroupBox {
-            title: "Synchro signal settigns:"
+            title: Translations.id_synchro_signal_settings
             ColumnLayout {
                 Text {
-                    text: "Synchro first half frequency:"
+                    text: Translations.id_synchro_first_half_frequency
                 }
 
                 TextField {
@@ -84,7 +87,7 @@ Dialog {
                 }
 
                 Text {
-                    text: "Synchro second half frequency:"
+                    text: Translations.id_synchro_second_half_frequency
                 }
 
                 TextField {
@@ -95,7 +98,7 @@ Dialog {
                 }
 
                 Text {
-                    text: "Synchro frequency:"
+                    text: Translations.id_synchro_frequency
                 }
 
                 TextField {
@@ -106,7 +109,7 @@ Dialog {
                 }
 
                 Text {
-                    text: "Synchro delta:"
+                    text: Translations.id_synchro_delta
                 }
 
                 TextField {
@@ -119,10 +122,10 @@ Dialog {
         }
 
         GroupBox {
-            title: "Zero digit settings:"
+            title: Translations.id_zero_digit_settings
             ColumnLayout {
                 Text {
-                    text: "Zero half frequency:"
+                    text: Translations.id_zero_half_frequency
                 }
 
                 TextField {
@@ -133,7 +136,7 @@ Dialog {
                 }
 
                 Text {
-                    text: "Zero frequency:"
+                    text: Translations.id_zero_frequency
                 }
 
                 TextField {
@@ -144,7 +147,7 @@ Dialog {
                 }
 
                 Text {
-                    text: "Zero delta:"
+                    text: Translations.id_zero_delta
                 }
 
                 TextField {
@@ -157,10 +160,10 @@ Dialog {
         }
 
         GroupBox {
-            title: "One digit settings:"
+            title: Translations.id_one_digit_settings
             ColumnLayout {
                 Text {
-                    text: "One half frequency:"
+                    text: Translations.id_one_half_frequency
                 }
 
                 TextField {
@@ -171,7 +174,7 @@ Dialog {
                 }
 
                 Text {
-                    text: "One frequency:"
+                    text: Translations.id_one_frequency
                 }
 
                 TextField {
@@ -182,7 +185,7 @@ Dialog {
                 }
 
                 Text {
-                    text: "One delta:"
+                    text: Translations.id_one_delta
                 }
 
                 TextField {
@@ -198,7 +201,7 @@ Dialog {
         anchors.top: grid.bottom
         anchors.topMargin: 5
 
-        text: "Check for abnormal sine when parsing"
+        text: Translations.id_check_for_abnormal_sine_when_parsing
         checked: ParserSettingsModel.checkForAbnormalSine
         onCheckedChanged: {
             ParserSettingsModel.checkForAbnormalSine = checked;

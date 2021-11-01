@@ -1,9 +1,15 @@
 <RCC>
     <qresource prefix="/">
+        <file>qmldir</file>
         <file>main.qml</file>
         <file>GoToAddress.qml</file>
         <file>Frequency.qml</file>
         <file>ParserSettings.qml</file>
         <file>About.qml</file>
+        <file>Translations.qml</file>
+    </qresource>
+    <qresource prefix="/translations">
+        <file>translations/zxtapereviver_en_US.qm</file>
+        <file>translations/zxtapereviver_ru_RU.qm</file>
     </qresource>
 </RCC>

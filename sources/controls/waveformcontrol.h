@@ -18,7 +18,7 @@
 #include <QDateTime>
 #include "sources/core/wavreader.h"
 #include "sources/core/waveformparser.h"
-#include "sources/controls/waveformcustomization.h"
+#include "sources/configuration/configurationmanager.h"
 #include "sources/util/enummetainfo.h"
 
 class WaveformControl : public QQuickPaintedItem
@@ -35,7 +35,7 @@ class WaveformControl : public QQuickPaintedItem
 
     WavReader& mWavReader;
     WaveformParser& mWavParser;
-    WaveformCustomization m_customData;
+    ConfigurationManager::WaveformCustomization& m_customData;
 
     QColor getBackgroundColor() const;
 

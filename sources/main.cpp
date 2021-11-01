@@ -18,9 +18,11 @@
 #include "sources/models/fileworkermodel.h"
 #include "sources/models/suspiciouspointsmodel.h"
 #include "sources/models/parsersettingsmodel.h"
+#include "sources/translations/translationmanager.h"
 
 void registerTypes()
 {
+    qmlRegisterSingletonInstance<TranslationManager>("com.models.zxtapereviver", 1, 0, "TranslationManager", TranslationManager::instance());
     qmlRegisterUncreatableType<FileWorkerModel>("com.enums.zxtapereviver", 1, 0, "FileWorkerResults", QString());
     qmlRegisterUncreatableType<WavReader>("com.enums.zxtapereviver", 1, 0, "ErrorCodesEnum", QString());
     qmlRegisterUncreatableType<WaveformControl>("com.enums.zxtapereviver", 1, 0, "WaveformControlOperationModes", QString());
