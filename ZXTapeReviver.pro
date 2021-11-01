@@ -65,10 +65,17 @@ TRANSLATIONS_GENERATED_FILENAME_CPP = $${TRANSLATIONS_GENERATED_FILENAME}.cpp
 write_file($${TRANSLATIONS_GENERATED_FILENAME_H}, TRANSLATION_IDS_HEADER)
 write_file($${TRANSLATIONS_GENERATED_FILENAME_CPP}, TRANSLATION_IDS_CODE)
 
+contains(QMAKE_HOST.os, Windows) {
+    GIT_CMD = \"$$system(where git)\"
+}
+else {
+    GIT_CMD = $$system(which git)
+}
+ZXTAPEREVIVER_VERSION = $$system($${GIT_CMD} --git-dir $${PWD}/.git --work-tree $${PWD} describe --always --tags)
 
 DEFINES += TRANSLATION_IDS_HEADER="\\\"$${TRANSLATIONS_GENERATED_FILENAME_H}\\\"" \
-           TRANSLATION_IDS_CODE="\\\"$${TRANSLATIONS_GENERATED_FILENAME_CPP}\\\""
-
+           TRANSLATION_IDS_CODE="\\\"$${TRANSLATIONS_GENERATED_FILENAME_CPP}\\\"" \
+           ZXTAPEREVIVER_VERSION=\\\"$${ZXTAPEREVIVER_VERSION}\\\"
 
 SOURCES += \
         sources/main.cpp \

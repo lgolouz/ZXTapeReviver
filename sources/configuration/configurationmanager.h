@@ -25,6 +25,9 @@
 class ConfigurationManager final : public QObject, protected EnumMetaInfo {
     Q_OBJECT
 
+    Q_PROPERTY(QString zxTapeReviverVersion READ getZxTapeReviverVersion CONSTANT)
+    Q_PROPERTY(QString zxTapeReviverBuildTag READ getZxTapeReviverBuildTag CONSTANT)
+
 public:
     enum class INISections {
         COLOR,
@@ -193,6 +196,9 @@ public:
     ApplicationCustomization* getApplicationCustomization();
 
     virtual ~ConfigurationManager() override;
+
+    QString getZxTapeReviverVersion() const;
+    QString getZxTapeReviverBuildTag() const;
 
     static ConfigurationManager* instance();
 
