@@ -21,7 +21,7 @@ Dialog {
     property var frequency: 0
 
     visible: false
-    title: "Measured frequency"
+    title: Translations.id_measured_frequency_window_header
     standardButtons: StandardButton.Ok
     modality: Qt.WindowModal
     width: 200
@@ -29,7 +29,7 @@ Dialog {
 
     Text {
         id: textWithField
-        text: "Measured frequency:"
+        text: Translations.id_measured_frequency
     }
 
     TextField {

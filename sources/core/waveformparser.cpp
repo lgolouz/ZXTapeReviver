@@ -13,6 +13,7 @@
 
 #include "waveformparser.h"
 #include "sources/models/parsersettingsmodel.h"
+#include "sources/translations/translations.h"
 #include <QDebug>
 #include <QDateTime>
 #include <QByteArray>
@@ -317,6 +318,11 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
         {0x02, "Character Array"},
         {0x03, "Bytes"}
     };
+    const QString id_header { qtTrId(ID_HEADER) };
+    const QString id_code { qtTrId(ID_CODE) };
+    const QString id_ok { qtTrId(ID_OK) };
+    const QString id_error { qtTrId(ID_ERROR) };
+    const QString id_unknown { qtTrId(ID_UNKNOWN) };
 
     QVariantList r;
     const auto& ch = mParsedData[chNum];
@@ -339,7 +345,7 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
             }
             else {
                 blockType = -2;
-                blockTypeName = d == 0x00 ? "Header" : "Code";
+                blockTypeName = d == 0x00 ? id_header : id_code;
             }
             m.insert("blockType", blockTypeName);
             QString sizeText = QString::number(i.data.size());
@@ -361,14 +367,14 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
                 nameText = QByteArray((const char*) &i.data.data()[2], loopRange > 1 ? loopRange - 2 : 0);
             }
             m.insert("blockName", nameText);
-            m.insert("blockStatus", i.state == OK ? "Ok" : "Error");
+            m.insert("blockStatus", i.state == OK ? id_ok : id_error);
             m.insert("state", i.state);
         }
         else {
-            m.insert("blockType", "Unknown");
+            m.insert("blockType", id_unknown);
             m.insert("blockName", QString());
             m.insert("blockSize", 0);
-            m.insert("blockStatus", "Unknown");
+            m.insert("blockStatus", id_unknown);
         }
         r.append(m);
     }

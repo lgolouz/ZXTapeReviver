@@ -1,0 +1,110 @@
+<!--
+*******************************************************************************
+ ZX Tape Reviver
+
+ Author: Leonid Golouz
+ E-mail: lgolouz@list.ru
+ YouTube channel: https://www.youtube.com/channel/UCz_ktTqWVekT0P4zVW8Xgcg
+ YouTube channel e-mail: computerenthusiasttips@mail.ru
+
+ Code modification and distribution of any kind is not allowed without direct
+ permission of the Author.
+*******************************************************************************
+-->
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+ <file source-language="en-US" target-language="ru-RU">
+  <body>
+<trans-unit id="id_timeline_sec"><source>%1 sec</source><target>%1 сек</target></trans-unit>
+<trans-unit id="id_about_window_header"><source>About</source><target>О программе</target></trans-unit>
+<trans-unit id="id_email_link"><source>E-mail: %1</source><target>Электронная почта: %1</target></trans-unit>
+<trans-unit id="id_youtube_channel_link"><source>YouTube channel: %1</source><target>YouTube канал: %1</target></trans-unit>
+<trans-unit id="id_donations_link"><source>Donate to program development: %1</source><target>Пожертвовать на развитие программы: %1</target></trans-unit>
+<trans-unit id="id_please_click_to_open_link"><source>Please click the highlighted links to open</source><target>Пожалуйста, нажмите на подсвеченные ссылки для их открытия</target></trans-unit>
+<trans-unit id="id_youtube_channel_name"><source>Computer Enthusiast Tips</source><target>Советы компьютерного энтузиаста</target></trans-unit>
+<trans-unit id="id_measured_frequency_window_header"><source>Measured frequency</source><target>Измеритель частоты</target></trans-unit>
+<trans-unit id="id_measured_frequency"><source>Measured frequency:</source><target>Измеренная частота:</target></trans-unit>
+<trans-unit id="id_goto_address_window_header"><source>Go to address</source><target>Переход на адрес</target></trans-unit>
+<trans-unit id="id_please_enter_address"><source>Please enter address:</source><target>Пожалуйста введите адрес:</target></trans-unit>
+<trans-unit id="id_hexadecimal"><source>Hexadecimal</source><target>В шестнадцатеричном виде</target></trans-unit>
+<trans-unit id="id_file_menu_item"><source>File</source><target>Файл</target></trans-unit>
+<trans-unit id="id_open_wav_file_menu_item"><source>Open WAV file...</source><target>Открыть WAV файл...</target></trans-unit>
+<trans-unit id="id_open_waveform_file_menu_item"><source>Open Waveform file...</source><target>Открыть файл с формой волны...</target></trans-unit>
+<trans-unit id="id_save_menu_item"><source>Save</source><target>Сохранить</target></trans-unit>
+<trans-unit id="id_save_parsed_menu_item"><source>Parsed</source><target>Разобранный</target></trans-unit>
+<trans-unit id="id_left_channel_menu_item"><source>Left channel...</source><target>Левый канал...</target></trans-unit>
+<trans-unit id="id_right_channel_menu_item"><source>Right channel...</source><target>Правый канал...</target></trans-unit>
+<trans-unit id="id_save_waveform_menu_item"><source>Waveform...</source><target>Форму волны...</target></trans-unit>
+<trans-unit id="id_exit_menu_item"><source>Exit</source><target>Выход</target></trans-unit>
+<trans-unit id="id_waveform_menu_item"><source>Waveform</source><target>Форма волны</target></trans-unit>
+<trans-unit id="id_restore_view_menu_item"><source>Restore view</source><target>Восстановить вид</target></trans-unit>
+<trans-unit id="id_reparse_menu_item"><source>Reparse</source><target>Разобрать</target></trans-unit>
+<trans-unit id="id_parser_settings_menu_item"><source>Parser settings...</source><target>Настройки парсера...</target></trans-unit>
+<trans-unit id="id_help_menu_item"><source>Help</source><target>Помощь</target></trans-unit>
+<trans-unit id="id_about_menu_item"><source>About...</source><target>О программе...</target></trans-unit>
+<trans-unit id="id_parser_settings_window_header"><source>Parser settings</source><target>Настройки парсера</target></trans-unit>
+<trans-unit id="id_pilot_tone_settings"><source>Pilot-tone settings:</source><target>Настройки пилот-тона:</target></trans-unit>
+<trans-unit id="id_pilot_half_frequency"><source>Pilot half frequency:</source><target>Частота полупериода пилот-тона:</target></trans-unit>
+<trans-unit id="id_pilot_frequency"><source>Pilot frequency:</source><target>Частота периода пилот-тона:</target></trans-unit>
+<trans-unit id="id_pilot_delta"><source>Pilot delta:</source><target>Допустимое отклонение частоты пилот-тона:</target></trans-unit>
+<trans-unit id="id_synchro_signal_settings"><source>Synchro signal settigns:</source><target>Настройки синхро-сигнала:</target></trans-unit>
+<trans-unit id="id_synchro_first_half_frequency"><source>Synchro first half frequency:</source><target>Частота первого полупериода синхро-сигнала:</target></trans-unit>
+<trans-unit id="id_synchro_second_half_frequency"><source>Synchro second half frequency:</source><target>Частота второго полупериода синхро-сигнала:</target></trans-unit>
+<trans-unit id="id_synchro_frequency"><source>Synchro frequency:</source><target>Частота периода синхро-сигнала:</target></trans-unit>
+<trans-unit id="id_synchro_delta"><source>Synchro delta:</source><target>Допустимое отклонение частоты синхро-сигнала:</target></trans-unit>
+<trans-unit id="id_zero_digit_settings"><source>Zero digit settings:</source><target>Настройки для "нуля":</target></trans-unit>
+<trans-unit id="id_zero_half_frequency"><source>Zero half frequency:</source><target>Частота полупериода "нуля":</target></trans-unit>
+<trans-unit id="id_zero_frequency"><source>Zero frequency:</source><target>Частота периода "нуля":</target></trans-unit>
+<trans-unit id="id_zero_delta"><source>Zero delta:</source><target>Допустимое отклонение частоты "нуля":</target></trans-unit>
+<trans-unit id="id_one_digit_settings"><source>One digit settings:</source><target>Настройки для "единицы":</target></trans-unit>
+<trans-unit id="id_one_half_frequency"><source>One half frequency:</source><target>Частота полупериода "единицы":</target></trans-unit>
+<trans-unit id="id_one_frequency"><source>One frequency:</source><target>Частота периода "единицы":</target></trans-unit>
+<trans-unit id="id_one_delta"><source>One delta:</source><target>Допустимое отклонение частоты "единицы":</target></trans-unit>
+<trans-unit id="id_check_for_abnormal_sine_when_parsing"><source>Check for abnormal sine when parsing</source><target>Проверка на явно вырожденную синусоиду во время разбора</target></trans-unit>
+<trans-unit id="id_please_choose_wav_file"><source>Please choose WAV file</source><target>Пожалуйста, выберите WAV файл</target></trans-unit>
+<trans-unit id="id_please_choose_wfm_file"><source>Please choose WFM file</source><target>Пожалуйста, выберите WFM файл</target></trans-unit>
+<trans-unit id="id_wav_files"><source>WAV files (%1)</source><target>Файлы WAV (%1)</target></trans-unit>
+<trans-unit id="id_wfm_files"><source>Waveform files (%1)</source><target>Файлы формы волны (%1)</target></trans-unit>
+<trans-unit id="id_tap_files"><source>TAP files (%1)</source><target>Файлы TAP (%1)</target></trans-unit>
+<trans-unit id="id_save_tap_file"><source>Save TAP file...</source><target>Сохранить TAP файл...</target></trans-unit>
+<trans-unit id="id_save_wfm_file"><source>Save WFM file...</source><target>Сохранить WFM файл...</target></trans-unit>
+<trans-unit id="id_vertical_zoom_in"><source>Vertical Zoom IN</source><target>Вертикаль больше</target></trans-unit>
+<trans-unit id="id_vertical_zoom_out"><source>Vertical Zoom OUT</source><target>Вертикаль меньше</target></trans-unit>
+<trans-unit id="id_horizontal_zoom_in"><source>Horizontal Zoom IN</source><target>Горизонталь больше</target></trans-unit>
+<trans-unit id="id_horizontal_zoom_out"><source>Horizontal Zoom OUT</source><target>Горизонталь меньше</target></trans-unit>
+<trans-unit id="id_waveform_shift_left"><source>&gt;&gt;</source><target>&gt;&gt;</target></trans-unit>
+<trans-unit id="id_waveform_shift_right"><source>&lt;&lt;</source><target>&lt;&lt;</target></trans-unit>
+<trans-unit id="id_reparse"><source>Reparse</source><target>Разобрать</target></trans-unit>
+<trans-unit id="id_save_parsed"><source>Save parsed</source><target>Сохранить разобранное</target></trans-unit>
+<trans-unit id="id_save_waveform"><source>Save waveform</source><target>Сохранить форму волны</target></trans-unit>
+<trans-unit id="id_restore_waveform"><source>Restore waveform</source><target>Восстановить волну</target></trans-unit>
+<trans-unit id="id_repair_waveform"><source>Repair waveform</source><target>Исправить волну</target></trans-unit>
+<trans-unit id="id_shift_waveform"><source>Shift waveform</source><target>Сдвинуть волну</target></trans-unit>
+<trans-unit id="id_goto_address"><source>Goto address...</source><target>Перейти на адрес</target></trans-unit>
+<trans-unit id="id_selection_mode"><source>Selection mode</source><target>Режим выделения</target></trans-unit>
+<trans-unit id="id_measurement_mode"><source>Measurement mode</source><target>Режим измерения</target></trans-unit>
+<trans-unit id="id_copy_from_r_to_l"><source>Copy from R to L (&#x25b2;)</source><target>Копировать из П в Л (&#x25b2;)</target></trans-unit>
+<trans-unit id="id_copy_from_l_to_r"><source>Copy from L to R (&#x25bc;)</source><target>Копировать из Л в П (&#x25bc;)</target></trans-unit>
+<trans-unit id="id_left_channel"><source>Left Channel</source><target>Левый канал</target></trans-unit>
+<trans-unit id="id_right_channel"><source>Right Channel</source><target>Правый канал</target></trans-unit>
+<trans-unit id="id_to_the_beginning_of_the_block"><source>&lt;&lt; To the beginning of the block</source><target>&lt;&lt; В начало блока</target></trans-unit>
+<trans-unit id="id_to_the_end_of_the_block"><source>To the end of the block &gt;&gt;</source><target>В конец блока &gt;&gt;</target></trans-unit>
+<trans-unit id="id_block_number"><source>#</source><target>#</target></trans-unit>
+<trans-unit id="id_block_type"><source>Type</source><target>Тип</target></trans-unit>
+<trans-unit id="id_block_name"><source>Name</source><target>Имя</target></trans-unit>
+<trans-unit id="id_block_size"><source>Size (to be read)</source><target>Размер (должно быть считано)</target></trans-unit>
+<trans-unit id="id_block_status"><source>Status</source><target>Статус</target></trans-unit>
+<trans-unit id="id_goto_suspicious_point"><source>Goto Suspicious point</source><target>Перейти к подозрительной точке</target></trans-unit>
+<trans-unit id="id_remove_suspicious_point"><source>Remove Suspicious point</source><target>Удалить подозрительную точку</target></trans-unit>
+<trans-unit id="id_suspicious_point_number"><source>#</source><target>#</target></trans-unit>
+<trans-unit id="id_suspicious_point_position"><source>Position</source><target>Позиция</target></trans-unit>
+<trans-unit id="id_ok"><source>Ok</source><target>ОК</target></trans-unit>
+<trans-unit id="id_error"><source>Error</source><target>Ошибка</target></trans-unit>
+<trans-unit id="id_unknown"><source>Unknown</source><target>Неизвестен</target></trans-unit>
+<trans-unit id="id_header"><source>Header</source><target>Header</target></trans-unit>
+<trans-unit id="id_code"><source>Code</source><target>Code</target></trans-unit>
+<trans-unit id="id_language_menu_item"><source>Language</source><target>Язык</target></trans-unit>
+<trans-unit id="id_english_language"><source>English</source><target>Английский</target></trans-unit>
+<trans-unit id="id_russian_language"><source>Russian</source><target>Русский</target></trans-unit>
+  </body>
+ </file>
+</xliff>

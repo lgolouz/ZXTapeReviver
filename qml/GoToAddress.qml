@@ -21,15 +21,15 @@ Dialog {
     signal gotoAddress(int adr);
 
     visible: false
-    title: "Go to address..."
+    title: Translations.id_goto_address_window_header
     standardButtons: StandardButton.Ok | StandardButton.Cancel
     modality: Qt.WindowModal
-    width: 200
+    width: 250
     height: 120
 
     Text {
         id: textWithField
-        text: "Please enter address:"
+        text: Translations.id_please_enter_address
     }
 
     TextField {
@@ -44,7 +44,7 @@ Dialog {
         anchors.top: textField.bottom
         anchors.topMargin: 3
         checked: true
-        text: "Hexadecimal"
+        text: Translations.id_hexadecimal
     }
 
     Text {

@@ -16,11 +16,13 @@ import QtQuick.Controls 1.3
 import QtQuick.Dialogs 1.3
 import QtQuick.Layouts 1.15
 
+import "."
+
 Dialog {
     id: aboutDialog
 
     visible: false
-    title: "About..."
+    title: Translations.id_about_window_header
     standardButtons: StandardButton.Ok
     modality: Qt.WindowModal
     width: 300
@@ -39,22 +41,29 @@ Dialog {
     Text {
         id: emailText
         anchors.top: skipText.bottom
-        text: 'E-mail: <a href="mailto:computerenthusiasttips@mail.ru">computerenthusiasttips@mail.ru</a>'
+        text: Translations.id_email_link
         onLinkActivated: Qt.openUrlExternally(link)
     }
     Text {
         id: youtubeText
         anchors.top: emailText.bottom
-        text: 'YouTube channel: <a href="https://www.youtube.com/channel/UCz_ktTqWVekT0P4zVW8Xgcg">Советы компьютерного энтузиаста</a> - <a href="https://www.youtube.com/channel/UCz_ktTqWVekT0P4zVW8Xgcg">Computer Enthusiast Tips</a>'
+        text: Translations.id_youtube_channel_link
         onLinkActivated: Qt.openUrlExternally(link)
     }
     Text {
-        id: skip2Text
+        id: donationText
         anchors.top: youtubeText.bottom
+        text: Translations.id_donations_link
+        onLinkActivated: Qt.openUrlExternally(link)
+    }
+
+    Text {
+        id: skip2Text
+        anchors.top: donationText.bottom
         text: ""
     }
     Text {
         anchors.top: skip2Text.bottom
-        text: "Please click the highlighted links to open"
+        text: Translations.id_please_click_to_open_link
     }
 }
