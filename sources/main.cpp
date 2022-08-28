@@ -18,6 +18,8 @@
 #include "sources/models/fileworkermodel.h"
 #include "sources/models/suspiciouspointsmodel.h"
 #include "sources/models/parsersettingsmodel.h"
+#include "sources/models/actionsmodel.h"
+#include "sources/models/dataplayermodel.h"
 #include "sources/translations/translationmanager.h"
 
 void registerTypes()
@@ -37,7 +39,9 @@ void registerTypes()
     qmlRegisterSingletonInstance<WavReader>("com.core.zxtapereviver", 1, 0, "WavReader", WavReader::instance());
     qmlRegisterSingletonInstance<WaveformParser>("com.core.zxtapereviver", 1, 0, "WaveformParser", WaveformParser::instance());
     qmlRegisterSingletonInstance<ParserSettingsModel>("com.models.zxtapereviver", 1, 0, "ParserSettingsModel", ParserSettingsModel::instance());
+    qmlRegisterSingletonInstance<ActionsModel>("com.models.zxtapereviver", 1, 0, "ActionsModel", ActionsModel::instance());
     qmlRegisterSingletonInstance<ConfigurationManager>("com.models.zxtapereviver", 1, 0, "ConfigurationManager", ConfigurationManager::instance());
+    qmlRegisterSingletonInstance<DataPlayerModel>("com.models.zxtapereviver", 1, 0, "DataPlayerModel", DataPlayerModel::instance());
 }
 
 int main(int argc, char *argv[])

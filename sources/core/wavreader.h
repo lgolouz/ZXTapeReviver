@@ -17,6 +17,7 @@
 #include <QObject>
 #include <QFile>
 #include <QMap>
+#include <QSharedPointer>
 #include "sources/defines.h"
 
 class WavReader : public QObject
@@ -79,7 +80,7 @@ private:
     template <typename T>
     const T* readData(QByteArray& buf) {
         buf = mWavFile.read(sizeof(T));
-        if (buf.size() < sizeof(T)) {
+        if ((unsigned) buf.size() < sizeof(T)) {
             return nullptr;
         }
         return reinterpret_cast<const T*>(buf.data());
@@ -109,13 +110,14 @@ private:
 
     QWavVectorType getSample(QByteArray& buf, size_t& bufIndex, uint dataSize, uint compressionCode) const;
     QWavVector* createVector(size_t bytesPerSample, size_t size);
+    unsigned calculateOnesInByte(uint8_t n);
 
     WavFmt mWavFormatHeader;
     WavChunk mCurrentChunk;
     bool mWavOpened;
     QFile mWavFile;
-    QScopedPointer<QWavVector> mChannel0;
-    QScopedPointer<QWavVector> mChannel1;
+    QSharedPointer<QWavVector> mChannel0;
+    QSharedPointer<QWavVector> mChannel1;
     QMap<uint, QSharedPointer<QWavVector>> mStoredChannels;
 
 protected:
@@ -139,19 +141,21 @@ public:
     uint getNumberOfChannels() const;
     uint32_t getSampleRate() const;
     uint getBytesPerSample() const;
-    QWavVector* /*const*/ getChannel0() const;
-    QWavVector* /*const*/ getChannel1() const;
+    QSharedPointer<QWavVector> getChannel0() const;
+    QSharedPointer<QWavVector> getChannel1() const;
 
     ErrorCodesEnum setFileName(const QString& fileName);
     ErrorCodesEnum open();
     ErrorCodesEnum read();
     ErrorCodesEnum close();
 
+    void loadTap(const QString& fname);
     void loadWaveform(const QString& fname);
     void saveWaveform(const QString& fname = QString()) const;
     void shiftWaveform(uint chNum);
     void storeWaveform(uint chNum);
     void restoreWaveform(uint chNum);
+    void repairWaveform(uint chNum);
     void normalizeWaveform(uint chNum);
     void normalizeWaveform2(uint chNum);
 

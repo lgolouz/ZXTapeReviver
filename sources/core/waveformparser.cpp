@@ -57,8 +57,8 @@ void WaveformParser::parse(uint chNum)
     const auto& parserSettings = ParserSettingsModel::instance()->getParserSettings();
     auto isSineNormal = [&parserSettings, sampleRate](const WaveformPart& b, const WaveformPart& e, bool zeroCheck) -> bool {
         if (parserSettings.checkForAbnormalSine) {
-            return isFreqFitsInDelta(sampleRate, b.length, zeroCheck ? parserSettings.zeroHalfFreq : parserSettings.oneHalfFreq, zeroCheck ? parserSettings.zeroDelta : parserSettings.oneDelta, 0.5) &&
-                   isFreqFitsInDelta(sampleRate, e.length, zeroCheck ? parserSettings.zeroHalfFreq : parserSettings.oneHalfFreq, zeroCheck ? parserSettings.zeroDelta : parserSettings.oneDelta, 0.5);
+            return isFreqFitsInDelta(sampleRate, b.length, zeroCheck ? parserSettings.zeroHalfFreq : parserSettings.oneHalfFreq, zeroCheck ? parserSettings.zeroDelta : parserSettings.oneDelta, parserSettings.sineCheckTolerance) &&
+                   isFreqFitsInDelta(sampleRate, e.length, zeroCheck ? parserSettings.zeroHalfFreq : parserSettings.oneHalfFreq, zeroCheck ? parserSettings.zeroDelta : parserSettings.oneDelta, parserSettings.sineCheckTolerance);
         }
         return true;
     };
@@ -137,7 +137,7 @@ void WaveformParser::parse(uint chNum)
             it = std::next(it);
             if (it != parsed.end()) {
                 const auto len = it->length + prevIt->length;
-                if (isFreqFitsInDelta(sampleRate, len, parserSettings.zeroFreq, parserSettings.zeroDelta) && isSineNormal(*prevIt, *it, true)) { //ZERO
+                if (isFreqFitsInDelta2(sampleRate, len, parserSettings.zeroFreq, parserSettings.zeroDelta, 0.75) && isSineNormal(*prevIt, *it, true)) { //ZERO
                     fillParsedWaveform(chNum, *prevIt, zeroBit ^ sequenceMiddle);
                     fillParsedWaveform(chNum, *it, zeroBit ^ sequenceMiddle);
                     parsedWaveform[prevIt->begin] = zeroBit ^ sequenceBegin;
@@ -165,7 +165,7 @@ void WaveformParser::parse(uint chNum)
                         bit ^= bit;
                     }
                 }
-                else if (isFreqFitsInDelta(sampleRate, len, parserSettings.oneFreq, parserSettings.oneDelta) && isSineNormal(*prevIt, *it, false)) { //ONE
+                else if (isFreqFitsInDelta2(sampleRate, len, parserSettings.oneFreq, 0.75, parserSettings.oneDelta) && isSineNormal(*prevIt, *it, false)) { //ONE
                     fillParsedWaveform(chNum, *prevIt, oneBit ^ sequenceMiddle);
                     fillParsedWaveform(chNum, *it, oneBit ^ sequenceMiddle);
                     parsedWaveform[prevIt->begin] = oneBit ^ sequenceBegin;
@@ -198,9 +198,11 @@ void WaveformParser::parse(uint chNum)
                         db.data = data;
                         db.waveformData = waveformData;
                         parity ^= data.last(); //Removing parity byte from overal parity check sum
-                        db.state = parity == data.last() ? DataState::OK : DataState::R_TAPE_LOADING_ERROR; //Should be checked with checksum
+                        //Storing parity data
+                        db.parityAwaited = data.last();
+                        db.parityCalculated = parity;
+                        db.state = parity == db.parityAwaited ? DataState::OK : DataState::R_TAPE_LOADING_ERROR; //Should be checked with checksum
                         parity ^= parity; //Zeroing parity byte
-
                         parsedData.append(db);
                     }
                 }
@@ -213,7 +215,10 @@ void WaveformParser::parse(uint chNum)
                 db.data = data;
                 db.waveformData = waveformData;
                 parity ^= data.last(); //Remove parity byte from overal parity check sum
-                db.state = parity == data.last() ? DataState::OK : DataState::R_TAPE_LOADING_ERROR; //Should be checked with checksum
+                //Storing parity data
+                db.parityAwaited = data.last();
+                db.parityCalculated = parity;
+                db.state = parity == db.parityAwaited ? DataState::OK : DataState::R_TAPE_LOADING_ERROR; //Should be checked with checksum
                 parity ^= parity; //Zeroing parity byte
 
                 parsedData.append(db);
@@ -244,7 +249,8 @@ void WaveformParser::parse(uint chNum)
 void WaveformParser::saveTap(uint chNum, const QString& fileName)
 {
     QFile f(fileName.isEmpty() ? QString("tape_%1_%2.tap").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")).arg(chNum ? "R" : "L") : fileName);
-    f.open(QIODevice::ReadWrite);
+    f.remove(); //Remove file if exists
+    f.open(QIODevice::WriteOnly);
 
     auto& parsedData = mParsedData[chNum];
     for (auto i = 0; i < parsedData.size(); ++i) {
@@ -271,9 +277,12 @@ void WaveformParser::fillParsedWaveform(uint chNum, const WaveformPart& p, uint8
     }
 }
 
-QVector<uint8_t> WaveformParser::getParsedWaveform(uint chNum) const
-{
+QVector<uint8_t> WaveformParser::getParsedWaveform(uint chNum) const {
     return mParsedWaveform[chNum];
+}
+
+QPair<QVector<WaveformParser::DataBlock>, QVector<bool>> WaveformParser::getParsedData(uint chNum) const {
+    return { mParsedData[chNum], mSelectedBlocks };
 }
 
 void WaveformParser::toggleBlockSelection(int blockNum) {
@@ -288,7 +297,7 @@ void WaveformParser::toggleBlockSelection(int blockNum) {
 
 int WaveformParser::getBlockDataStart(uint chNum, uint blockNum) const
 {
-    if (chNum < mParsedData.size() && blockNum < mParsedData[chNum].size()) {
+    if (chNum < (unsigned) mParsedData.size() && blockNum < (unsigned) mParsedData[chNum].size()) {
         return mParsedData[chNum][blockNum].dataStart;
     }
     return 0;
@@ -296,7 +305,7 @@ int WaveformParser::getBlockDataStart(uint chNum, uint blockNum) const
 
 int WaveformParser::getBlockDataEnd(uint chNum, uint blockNum) const
 {
-    if (chNum < mParsedData.size() && blockNum < mParsedData[chNum].size()) {
+    if (chNum < (unsigned) mParsedData.size() && blockNum < (unsigned) mParsedData[chNum].size()) {
         return mParsedData[chNum][blockNum].dataEnd;
     }
     return 0;
@@ -304,7 +313,7 @@ int WaveformParser::getBlockDataEnd(uint chNum, uint blockNum) const
 
 int WaveformParser::getPositionByAddress(uint chNum, uint blockNum, uint addr) const
 {
-    if (chNum < mParsedData.size() && blockNum < mParsedData[chNum].size() && addr < mParsedData[chNum][blockNum].waveformData.size()) {
+    if (chNum < (unsigned) mParsedData.size() && blockNum < (unsigned) mParsedData[chNum].size() && addr < (unsigned) mParsedData[chNum][blockNum].waveformData.size()) {
         return mParsedData[chNum][blockNum].waveformData.at(addr).end;
     }
     return 0;
@@ -355,19 +364,11 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
             m.insert("blockSize", sizeText);
             QString nameText;
             if (blockType >= 0) {
-                const auto loopRange { std::min(
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-                    (int)
-#else
-                    (qsizetype)
-#endif
-                    12, i.data.size())
-                };
-
+                const auto loopRange { std::min(decltype(i.data.size())(12), i.data.size()) };
                 nameText = QByteArray((const char*) &i.data.data()[2], loopRange > 1 ? loopRange - 2 : 0);
             }
             m.insert("blockName", nameText);
-            m.insert("blockStatus", i.state == OK ? id_ok : id_error);
+            m.insert("blockStatus", (i.state == OK ? id_ok : id_error) + qtTrId(ID_PARITY_MESSAGE).arg(QString::number(i.parityCalculated, 16).toUpper().rightJustified(2, '0')).arg(QString::number(i.parityAwaited, 16).toUpper().rightJustified(2, '0')));
             m.insert("state", i.state);
         }
         else {

@@ -29,6 +29,7 @@
 <trans-unit id="id_file_menu_item"><source>File</source><target>Файл</target></trans-unit>
 <trans-unit id="id_open_wav_file_menu_item"><source>Open WAV file...</source><target>Открыть WAV файл...</target></trans-unit>
 <trans-unit id="id_open_waveform_file_menu_item"><source>Open Waveform file...</source><target>Открыть файл с формой волны...</target></trans-unit>
+<trans-unit id="id_open_tap_file_menu_item"><source>Open TAP file...</source><target>Открыть TAP файл...</target></trans-unit>
 <trans-unit id="id_save_menu_item"><source>Save</source><target>Сохранить</target></trans-unit>
 <trans-unit id="id_save_parsed_menu_item"><source>Parsed</source><target>Разобранный</target></trans-unit>
 <trans-unit id="id_left_channel_menu_item"><source>Left channel...</source><target>Левый канал...</target></trans-unit>
@@ -62,6 +63,7 @@
 <trans-unit id="id_check_for_abnormal_sine_when_parsing"><source>Check for abnormal sine when parsing</source><target>Проверка на явно вырожденную синусоиду во время разбора</target></trans-unit>
 <trans-unit id="id_please_choose_wav_file"><source>Please choose WAV file</source><target>Пожалуйста, выберите WAV файл</target></trans-unit>
 <trans-unit id="id_please_choose_wfm_file"><source>Please choose WFM file</source><target>Пожалуйста, выберите WFM файл</target></trans-unit>
+<trans-unit id="id_please_choose_tap_file"><source>Please choose TAP file</source><target>Пожалуйста, выберите TAP</target></trans-unit>
 <trans-unit id="id_wav_files"><source>WAV files (%1)</source><target>Файлы WAV (%1)</target></trans-unit>
 <trans-unit id="id_wfm_files"><source>Waveform files (%1)</source><target>Файлы формы волны (%1)</target></trans-unit>
 <trans-unit id="id_tap_files"><source>TAP files (%1)</source><target>Файлы TAP (%1)</target></trans-unit>
@@ -105,6 +107,16 @@
 <trans-unit id="id_language_menu_item"><source>Language</source><target>Язык</target></trans-unit>
 <trans-unit id="id_english_language"><source>English</source><target>Английский</target></trans-unit>
 <trans-unit id="id_russian_language"><source>Russian</source><target>Русский</target></trans-unit>
+<trans-unit id="id_hotkey_tooltip"><source>Hotkey: %1</source><target>Горячая клавиша: %1</target></trans-unit>
+<trans-unit id="id_remove_action"><source>Remove action</source><target>Удалить действие</target></trans-unit>
+<trans-unit id="id_action_name"><source>Action name</source><target>Название действия</target></trans-unit>
+<trans-unit id="id_edit_action"><source>Edit Sample</source><target>Редактирование семпла</target></trans-unit>
+<trans-unit id="id_shift_waveform_action"><source>Shift Waveform</source><target>Сдвиг волны</target></trans-unit>
+<trans-unit id="id_sine_check_tolerance"><source>Sine Check Tolerance:</source><target>Допуск при проверке синусоиды:</target></trans-unit>
+<trans-unit id="id_play_parsed_data"><source>Play parsed data</source><target>Играть разобранное</target></trans-unit>
+<trans-unit id="id_stop_playing_parsed_data"><source>Stop playing</source><target>Стоп воспроизведения</target></trans-unit>
+<trans-unit id="id_parity_message"><source> (Parity: %1 ; Should be: %2)</source><target> (Сумма: %1 ; Ожидается: %2)</target></trans-unit>
+<trans-unit id="id_playing_parsed_data_window_header"><source>Playing parsed data</source><target>Воспроизведение разобранных данных</target></trans-unit>
   </body>
  </file>
 </xliff>

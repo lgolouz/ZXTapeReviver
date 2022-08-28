@@ -19,6 +19,7 @@
 #include "sources/core/wavreader.h"
 #include "sources/core/waveformparser.h"
 #include "sources/configuration/configurationmanager.h"
+#include "sources/models/waveformmodel.h"
 #include "sources/util/enummetainfo.h"
 
 class WaveformControl : public QQuickPaintedItem
@@ -35,6 +36,7 @@ class WaveformControl : public QQuickPaintedItem
 
     WavReader& mWavReader;
     WaveformParser& mWavParser;
+    WaveFormModel& mWaveFormModel;
     ConfigurationManager::WaveformCustomization& m_customData;
 
     QColor getBackgroundColor() const;
@@ -102,6 +104,8 @@ private:
     bool m_allowToGrabPoint;
     bool m_pointGrabbed;
     int m_pointIndex;
+    QWavVectorType m_initialValue;
+    QWavVectorType m_newValue;
     int m_wavePos;
     double m_xScaleFactor;
     double m_yScaleFactor;
@@ -113,7 +117,7 @@ private:
     QPair<int, int> m_selectionRange;
     int m_clickCount;
 
-    QWavVector* getChannel(uint* chNum = nullptr) const;
+    QSharedPointer<QWavVector> getChannel(uint* chNum = nullptr) const;
     int getWavPositionByMouseX(int x, int* point = nullptr, double* dx = nullptr) const;
 };
 

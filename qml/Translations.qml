@@ -25,6 +25,7 @@ QtObject {
     property string id_file_menu_item:                       qsTrId("id_file_menu_item") + TranslationManager.translationChanged
     property string id_open_wav_file_menu_item:              qsTrId("id_open_wav_file_menu_item") + TranslationManager.translationChanged
     property string id_open_waveform_file_menu_item:         qsTrId("id_open_waveform_file_menu_item") + TranslationManager.translationChanged
+    property string id_open_tap_file_menu_item:              qsTrId("id_open_tap_file_menu_item") + TranslationManager.translationChanged
     property string id_save_menu_item:                       qsTrId("id_save_menu_item") + TranslationManager.translationChanged
     property string id_save_parsed_menu_item:                qsTrId("id_save_parsed_menu_item") + TranslationManager.translationChanged
     property string id_left_channel_menu_item:               qsTrId("id_left_channel_menu_item") + TranslationManager.translationChanged
@@ -58,6 +59,7 @@ QtObject {
     property string id_check_for_abnormal_sine_when_parsing: qsTrId("id_check_for_abnormal_sine_when_parsing") + TranslationManager.translationChanged
     property string id_please_choose_wav_file:               qsTrId("id_please_choose_wav_file") + TranslationManager.translationChanged
     property string id_please_choose_wfm_file:               qsTrId("id_please_choose_wfm_file") + TranslationManager.translationChanged
+    property string id_please_choose_tap_file:               qsTrId("id_please_choose_tap_file") + TranslationManager.translationChanged
     property string id_wav_files:                            qsTrId("id_wav_files").arg(filename_wildcard + wav_file_suffix) + TranslationManager.translationChanged
     property string id_wfm_files:                            qsTrId("id_wfm_files").arg(filename_wildcard + wfm_file_suffix) + TranslationManager.translationChanged
     property string id_tap_files:                            qsTrId("id_tap_files").arg(filename_wildcard + tap_file_suffix) + TranslationManager.translationChanged
@@ -94,4 +96,11 @@ QtObject {
     property string id_suspicious_point_number:              qsTrId("id_suspicious_point_number") + TranslationManager.translationChanged
     property string id_suspicious_point_position:            qsTrId("id_suspicious_point_position") + TranslationManager.translationChanged
     property string id_language_menu_item:                   qsTrId("id_language_menu_item") + TranslationManager.translationChanged
+    property string id_hotkey_tooltip:                       qsTrId("id_hotkey_tooltip") + TranslationManager.translationChanged
+    property string id_remove_action:                        qsTrId("id_remove_action") + TranslationManager.translationChanged //Button caption
+    property string id_action_name:                          qsTrId("id_action_name") + TranslationManager.translationChanged
+    property string id_sine_check_tolerance:                 qsTrId("id_sine_check_tolerance") + TranslationManager.translationChanged
+    property string id_play_parsed_data:                     qsTrId("id_play_parsed_data") + TranslationManager.translationChanged
+    property string id_stop_playing_parsed_data:             qsTrId("id_stop_playing_parsed_data") + TranslationManager.translationChanged
+    property string id_playing_parsed_data_window_header:    qsTrId("id_playing_parsed_data_window_header") + TranslationManager.translationChanged
 }

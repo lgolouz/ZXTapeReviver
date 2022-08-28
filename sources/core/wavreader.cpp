@@ -14,10 +14,12 @@
 #include "wavreader.h"
 #include "sources/models/suspiciouspointsmodel.h"
 #include "sources/models/parsersettingsmodel.h"
+#include "sources/models/waveformmodel.h"
 #include <QVariant>
 #include <QVariantList>
 #include <QDateTime>
 #include <QDebug>
+#include <QScopeGuard>
 
 WavReader::WavReader(QObject* parent) :
     QObject(parent),
@@ -168,6 +170,7 @@ WavReader::ErrorCodesEnum WavReader::read()
         }
     }
 
+    WaveFormModel::instance()->initialize({ getChannel0(), getChannel1() });
     emit numberOfChannelsChanged();
     return Ok;
 }
@@ -187,14 +190,14 @@ uint WavReader::getBytesPerSample() const
     return mWavOpened ? mWavFormatHeader.significantBitsPerSample / 8 : 0;
 }
 
-QWavVector* WavReader::getChannel0() const
+QSharedPointer<QWavVector> WavReader::getChannel0() const
 {
-    return mChannel0.get();
+    return mChannel0;
 }
 
-QWavVector* WavReader::getChannel1() const
+QSharedPointer<QWavVector> WavReader::getChannel1() const
 {
-    return mChannel1.get();
+    return mChannel1;
 }
 
 WavReader::ErrorCodesEnum WavReader::close()
@@ -236,6 +239,142 @@ void WavReader::loadWaveform(const QString& fname)
     SuspiciousPointsModel::instance()->setSuspiciousPoints(sp);
 
     f.close();
+    WaveFormModel::instance()->initialize({ getChannel0(), getChannel1() });
+    mWavOpened = true;
+}
+
+unsigned WavReader::calculateOnesInByte (uint8_t n) {
+  n = ((n>>1) & 0x55) + (n & 0x55);
+  n = ((n>>2) & 0x33) + (n & 0x33);
+  n = ((n>>4) & 0x0F) + (n & 0x0F);
+  return n;
+}
+
+void WavReader::loadTap(const QString& fname) {
+    QFile f(fname);
+    f.open(QIODevice::ReadOnly);
+    const auto guard = qScopeGuard([&f](){ f.close(); });
+
+    const size_t fSize = f.size();
+    QByteArray b(f.read(fSize));
+    //Create header
+    mWavFormatHeader = WavFmt {
+            WavChunk { 0, 0 }, //Doesn't matter for TAP
+            1, //Compression code
+            2, //Number of channels
+            48000, //Sample Rate
+            192000, //Avg bytes per second
+            4, //Block align
+            16 //Significant bits per sample
+    };
+
+    const auto& parserSettings = ParserSettingsModel::instance()->getParserSettings();
+
+    const auto oneFreq { parserSettings.oneHalfFreq / 2 };
+    const auto oneHalfFreq { oneFreq * 2 };
+    const auto zeroFreq { parserSettings.zeroHalfFreq / 2 };
+    const auto zeroHalfFreq { zeroFreq * 2 };
+    const auto synchroFirstHalf { parserSettings.synchroFirstHalfFreq };
+    const auto synchroSecondHalf { parserSettings.synchroSecondHalfFreq };
+    const auto pilotFreq { parserSettings.pilotHalfFreq / 2 };
+    const auto pilotHalfFreq { pilotFreq * 2 };
+    const auto silence { 0.5 };
+    const auto pilotLen { 3 };
+
+    //Check TAP file for correctness
+    size_t pos { 0 };
+    bool err { false };
+    size_t wavlen { 0 };
+    while (!err && pos < fSize) {
+        err = fSize <= pos + sizeof(uint16_t);
+        if (err) {
+            continue;
+        }
+
+        const uint16_t blockSize { *getData<uint16_t>(b, pos) };
+        err = fSize < pos + blockSize;
+        if (err) {
+            continue;
+        }
+
+        //Pilot
+        wavlen += mWavFormatHeader.sampleRate * pilotLen;
+        //Synchro
+        wavlen += mWavFormatHeader.sampleRate / synchroFirstHalf;
+        wavlen += mWavFormatHeader.sampleRate / synchroSecondHalf;
+
+        for (size_t i { 0 }; i < blockSize; ++i) {
+            const uint8_t byte { *getData<uint8_t>(b, pos) };
+            const auto ones { calculateOnesInByte(byte) };
+            const size_t byteLen { ones * (mWavFormatHeader.sampleRate / oneFreq) + (8 - ones) * (mWavFormatHeader.sampleRate / zeroFreq) };
+
+            wavlen += byteLen;
+        }
+
+        //Silence
+        wavlen += mWavFormatHeader.sampleRate * silence;
+    }
+    if (err) {
+        return;
+    }
+
+    QWavVector v(wavlen, -1.);
+    size_t wavpos { 0 };
+    pos ^= pos;
+    while (pos < fSize) {
+        const uint16_t blockSize { *getData<uint16_t>(b, pos) };
+
+        //Pilot
+        wavlen = mWavFormatHeader.sampleRate / pilotHalfFreq;
+        auto threshold { mWavFormatHeader.sampleRate * pilotLen / (wavlen * 2) };
+        for (size_t i { 0 }; i < threshold; ++i) {
+            for (auto p { 0 }; p <= 1; ++p) {
+                const QWavVectorType val { QWavVectorType(32767 * (p ? 1 : -1)) };
+                for (size_t c { 0 }; c < wavlen; ++c) {
+                    v[wavpos++] = val;
+                }
+            }
+        }
+        //Synchro
+        for (auto w { 0 }; w <= 1; ++w) {
+            wavlen = mWavFormatHeader.sampleRate / (w ? synchroSecondHalf : synchroFirstHalf);
+            const QWavVectorType val { QWavVectorType(32767 * (w ? 1 : -1)) };
+            for (size_t c { 0 }; c < wavlen; ++c) {
+                v[wavpos++] = val;
+            }
+        }
+
+        for (size_t i { 0 }; i < blockSize; ++i) {
+            const uint8_t byte { *getData<uint8_t>(b, pos) };
+            //const auto ones { calculateOnesInByte(byte) };
+            //const size_t byteLen { ones * (mWavFormatHeader.sampleRate / oneFreq) + (8 - ones) * (mWavFormatHeader.sampleRate / zeroFreq) };
+            for (int i { 7 }; i >= 0; --i) {
+                const uint8_t bit8 = 1 << i;
+                const auto bit { byte & bit8 };
+                wavlen = mWavFormatHeader.sampleRate / (bit == 0 ? zeroHalfFreq : oneHalfFreq);
+                for (auto b { 0 }; b <= 1; ++b) {
+                    const QWavVectorType val { QWavVectorType(32767 * (b ? 1 : -1)) };
+                    for (size_t c { 0 }; c < wavlen; ++c) {
+                        v[wavpos++] = val;
+                    }
+                }
+            }
+        }
+
+        //Silence
+        threshold = mWavFormatHeader.sampleRate * silence;
+        for (size_t s { 0 }; s < threshold; ++s) {
+            v[wavpos++] = s == 1 ? 0. : -1.;
+        }
+    }
+
+
+    for (auto i = 0; i < mWavFormatHeader.numberOfChannels; ++i) {
+        auto& ch = i == 0 ? mChannel0 : mChannel1;
+        ch.reset(new QWavVector(v));
+    }
+
+    WaveFormModel::instance()->initialize({ getChannel0(), getChannel1() });
     mWavOpened = true;
 }
 
@@ -312,6 +451,167 @@ void WavReader::restoreWaveform(uint chNum)
     }
 
     ch.reset(new QWavVector(*mStoredChannels[chNum]));
+}
+
+void WavReader::repairWaveform(uint chNum) {
+    if (chNum >= mWavFormatHeader.numberOfChannels) {
+        qDebug() << "Channel number exceeds number of channels";
+        return;
+    }
+
+    auto& ch = *(chNum == 0 ? mChannel0 : mChannel1).get();
+    auto& ch2 =  *(chNum == 0 ? mChannel1 : mChannel0).get();
+    const auto size { ch.size() };
+    const auto size2 { ch2.size() };
+    if (size == 0) {
+        qDebug() << "Empty channel data";
+        return;
+    }
+    for (auto i = 0; i < size; ++i) {
+        const auto u = i < size2 ? (ch[i] + ch2[i]) / 2 : ch[i];
+        ch[i] = u;
+    }
+    return;
+
+    auto siz1 { ch.size() };
+
+    int    du,siz0,_siz0;		// last amplitude value, size of last buff
+    int a0,u0,du0;				// peak (index,amplitude,delta)
+    int a1,u1,du1;				// peak (index,amplitude,delta)
+    int a2,u2,du2;				// peak (index,amplitude,delta)
+
+    du=0x7FFFFFFF; siz0=0; _siz0=siz1;
+    a0=0; u0=0x7FFFFFFF; du0=0;
+    a1=0; u1=0x7FFFFFFF; du1=0;
+    a2=0; u2=0x7FFFFFFF; du2=0;
+
+    __int64 adr,/*i,*/u,thr,A0,A1,U0,U1,uu;
+    //                        noise      amplitude
+    //                      threshold  min        max
+    //if (wav.fmt.bits== 8){ thr=  32; U0=     0; U1=   255; }
+    { thr=6000; U0=-30000; U1=+30000; }
+    /*
+    for (adr=0;adr<siz1;++adr)
+        {
+        // sum chanels into mono
+//        for (u=0,i=0;i<wav.fmt.chanels;i++)
+//            {
+//            if (wav.fmt.bits== 8) u+=((unsigned __int8* )(dat1+adr))[i];
+//            if (wav.fmt.bits==16) u+=((         __int16*)(dat1+adr))[i];
+//            } u/=i;
+//        // write back
+//        for (i=0;i<wav.fmt.chanels;i++)
+//            {
+//            if (wav.fmt.bits== 8) ((unsigned __int8* )(dat1+adr))[i]=u;
+//            if (wav.fmt.bits==16) ((         __int16*)(dat1+adr))[i]=u;
+//            }
+        u = adr < size2 ? (ch.at(adr) + ch2.at(adr)) / 2 : ch.at(adr);
+        // detect peaks
+        if (du==0x7FFFFFFF) du=u; 					// first value
+        if (u2==0x7FFFFFFF){ a2=adr; u2=u; du2=0; }	// first value
+        du=u-du;									// delta
+        if (du*du2>=0) du2+=du;						// no peak
+        else{
+            if ((abs(du1)>thr)&&(abs(du2)>thr))		// 2 valid peaks
+                {
+                uu=u;
+                // center and normalize amplitude
+                if (u1<u2){ A0=u1; A1=u2; }
+                 else     { A0=u2; A1=u1; }
+                if (A1-A0>thr)
+                 for (;a1<a2;++a1)
+                    {
+//                    for (u=0,i=0;i<wav.fmt.chanels;i++)
+//                        {
+//                        if (a1<0)
+//                            {
+//                            if (wav.fmt.bits== 8) u+=((unsigned __int8* )(dat0+a1+_siz0))[i];
+//                            if (wav.fmt.bits==16) u+=((         __int16*)(dat0+a1+_siz0))[i];
+//                            }
+//                        else{
+//                            if (wav.fmt.bits== 8) u+=((unsigned __int8* )(dat1+a1))[i];
+//                            if (wav.fmt.bits==16) u+=((         __int16*)(dat1+a1))[i];
+//                            }
+//                        } u/=i;
+                    u = ch.at(a1);
+                    u=U0+(((U1-U0)*(u-A0))/(A1-A0));
+                    if (u<U0) u=U0;
+                    if (u>U1) u=U1;
+                    ch[a1] = u;
+//                    for (i=0;i<wav.fmt.chanels;i++)
+//                        {
+//                        if (a1<0)
+//                            {
+//                            if (wav.fmt.bits== 8) ((unsigned __int8* )(dat0+a1+_siz0))[i]=u;
+//                            if (wav.fmt.bits==16) ((         __int16*)(dat0+a1+_siz0))[i]=u;
+//                            }
+//                        else{
+//                            if (wav.fmt.bits== 8) ((unsigned __int8* )(dat1+a1))[i]=u;
+//                            if (wav.fmt.bits==16) ((         __int16*)(dat1+a1))[i]=u;
+//                            }
+//                        }
+                    }
+                // shift peaks forward
+                a0=a1;  u0=u1; du0=du1;
+                a1=a2;  u1=u2; du1=du2;
+                a2=adr; u2=uu; du2=du; u=uu;
+                }
+            else if (u1==0x7FFFFFFF)					// first peak
+                {
+                // shift peaks forward
+                a0=a1;  u0=u1; du0=du1;
+                a1=a2;  u1=u2; du1=du2;
+                a2=adr; u2=u;  du2=du;
+                }
+            else{										// noise
+                // shift peaks backward
+                a2=a1; u2=u1; du2=u-u2;
+                a1=a0; u1=u0; du1=du0;
+                a0= 0; u0=0x7FFFFFFF; du0=0;
+                }
+            }
+        du=u;
+        }
+//    if ((a0>=0)&&(u0!=0x7FFFFFFF)) a0-=siz1;
+//    if ((a1>=0)&&(u1!=0x7FFFFFFF)) a1-=siz1;
+//    if ((a2>=0)&&(u2!=0x7FFFFFFF)) a2-=siz1;
+//    siz0=_siz0;	_siz0=siz1;
+*/
+    const auto thrhold = thr;
+    auto v { ch.first() };
+    auto max { v };
+    //auto it { ch.begin() };
+    auto i { size - size };
+    while (i < size) {
+        v = ch[i];
+        while (i < size) {
+        //auto tit = std::find_if(it, ch.end(), [&max, v, threshold](auto& val) {
+            auto& val = ch[i];
+                bool signEqual { lessThanZero(v) == lessThanZero(val) };
+                if (signEqual) {
+                    if (abs(val) > abs(max)) {
+                        max = val;
+                    }
+                } else if (abs(val) <= abs(thrhold)) {
+                    //if (i >= 553180) {
+                        val = (max + val) / 2;
+                        signEqual = lessThanZero(v) == lessThanZero(val);
+                    //}
+                }
+                if (!signEqual) {
+                    break;
+                }
+                ++i;
+            //});
+        }
+        if (i < size) {
+            max = ch.at(i);
+            ++i;
+        }
+//        uint64_t d = std::distance(it, ch.end());
+//        qDebug() << "Distance: " << d;
+    }
+
 }
 
 void WavReader::normalizeWaveform(uint chNum)

@@ -11,7 +11,7 @@
 # permission of the Author.
 #*******************************************************************************
 
-QT += quick gui quickcontrols2
+QT += quick gui quickcontrols2 multimedia
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -55,7 +55,7 @@ for (T, AVAILABLE_TRANSLATIONS) {
 
     system($$[QT_INSTALL_BINS]/lrelease -idbased $${TRANSLATIONS_PATH}/$${TRANSLATION_FILENAME}$${COUNTRY_CODE}.xlf -qm $${TRANSLATIONS_PATH}/$${TRANSLATION_FILENAME}$${COUNTRY_CODE}.qm)
 }
-DEFINES += AVAILABLE_TRANSLATIONS=\\\"$${DEFINED_TRANSLATIONS}\\\" \
+DEFINES += AVAILABLE_TRANSLATIONS=\"\\\"$${DEFINED_TRANSLATIONS}\\\"\" \
            COUNTRY_CODES=$${COUNTRY_CODES}
 
 TRANSLATIONS_GENERATED_FILENAME = $${PWD}/generated/translations_generated
@@ -78,26 +78,38 @@ DEFINES += TRANSLATION_IDS_HEADER="\\\"$${TRANSLATIONS_GENERATED_FILENAME_H}\\\"
            ZXTAPEREVIVER_VERSION=\\\"$${ZXTAPEREVIVER_VERSION}\\\"
 
 SOURCES += \
+        sources/actions/actionbase.cpp \
+        sources/actions/editsampleaction.cpp \
+        sources/actions/shiftwaveformaction.cpp \
         sources/main.cpp \
+        sources/models/actionsmodel.cpp \
+        sources/models/dataplayermodel.cpp \
         sources/models/fileworkermodel.cpp \
         sources/controls/waveformcontrol.cpp \
         sources/core/waveformparser.cpp \
         sources/core/wavreader.cpp \
         sources/models/parsersettingsmodel.cpp \
         sources/models/suspiciouspointsmodel.cpp \
+        sources/models/waveformmodel.cpp \
         sources/translations/translationmanager.cpp \
         sources/translations/translations.cpp \
         sources/util/enummetainfo.cpp \
         sources/configuration/configurationmanager.cpp
 
 HEADERS += \
+    sources/actions/actionbase.h \
+    sources/actions/editsampleaction.h \
+    sources/actions/shiftwaveformaction.h \
     sources/defines.h \
+    sources/models/actionsmodel.h \
+    sources/models/dataplayermodel.h \
     sources/models/fileworkermodel.h \
     sources/controls/waveformcontrol.h \
     sources/core/waveformparser.h \
     sources/core/wavreader.h \
     sources/models/parsersettingsmodel.h \
     sources/models/suspiciouspointsmodel.h \
+    sources/models/waveformmodel.h \
     sources/translations/translationmanager.h \
     sources/translations/translations.h \
     sources/util/enummetainfo.h \

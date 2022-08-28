@@ -34,6 +34,10 @@ class ParserSettingsModel : public QObject
     Q_PROPERTY(double zeroDelta READ getZeroDelta WRITE setZeroDelta NOTIFY zeroDeltaChanged)
     Q_PROPERTY(double oneDelta READ getOneDelta WRITE setOneDelta NOTIFY oneDeltaChanged)
     Q_PROPERTY(bool checkForAbnormalSine READ getCheckForAbnormalSine WRITE setCheckForAbnormalSine NOTIFY checkForAbnormalSineChanged)
+    Q_PROPERTY(double sineCheckTolerance READ getSineCheckTolerance WRITE setSineCheckTolerance NOTIFY sineCheckToleranceChanged)
+
+protected:
+    explicit ParserSettingsModel(QObject* parent = nullptr);
 
 public:
     struct ParserSettings {
@@ -51,9 +55,9 @@ public:
         double zeroDelta;
         double oneDelta;
         bool checkForAbnormalSine;
+        double sineCheckTolerance;
     };
 
-    explicit ParserSettingsModel(QObject* parent = nullptr);
     virtual ~ParserSettingsModel() = default;
     const ParserSettings& getParserSettings() const;
 
@@ -76,6 +80,7 @@ public:
     double getZeroDelta() const;
     double getOneDelta() const;
     bool getCheckForAbnormalSine() const;
+    double getSineCheckTolerance() const;
 
     //Setters
     void setPilotHalfFreq(int freq);
@@ -92,6 +97,7 @@ public:
     void setZeroDelta(double delta);
     void setOneDelta(double delta);
     void setCheckForAbnormalSine(bool check);
+    void setSineCheckTolerance(double value);
 
 signals:
     void pilotHalfFreqChanged();
@@ -108,6 +114,7 @@ signals:
     void zeroDeltaChanged();
     void oneDeltaChanged();
     void checkForAbnormalSineChanged();
+    void sineCheckToleranceChanged();
 
 private:
     ParserSettings m_parserSettings;

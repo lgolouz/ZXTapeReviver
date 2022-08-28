@@ -31,7 +31,7 @@ Dialog {
 
     Text {
         id: zxTapeReviverText
-        text: '<b>ZX Tape Reviver</b> <i>%1</i> (c) 2020-2021 <a href="mailto:lgolouz@list.ru">Leonid Golouz</a>'.arg(ConfigurationManager.zxTapeReviverVersion)
+        text: '<b>ZX Tape Reviver</b> <i>%1</i> (c) 2020-2022 <a href="mailto:lgolouz@list.ru">Leonid Golouz</a>'.arg(ConfigurationManager.zxTapeReviverVersion)
         onLinkActivated: Qt.openUrlExternally(link)
     }
     Text {
