@@ -16,9 +16,12 @@
 
 #include TRANSLATION_IDS_CODE
 
-const char* ID_TIMELINE_SEC = QT_TRID_NOOP("id_timeline_sec");
-const char* ID_OK           = QT_TRID_NOOP("id_ok");
-const char* ID_ERROR        = QT_TRID_NOOP("id_error");
-const char* ID_UNKNOWN      = QT_TRID_NOOP("id_unknown");
-const char* ID_HEADER       = QT_TRID_NOOP("id_header");
-const char* ID_CODE         = QT_TRID_NOOP("id_code");
+const char* ID_TIMELINE_SEC          = QT_TRID_NOOP("id_timeline_sec");
+const char* ID_OK                    = QT_TRID_NOOP("id_ok");
+const char* ID_ERROR                 = QT_TRID_NOOP("id_error");
+const char* ID_UNKNOWN               = QT_TRID_NOOP("id_unknown");
+const char* ID_HEADER                = QT_TRID_NOOP("id_header");
+const char* ID_CODE                  = QT_TRID_NOOP("id_code");
+const char* ID_EDIT_ACTION           = QT_TRID_NOOP("id_edit_action");
+const char* ID_SHIFT_WAVEFORM_ACTION = QT_TRID_NOOP("id_shift_waveform_action");
+const char* ID_PARITY_MESSAGE        = QT_TRID_NOOP("id_parity_message");

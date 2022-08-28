@@ -29,6 +29,7 @@
 <trans-unit id="id_file_menu_item"><source>File</source><target>File</target></trans-unit>
 <trans-unit id="id_open_wav_file_menu_item"><source>Open WAV file...</source><target>Open WAV file...</target></trans-unit>
 <trans-unit id="id_open_waveform_file_menu_item"><source>Open Waveform file...</source><target>Open Waveform file...</target></trans-unit>
+<trans-unit id="id_open_tap_file_menu_item"><source>Open TAP file...</source><target>Open TAP file...</target></trans-unit>
 <trans-unit id="id_save_menu_item"><source>Save</source><target>Save</target></trans-unit>
 <trans-unit id="id_save_parsed_menu_item"><source>Parsed</source><target>Parsed</target></trans-unit>
 <trans-unit id="id_left_channel_menu_item"><source>Left channel...</source><target>Left channel...</target></trans-unit>
@@ -62,6 +63,7 @@
 <trans-unit id="id_check_for_abnormal_sine_when_parsing"><source>Check for abnormal sine when parsing</source><target>Check for abnormal sine when parsing</target></trans-unit>
 <trans-unit id="id_please_choose_wav_file"><source>Please choose WAV file</source><target>Please choose WAV file</target></trans-unit>
 <trans-unit id="id_please_choose_wfm_file"><source>Please choose WFM file</source><target>Please choose WFM file</target></trans-unit>
+<trans-unit id="id_please_choose_tap_file"><source>Please choose TAP file</source><target>Please choose TAP file</target></trans-unit>
 <trans-unit id="id_wav_files"><source>WAV files (%1)</source><target>WAV files (%1)</target></trans-unit>
 <trans-unit id="id_wfm_files"><source>Waveform files (%1)</source><target>Waveform files (%1)</target></trans-unit>
 <trans-unit id="id_tap_files"><source>TAP files (%1)</source><target>TAP files (%1)</target></trans-unit>
@@ -105,6 +107,16 @@
 <trans-unit id="id_language_menu_item"><source>Language</source><target>Language</target></trans-unit>
 <trans-unit id="id_english_language"><source>English</source><target>English</target></trans-unit>
 <trans-unit id="id_russian_language"><source>Russian</source><target>Russian</target></trans-unit>
+<trans-unit id="id_hotkey_tooltip"><source>Hotkey: %1</source><target>Hotkey: %1</target></trans-unit>
+<trans-unit id="id_remove_action"><source>Remove action</source><target>Remove action</target></trans-unit>
+<trans-unit id="id_action_name"><source>Action name</source><target>Action name</target></trans-unit>
+<trans-unit id="id_edit_action"><source>Edit Sample</source><target>Edit Sample</target></trans-unit>
+<trans-unit id="id_shift_waveform_action"><source>Shift Waveform</source><target>Shift Waveform</target></trans-unit>
+<trans-unit id="id_sine_check_tolerance"><source>Sine Check Tolerance:</source><target>Sine Check Tolerance:</target></trans-unit>
+<trans-unit id="id_play_parsed_data"><source>Play parsed data</source><target>Play parsed data</target></trans-unit>
+<trans-unit id="id_stop_playing_parsed_data"><source>Stop playing</source><target>Stop playing</target></trans-unit>
+<trans-unit id="id_parity_message"><source> (Parity: %1 ; Should be: %2)</source><target> (Parity: %1 ; Should be: %2)</target></trans-unit>
+<trans-unit id="id_playing_parsed_data_window_header"><source>Playing parsed data</source><target>Playing parsed data</target></trans-unit>
   </body>
  </file>
 </xliff>

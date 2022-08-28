@@ -22,11 +22,14 @@
 #include <QDebug>
 #include <QGuiApplication>
 #include "sources/translations/translations.h"
+#include "sources/models/actionsmodel.h"
+#include "sources/actions/editsampleaction.h"
 
 WaveformControl::WaveformControl(QQuickItem* parent) :
     QQuickPaintedItem(parent),
     mWavReader(*WavReader::instance()),
     mWavParser(*WaveformParser::instance()),
+    mWaveFormModel(*WaveFormModel::instance()),
     m_customData(*ConfigurationManager::instance()->getWaveformCustomization()),
     m_channelNumber(0),
     m_isWaveformRepaired(false),
@@ -56,10 +59,9 @@ QColor WaveformControl::getBackgroundColor() const {
     }
 }
 
-QWavVector* WaveformControl::getChannel(uint* chNum) const
-{
+QSharedPointer<QWavVector> WaveformControl::getChannel(uint* chNum) const {
     const auto c = chNum ? *chNum : m_channelNumber;
-    return c == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1();
+    return mWaveFormModel.getChannel(c);
 }
 
 int WaveformControl::getWavPositionByMouseX(int x, int* point, double* dx) const
@@ -75,8 +77,7 @@ int WaveformControl::getWavPositionByMouseX(int x, int* point, double* dx) const
     return rpoint + getWavePos() * xinc;
 }
 
-void WaveformControl::paint(QPainter* painter)
-{
+void WaveformControl::paint(QPainter* painter) {
     auto p = painter->pen();
     painter->setBackground(QBrush(getBackgroundColor()));
     painter->setBackgroundMode(Qt::OpaqueMode);
@@ -88,7 +89,7 @@ void WaveformControl::paint(QPainter* painter)
     painter->drawLine(0, halfHeight, bRect.width(), halfHeight);
     int32_t scale = bRect.width() * getXScaleFactor();
     int32_t pos = getWavePos();
-    const auto* channel = getChannel();
+    const auto channel = getChannel();
     if (channel == nullptr) {
         return;
     }
@@ -319,12 +320,14 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
             else {
                 if (dpoint >= (event->x() - dx/2) && dpoint <= (event->x() + dx/2)) {
                     const double maxy = getYScaleFactor();
-                    double y = halfHeight - ((double) (getChannel()->operator[](m_clickPosition)) / maxy) * waveHeight;
+                    auto initialVal { getChannel()->operator[](m_clickPosition) };
+                    double y = halfHeight - ((double) (initialVal) / maxy) * waveHeight;
                     if (!m_customData.checkVerticalRange() || (y >= event->y() - 2 && y <= event->y() + 2)) {
                         if (event->button() == Qt::LeftButton) {
                             m_pointIndex = point;
+                            m_initialValue = initialVal;
                             m_pointGrabbed = true;
-                            qDebug() << "Grabbed point: " << getChannel()->operator[](m_clickPosition);
+                            qDebug() << "Grabbed point: " << initialVal; //getChannel()->operator[](m_clickPosition);
                         }
                         else {
                             if (QGuiApplication::queryKeyboardModifiers() != Qt::ShiftModifier) {
@@ -359,7 +362,7 @@ void WaveformControl::mouseReleaseEvent(QMouseEvent* event)
             }
 
             if (m_operationMode == WaveformRepairMode || m_operationMode == WaveformSelectionMode) {
-                if ( m_clickState == WaitForFirstRelease && m_clickTime.msecsTo(now) <= 500) {
+                if (m_clickState == WaitForFirstRelease && m_clickTime.msecsTo(now) <= 500) {
                     m_clickState = WaitForSecondPress;
                 }
                 else if (m_clickState == WaitForSecondRelease && m_clickTime.msecsTo(now) <= 500) {
@@ -369,8 +372,11 @@ void WaveformControl::mouseReleaseEvent(QMouseEvent* event)
                 else {
                     m_clickState = WaitForFirstPress;
                 }
-            }
-            else if (m_operationMode == WaveformMeasurementMode) {
+
+                if (m_pointGrabbed) {
+                    ActionsModel::instance()->addAction(QSharedPointer<EditSampleAction>::create(m_channelNumber, EditSampleActionParams { m_initialValue, m_newValue, m_clickPosition }));
+                }
+            } else if (m_operationMode == WaveformMeasurementMode) {
                 auto& clickPoint = m_clickCount == 0 ? m_selectionRange.first : m_selectionRange.second;
                 clickPoint = getWavPositionByMouseX(event->x());
                 if (m_clickCount == 1) {
@@ -410,7 +416,7 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
                 }
             }
             else if (m_operationMode == WaveformRepairMode) {
-                const auto* ch = getChannel();
+                const auto ch = getChannel();
                 if (!ch) {
                     return;
                 }
@@ -420,6 +426,7 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
                 const auto pointerPos = halfHeight - event->y();
                 double val = halfHeight + (m_yScaleFactor / waveHeight * pointerPos);
                 if (m_pointIndex + getWavePos() >= 0 && m_pointIndex + getWavePos() < ch->size()) {
+                    m_newValue = val;
                     getChannel()->operator[](m_pointIndex + getWavePos()) = val;
                 }
                 qDebug() << "Setting point: " << m_pointIndex + getWavePos();
@@ -432,7 +439,7 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
         // Smooth drawing at Repair mode
         case Qt::RightButton: {
             if (m_operationMode == WaveformRepairMode && QGuiApplication::queryKeyboardModifiers() == Qt::ShiftModifier) {
-                const auto* ch = getChannel();
+                const auto ch = getChannel();
                 if (!ch) {
                     return;
                 }
@@ -489,8 +496,8 @@ void WaveformControl::saveWaveform()
 void WaveformControl::repairWaveform()
 {
     if (!m_isWaveformRepaired) {
-        //mWavReader.repairWaveform(m_channelNumber);
-        mWavReader.normalizeWaveform2(m_channelNumber);
+        mWavReader.repairWaveform(m_channelNumber);
+        //mWavReader.normalizeWaveform2(m_channelNumber);
         update();
         m_isWaveformRepaired = true;
         emit isWaveformRepairedChanged();

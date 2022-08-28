@@ -13,6 +13,7 @@
 
 import QtQuick 2.15
 import QtQuick.Window 2.15
+import QtQuick.Controls 2.5
 import QtQuick.Controls 1.4
 import QtQuick.Dialogs 1.3
 
@@ -60,7 +61,7 @@ ApplicationWindow {
                 text: Translations.id_open_wav_file_menu_item
                 onTriggered: {
                     console.log("Opening WAV file");
-                    openFileDialog.isWavOpening = true;
+                    openFileDialog.openDialogType = openFileDialog.openWav;
                     openFileDialog.open();
                 }
             }
@@ -69,7 +70,16 @@ ApplicationWindow {
                 text: Translations.id_open_waveform_file_menu_item
                 onTriggered:  {
                     console.log("Opening Waveform file");
-                    openFileDialog.isWavOpening = false;
+                    openFileDialog.openDialogType = openFileDialog.openWfm;
+                    openFileDialog.open();
+                }
+            }
+
+            MenuItem {
+                text: Translations.id_open_tap_file_menu_item
+                onTriggered: {
+                    console.log("Opening TAP file");
+                    openFileDialog.openDialogType = openFileDialog.openTap;
                     openFileDialog.open();
                 }
             }
@@ -189,23 +199,50 @@ ApplicationWindow {
     FileDialog {
         id: openFileDialog
 
-        property bool isWavOpening: true
+        readonly property int openWav: 0
+        readonly property int openWfm: 1
+        readonly property int openTap: 2
 
-        title: isWavOpening ? Translations.id_please_choose_wav_file : Translations.id_please_choose_wfm_file
+        property int openDialogType: openFileDialog.openWav
+
+        title: openDialogType === openFileDialog.openWfm
+                 ? Translations.id_please_choose_wfm_file
+                 : openDialogType === openFileDialog.openTap
+                   ? Translations.id_please_choose_tap_file
+                   : Translations.id_please_choose_wav_file
+
         selectMultiple: false
         sidebarVisible: true
-        defaultSuffix: isWavOpening ? Translations.wav_file_suffix : Translations.wfm_file_suffix
-        nameFilters: isWavOpening ? [ Translations.id_wav_files ] : [ Translations.id_wfm_files ]
+
+        defaultSuffix: openDialogType === openFileDialog.openWfm
+                       ? Translations.wfm_file_suffix
+                       : openDialogType === openFileDialog.openTap
+                         ? Translations.tap_file_suffix
+                         : Translations.wav_file_suffix
+
+        nameFilters: openDialogType === openFileDialog.openWfm
+                       ? [ Translations.id_wfm_files ]
+                       : openDialogType === openFileDialog.openTap
+                         ? [ Translations.id_tap_files ]
+                         : [ Translations.id_wav_files ]
 
         onAccepted: {
-            var filetype = isWavOpening ? "WAV" : "Waveform";
+            var filetype = openDialogType === openFileDialog.openWfm
+                             ? "Waveform"
+                             : openDialogType === openFileDialog.openTap
+                               ? "TAP"
+                               : "WAV";
+
             console.log("Selected %1 file: ".arg(filetype) + openFileDialog.fileUrl);
-            var res = (isWavOpening
-                        ? FileWorkerModel.openWavFileByUrl(openFileDialog.fileUrl)
-                        : FileWorkerModel.openWaveformFileByUrl(openFileDialog.fileUrl));
+            var res = (openDialogType === openFileDialog.openWfm
+                        ? FileWorkerModel.openWaveformFileByUrl(openFileDialog.fileUrl)
+                        : openDialogType === openFileDialog.openTap
+                           ? FileWorkerModel.openTapFileByUrl(openFileDialog.fileUrl)
+                           : FileWorkerModel.openWavFileByUrl(openFileDialog.fileUrl));
+
             console.log("Open %1 file result: ".arg(filetype) + res);
             if (res === 0) {
-                if (isWavOpening) {
+                if (openDialogType !== openFileDialog.openWfm) {
                     SuspiciousPointsModel.clearSuspiciousPoints();
                 }
                 restoreWaveformView();
@@ -413,6 +450,26 @@ ApplicationWindow {
         }
 
         Button {
+            id: playParsedData
+
+            text: DataPlayerModel.stopped ? Translations.id_play_parsed_data : Translations.id_stop_playing_parsed_data
+            anchors.top: hZoomOutButton.bottom
+            anchors.right: parent.right
+            anchors.rightMargin: 5
+            anchors.topMargin: hZoomOutButton.anchors.topMargin * 10
+            width: hZoomOutButton.width
+
+            onClicked: {
+                if (DataPlayerModel.stopped) {
+                    DataPlayerModel.playParsedData(channelsComboBox.currentIndex, parsedDataView.currentRow === -1 ? 0 : parsedDataView.currentRow);
+                    dataPlayerDialog.open();
+                } else {
+                    DataPlayerModel.stop();
+                }
+            }
+        }
+
+        Button {
             id: shiftWaveRight
 
             Shortcut {
@@ -460,7 +517,26 @@ ApplicationWindow {
         Button {
             id: reparseButton
 
-            text: Translations.id_reparse
+            function reparse() {
+            }
+
+            Shortcut {
+                id: shortcut_reparseButton
+
+                sequence: "p"
+                autoRepeat: true
+                onActivated: reparseButton.clicked()
+            }
+
+            Shortcut {
+                id: shortcut_reparseButtonShift
+
+                sequence: "Shift+s"
+                autoRepeat: true
+                onActivated: reparseButton.clicked()
+            }
+
+            text: Translations.id_reparse + mainArea.hotkeyHint.arg(shortcut_reparseButton.sequence + " / " + shortcut_reparseButtonShift.sequence)
             anchors.top: shiftWaveLeft.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -544,7 +620,9 @@ ApplicationWindow {
             width: hZoomOutButton.width
 
             onClicked: {
-                getSelectedWaveform().shiftWaveform();
+                ActionsModel.shiftWaveform(1300);
+                waveformControlCh0.update();
+                //getSelectedWaveform().shiftWaveform();
             }
         }
 
@@ -679,6 +757,13 @@ ApplicationWindow {
                 onActivated: toBlockBeginningButton.clicked()
             }
 
+            ToolTip {
+                delay: 1000
+                timeout: 5000
+                visible: toBlockBeginningButton.hovered
+                text: Translations.id_hotkey_tooltip.arg(shortcut_toBlockBeginning.sequence)
+            }
+
             text: Translations.id_to_the_beginning_of_the_block
             anchors {
                 top: channelsComboBox.bottom
@@ -710,6 +795,13 @@ ApplicationWindow {
                 sequence: "Shift+d"
                 autoRepeat: true
                 onActivated: toBlockEndButton.clicked()
+            }
+
+            ToolTip {
+                delay: 1000
+                timeout: 5000
+                visible: toBlockEndButton.hovered
+                text: Translations.id_hotkey_tooltip.arg(shortcut_toBlockEnd.sequence)
             }
 
             text: Translations.id_to_the_end_of_the_block
@@ -793,7 +885,7 @@ ApplicationWindow {
 
             TableViewColumn {
                 title: Translations.id_block_status
-                width: rightArea.width * 0.15
+                width: rightArea.width * 0.45
                 role: "blockStatus"
             }
 
@@ -858,11 +950,13 @@ ApplicationWindow {
 
             anchors {
                 top: gotoPointButton.bottom
-                bottom: parent.bottom
+                //bottom: parent.bottom
                 left: parent.left
                 right: parent.right
                 topMargin: 2
             }
+            height: parent.height * 0.25
+            implicitHeight: parent.height * 0.25
 
             selectionMode: SelectionMode.SingleSelection
             model: suspiciousPoints
@@ -877,6 +971,54 @@ ApplicationWindow {
 
             TableViewColumn {
                 title: Translations.id_suspicious_point_position
+                width: rightArea.width * 0.9
+            }
+        }
+
+        Button {
+            id: removeActionButton
+
+            anchors {
+                top: suspiciousPointsView.bottom
+                left: parent.left
+                right: parent.right
+                leftMargin: 2
+                topMargin: 2
+            }
+
+            text: Translations.id_remove_action
+
+            onClicked: {
+                ActionsModel.removeAction();
+                waveformControlCh0.update();
+                waveformControlCh1.update();
+            }
+        }
+
+        TableView {
+            id: actionsView
+
+            anchors {
+                top: removeActionButton.bottom
+                bottom: parent.bottom
+                left: parent.left
+                right: parent.right
+                topMargin: 2
+            }
+
+            selectionMode: SelectionMode.SingleSelection
+            model: ActionsModel.actions
+            itemDelegate: Text {
+                text: styleData.column === 0 ? styleData.row + 1 : modelData.name
+            }
+
+            TableViewColumn {
+                title: Translations.id_suspicious_point_number
+                width: rightArea.width * 0.1
+            }
+
+            TableViewColumn {
+                title: Translations.id_action_name
                 width: rightArea.width * 0.9
             }
         }
@@ -913,5 +1055,12 @@ ApplicationWindow {
             waveformControlCh0.frequency.connect(func);
             waveformControlCh1.frequency.connect(func);
         }
+    }
+
+    DataPlayer {
+        id: dataPlayerDialog
+
+        selectedChannel: channelsComboBox.currentIndex
+        parsedChannel: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
     }
 }

@@ -31,7 +31,8 @@ ParserSettingsModel::ParserSettingsModel(QObject* parent) :
         synchroDelta,
         zeroDelta,
         oneDelta,
-        checkForAbnormalSine }
+        checkForAbnormalSine,
+        sineCheckTolerance }
 {
 
 }
@@ -52,6 +53,7 @@ void ParserSettingsModel::restoreDefaultSettings()
     setZeroDelta(zeroDelta);
     setOneDelta(oneDelta);
     setCheckForAbnormalSine(checkForAbnormalSine);
+    setSineCheckTolerance(sineCheckTolerance);
 }
 
 const ParserSettingsModel::ParserSettings& ParserSettingsModel::getParserSettings() const
@@ -127,6 +129,10 @@ double ParserSettingsModel::getOneDelta() const
 bool ParserSettingsModel::getCheckForAbnormalSine() const
 {
     return m_parserSettings.checkForAbnormalSine;
+}
+
+double ParserSettingsModel::getSineCheckTolerance() const {
+    return m_parserSettings.sineCheckTolerance;
 }
 
 void ParserSettingsModel::setPilotHalfFreq(int freq)
@@ -238,6 +244,13 @@ void ParserSettingsModel::setCheckForAbnormalSine(bool check)
     if (m_parserSettings.checkForAbnormalSine != check) {
         m_parserSettings.checkForAbnormalSine = check;
         emit checkForAbnormalSineChanged();
+    }
+}
+
+void ParserSettingsModel::setSineCheckTolerance(double value) {
+    if (m_parserSettings.sineCheckTolerance != value) {
+        m_parserSettings.sineCheckTolerance = value;
+        emit sineCheckToleranceChanged();
     }
 }
 

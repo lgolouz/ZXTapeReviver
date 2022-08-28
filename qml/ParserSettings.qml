@@ -198,6 +198,7 @@ Dialog {
         }
     }
     CheckBox {
+        id: checkForAbnormalSineCheckbox
         anchors.top: grid.bottom
         anchors.topMargin: 5
 
@@ -206,6 +207,20 @@ Dialog {
         onCheckedChanged: {
             ParserSettingsModel.checkForAbnormalSine = checked;
         }
+    }
+    Text {
+        id: sineCheckToleranceText
+        anchors.top: checkForAbnormalSineCheckbox.bottom
+        text: Translations.id_sine_check_tolerance
+        visible: checkForAbnormalSineCheckbox.checked
+    }
+    TextField {
+        anchors.top: sineCheckToleranceText.bottom
+        text: ParserSettingsModel.sineCheckTolerance;
+        onTextChanged: {
+            ParserSettingsModel.sineCheckTolerance = text;
+        }
+        visible: checkForAbnormalSineCheckbox.checked
     }
 
     onReset: {

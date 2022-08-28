@@ -50,18 +50,16 @@ public:
 // | | | | | | | |----------------- 1 - end of signal sequence
 // x x x x x x x x
 
-const uint8_t zeroBit        = 0b10000000; //zero data bit
-const uint8_t oneBit         = 0b01000000; //one bit
-const uint8_t pilotTone      = 0b00100000; //pilot tone
-const uint8_t synchroSignal  = 0b00010000; //synchro signal
-const uint8_t byteBound      = 0b00001000; //byte bound
-const uint8_t sequenceBegin  = 0b00000100; //begin of signal sequence
-const uint8_t sequenceMiddle = 0b00000010; //middle of signal sequence
-const uint8_t sequenceEnd    = 0b00000001; //end of signal sequence
+    const uint8_t zeroBit        = 0b10000000; //zero data bit
+    const uint8_t oneBit         = 0b01000000; //one bit
+    const uint8_t pilotTone      = 0b00100000; //pilot tone
+    const uint8_t synchroSignal  = 0b00010000; //synchro signal
+    const uint8_t byteBound      = 0b00001000; //byte bound
+    const uint8_t sequenceBegin  = 0b00000100; //begin of signal sequence
+    const uint8_t sequenceMiddle = 0b00000010; //middle of signal sequence
+    const uint8_t sequenceEnd    = 0b00000001; //end of signal sequence
 
-private:
     enum WaveformSign { POSITIVE, NEGATIVE };
-    enum StateType { SEARCH_OF_PILOT_TONE, PILOT_TONE, SYNCHRO_SIGNAL, DATA_SIGNAL, END_OF_DATA, NO_MORE_DATA };
     enum DataState { OK, R_TAPE_LOADING_ERROR };
 
     struct WaveformPart
@@ -79,7 +77,12 @@ private:
         QVector<uint8_t> data;
         QVector<WaveformPart> waveformData;
         DataState state;
+        uint8_t parityCalculated;
+        uint8_t parityAwaited;
     };
+
+private:
+    enum StateType { SEARCH_OF_PILOT_TONE, PILOT_TONE, SYNCHRO_SIGNAL, DATA_SIGNAL, END_OF_DATA, NO_MORE_DATA };
 
     template <typename T>
     QVector<WaveformPart> parseChannel(const QVector<T>& ch) {
@@ -90,7 +93,7 @@ private:
 
         auto it = ch.begin();
         auto val = *it;
-        while(it != ch.end()) {
+        while (it != ch.end()) {
             auto prevIt = it;
             it = std::find_if(it, ch.end(), [&val](const T& i) { return lessThanZero(val) != lessThanZero(i); });
             WaveformPart part;
@@ -129,6 +132,7 @@ public:
     void saveTap(uint chNum, const QString& fileName = QString());
     void saveWaveform(uint chNum);
     QVector<uint8_t> getParsedWaveform(uint chNum) const;
+    QPair<QVector<DataBlock>, QVector<bool>> getParsedData(uint chNum) const;
 
     Q_INVOKABLE void toggleBlockSelection(int blockNum);
     Q_INVOKABLE int getBlockDataStart(uint chNum, uint blockNum) const;

@@ -11,19 +11,25 @@
 // permission of the Author.
 //*******************************************************************************
 
-#ifndef TRANSLATIONS_H
-#define TRANSLATIONS_H
+#ifndef SHIFTWAVEFORMACTION_H
+#define SHIFTWAVEFORMACTION_H
 
-#include TRANSLATION_IDS_HEADER
+#include "actionbase.h"
 
-extern const char* ID_TIMELINE_SEC;
-extern const char* ID_OK;
-extern const char* ID_ERROR;
-extern const char* ID_UNKNOWN;
-extern const char* ID_HEADER;
-extern const char* ID_CODE;
-extern const char* ID_EDIT_ACTION;
-extern const char* ID_SHIFT_WAVEFORM_ACTION;
-extern const char* ID_PARITY_MESSAGE;
+struct ShiftWaveFormActionParams {
+    QWavVectorType offsetValue;
+};
 
-#endif // TRANSLATIONS_H
+class ShiftWaveFormAction : public ActionBase
+{
+    const ShiftWaveFormActionParams m_params;
+
+public:
+    ShiftWaveFormAction(int channel, const ShiftWaveFormActionParams& params);
+    virtual ~ShiftWaveFormAction() = default;
+
+    virtual bool apply() override;
+    virtual void undo() override;
+};
+
+#endif // SHIFTWAVEFORMACTION_H
