@@ -117,6 +117,12 @@ void DataPlayerModel::handleNextDataRecord() {
             }
         }
     }
+    //Silence for 1 us (prevents R Tape loading error under Linux, ZXTR-48)
+    wavlen = c_sampleRate / 1000;
+    int16_t val { 0 };
+    for (unsigned i { 0 }; i < wavlen; ++i) {
+        array.append((char *)&val, sizeof(int16_t));
+    }
 
     emit currentBlockChanged();
     m_blockTime = (array.size() / sizeof(int16_t)) / (c_sampleRate / 1000);
