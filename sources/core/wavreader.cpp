@@ -485,7 +485,7 @@ void WavReader::repairWaveform(uint chNum) {
     a1=0; u1=0x7FFFFFFF; du1=0;
     a2=0; u2=0x7FFFFFFF; du2=0;
 
-    __int64 adr,/*i,*/u,thr,A0,A1,U0,U1,uu;
+    int64_t adr,/*i,*/u,thr,A0,A1,U0,U1,uu;
     //                        noise      amplitude
     //                      threshold  min        max
     //if (wav.fmt.bits== 8){ thr=  32; U0=     0; U1=   255; }
