@@ -12,6 +12,9 @@
 //*******************************************************************************
 
 #include "dataplayermodel.h"
+#include <QAudioFormat>
+#include <QAudioDevice>
+#include <QMediaDevices>
 #include <QDebug>
 
 DataPlayerModel::DataPlayerModel(QObject* parent) :
@@ -20,7 +23,9 @@ DataPlayerModel::DataPlayerModel(QObject* parent) :
     m_blockTime(0),
     m_processedTime(0)
 {
+    m_notifyTimer.setInterval(30);
     connect(&m_delayTimer, &QTimer::timeout, this, &DataPlayerModel::handleNextDataRecord);
+    connect(&m_notifyTimer, &QTimer::timeout, this, &DataPlayerModel::handleAudioOutputNotify);
 }
 
 void DataPlayerModel::playParsedData(uint chNum, uint currentBlock) {
@@ -29,30 +34,30 @@ void DataPlayerModel::playParsedData(uint chNum, uint currentBlock) {
     }
 
 #if (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-    const auto endianness { QAudioFormat::BigEndian };
+    //const auto endianness { QAudioFormat::BigEndian };
 #else
-    const auto endianness { QAudioFormat::LittleEndian };
+    //const auto endianness { QAudioFormat::LittleEndian };
 #endif
 
     QAudioFormat format;
     // Set up the format
     format.setSampleRate(c_sampleRate);
     format.setChannelCount(1);
-    format.setSampleSize(16);
-    format.setCodec("audio/pcm");
-    format.setByteOrder(endianness);
-    format.setSampleType(QAudioFormat::SignedInt);
+    format.setSampleFormat(QAudioFormat::Int16);
+    //format.setSampleSize(16);
+    //format.setCodec("audio/pcm");
+    //format.setByteOrder(endianness);
+    //format.setSampleType(QAudioFormat::SignedInt);
 
-    const QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
+    const QAudioDevice info(QMediaDevices::defaultAudioOutput());
     if (!info.isFormatSupported(format)) {
         qDebug() << "Audio format not supported, cannot play audio.";
         return;
     }
 
-    m_audio.reset(new QAudioOutput(info, format));
-    m_audio->setNotifyInterval(30);
-    connect(m_audio.data(), &QAudioOutput::stateChanged, this, &DataPlayerModel::handleAudioOutputStateChanged);
-    connect(m_audio.data(), &QAudioOutput::notify, this, &DataPlayerModel::handleAudioOutputNotify);
+    m_audio.reset(new QAudioSink(info, format));
+    //m_audio->setNotifyInterval(30);
+    connect(m_audio.data(), &QAudioSink::stateChanged, this, &DataPlayerModel::handleAudioOutputStateChanged);
 
     m_buffer.close();
     m_currentBlock = currentBlock;
@@ -104,7 +109,7 @@ void DataPlayerModel::handleNextDataRecord() {
         }
     }
     //Data
-    for (const uint8_t byte: qAsConst(m_data.first[m_currentBlock].data)) {
+    for (const uint8_t byte: std::as_const(m_data.first[m_currentBlock].data)) {
         for (int i { 7 }; i >= 0; --i) {
             const uint8_t bit8 = 1 << i;
             const auto bit { byte & bit8 };
@@ -156,6 +161,7 @@ void DataPlayerModel::prepareNextDataRecord() {
             }
         });
     } else {
+        m_notifyTimer.stop();
         m_audio->stop();
         m_audio.reset();
         m_playingState = DP_Stopped;

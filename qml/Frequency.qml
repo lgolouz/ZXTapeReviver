@@ -11,9 +11,9 @@
 // permission of the Author.
 //*******************************************************************************
 
-import QtQuick 2.3
-import QtQuick.Controls 1.3
-import QtQuick.Dialogs 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Dialogs
 
 Dialog {
     id: frequencyDialog
@@ -23,7 +23,7 @@ Dialog {
     visible: false
     title: Translations.id_measured_frequency_window_header
     standardButtons: StandardButton.Ok
-    modality: Qt.WindowModal
+    //modality: Qt.WindowModal
     width: 200
     height: 120
 

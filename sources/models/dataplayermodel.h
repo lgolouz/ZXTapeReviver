@@ -16,7 +16,7 @@
 
 #include <QTimer>
 #include <QBuffer>
-#include <QAudioOutput>
+#include <QAudioSink>
 #include "sources/core/waveformparser.h"
 
 class DataPlayerModel : public QObject
@@ -36,11 +36,12 @@ class DataPlayerModel : public QObject
     Q_PROPERTY(QVariant blockData READ getBlockData NOTIFY currentBlockChanged)
 
     PlayingState m_playingState;
-    QScopedPointer<QAudioOutput> m_audio;
+    QScopedPointer<QAudioSink> m_audio;
     QPair<QVector<WaveformParser::DataBlock>, QVector<bool>> m_data;
     QVariantList m_parserData;
     unsigned m_currentBlock;
     QTimer m_delayTimer;
+    QTimer m_notifyTimer;
     QBuffer m_buffer;
     const unsigned c_sampleRate { 44100 };
     int m_blockTime;

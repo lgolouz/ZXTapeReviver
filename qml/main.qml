@@ -11,11 +11,11 @@
 // permission of the Author.
 //*******************************************************************************
 
-import QtQuick 2.15
-import QtQuick.Window 2.15
-import QtQuick.Controls 2.5
-import QtQuick.Controls 1.4
-import QtQuick.Dialogs 1.3
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Dialogs
+import Qt.labs.qmlmodels
 
 import WaveformControl 1.0
 import com.enums.zxtapereviver 1.0
@@ -211,8 +211,8 @@ ApplicationWindow {
                    ? Translations.id_please_choose_tap_file
                    : Translations.id_please_choose_wav_file
 
-        selectMultiple: false
-        sidebarVisible: true
+        //selectMultiple: false
+        //sidebarVisible: true
 
         defaultSuffix: openDialogType === openFileDialog.openWfm
                        ? Translations.wfm_file_suffix
@@ -261,9 +261,9 @@ ApplicationWindow {
         property int channelNumber: 0
 
         title: saveParsed ? Translations.id_save_tap_file : Translations.id_save_wfm_file
-        selectExisting: false
-        selectMultiple: false
-        sidebarVisible: true
+        //selectExisting: false
+        //selectMultiple: false
+        //sidebarVisible: true
         defaultSuffix: saveParsed ? Translations.tap_file_suffix : Translations.wfm_file_suffix
         nameFilters: saveParsed ? [ Translations.id_tap_files ] : [ Translations.id_wfm_files ]
 
@@ -826,7 +826,7 @@ ApplicationWindow {
             }
         }
 
-        TableView {
+        ZXTableControl {
             id: parsedDataView
 
             height: parent.height * 0.4
@@ -837,64 +837,66 @@ ApplicationWindow {
                 topMargin: 2
             }
 
-            TableViewColumn {
-                title: Translations.id_block_number
-                width: rightArea.width * 0.07
-                role: "block"
-                delegate: Item {
-                    property bool blkSelected: styleData.value.blockSelected
-                    property int blkNumber: styleData.value.blockNumber
+            //model: TableModel {
+            //TableModelColumn {
+//                title: Translations.id_block_number
+//                width: rightArea.width * 0.07
+//                role: "block"
+//                delegate: Item {
+//                    property bool blkSelected: styleData.value.blockSelected
+//                    property int blkNumber: styleData.value.blockNumber
 
-                    Rectangle {
-                        anchors.fill: parent
-                        border.width: 0
-                        color: parent.blkSelected ? "#A00000FF" : "transparent"
-                        Text {
-                            anchors.centerIn: parent
-                            color: parent.parent.blkSelected ? "white" : "black"
-                            text: blkNumber + 1
-                        }
-                    }
+//                    Rectangle {
+//                        anchors.fill: parent
+//                        border.width: 0
+//                        color: parent.blkSelected ? "#A00000FF" : "transparent"
+//                        Text {
+//                            anchors.centerIn: parent
+//                            color: parent.parent.blkSelected ? "white" : "black"
+//                            text: blkNumber + 1
+//                        }
+//                    }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {
-                            WaveformParser.toggleBlockSelection(blkNumber);
-                        }
-                    }
-                }
-            }
+//                    MouseArea {
+//                        anchors.fill: parent
+//                        onClicked: {
+//                            WaveformParser.toggleBlockSelection(blkNumber);
+//                        }
+//                    }
+//                }
+            //}
 
-            TableViewColumn {
-                title: Translations.id_block_type
-                width: rightArea.width * 0.23
-                role: "blockType"
-            }
+            //TableModelColumn {
+//                title: Translations.id_block_type
+//                width: rightArea.width * 0.23
+//                role: "blockType"
+            //}
 
-            TableViewColumn {
-                title: Translations.id_block_name
-                width: rightArea.width * 0.3
-                role: "blockName"
-            }
+            //TableModelColumn {
+//                title: Translations.id_block_name
+//                width: rightArea.width * 0.3
+//                role: "blockName"
+            //}
 
-            TableViewColumn {
-                title: Translations.id_block_size
-                width: rightArea.width * 0.25
-                role: "blockSize"
-            }
+            //TableModelColumn {
+//                title: Translations.id_block_size
+//                width: rightArea.width * 0.25
+//                role: "blockSize"
+            //}
 
-            TableViewColumn {
-                title: Translations.id_block_status
-                width: rightArea.width * 0.45
-                role: "blockStatus"
-            }
+            //TableModelColumn {
+//                title: Translations.id_block_status
+//                width: rightArea.width * 0.45
+//                role: "blockStatus"
+            //}
+            //}
 
-            selectionMode: SelectionMode.SingleSelection
-            model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
-            itemDelegate: Text {
-                text: styleData.value
-                color: modelData.state === 0 ? "black" : "red"
-            }
+//            selectionMode: SelectionMode.SingleSelection
+            //model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
+//            itemDelegate: Text {
+//                text: styleData.value
+//                color: modelData.state === 0 ? "black" : "red"
+//            }
         }
 
         Button {
@@ -958,20 +960,22 @@ ApplicationWindow {
             height: parent.height * 0.25
             implicitHeight: parent.height * 0.25
 
-            selectionMode: SelectionMode.SingleSelection
-            model: suspiciousPoints
-            itemDelegate: Text {
-                text: styleData.column === 0 ? styleData.row + 1 : styleData.value
+//            selectionMode: SelectionMode.SingleSelection
+            //model: suspiciousPoints
+//            itemDelegate: Text {
+//                text: styleData.column === 0 ? styleData.row + 1 : styleData.value
+//            }
+
+            model: TableModel {
+            TableModelColumn {
+//                title: Translations.id_suspicious_point_number
+//                width: rightArea.width * 0.1
             }
 
-            TableViewColumn {
-                title: Translations.id_suspicious_point_number
-                width: rightArea.width * 0.1
+            TableModelColumn {
+//                title: Translations.id_suspicious_point_position
+//                width: rightArea.width * 0.9
             }
-
-            TableViewColumn {
-                title: Translations.id_suspicious_point_position
-                width: rightArea.width * 0.9
             }
         }
 
@@ -1006,20 +1010,22 @@ ApplicationWindow {
                 topMargin: 2
             }
 
-            selectionMode: SelectionMode.SingleSelection
-            model: ActionsModel.actions
-            itemDelegate: Text {
-                text: styleData.column === 0 ? styleData.row + 1 : modelData.name
+//            selectionMode: SelectionMode.SingleSelection
+            //model: ActionsModel.actions
+//            itemDelegate: Text {
+//                text: styleData.column === 0 ? styleData.row + 1 : modelData.name
+//            }
+
+            model: TableModel {
+            TableModelColumn {
+//                title: Translations.id_suspicious_point_number
+//                width: rightArea.width * 0.1
             }
 
-            TableViewColumn {
-                title: Translations.id_suspicious_point_number
-                width: rightArea.width * 0.1
+            TableModelColumn {
+//                title: Translations.id_action_name
+//                width: rightArea.width * 0.9
             }
-
-            TableViewColumn {
-                title: Translations.id_action_name
-                width: rightArea.width * 0.9
             }
         }
     }

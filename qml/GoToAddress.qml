@@ -11,9 +11,9 @@
 // permission of the Author.
 //*******************************************************************************
 
-import QtQuick 2.3
-import QtQuick.Controls 1.3
-import QtQuick.Dialogs 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Dialogs
 
 Dialog {
     id: gotoAddressDialog
@@ -23,7 +23,7 @@ Dialog {
     visible: false
     title: Translations.id_goto_address_window_header
     standardButtons: StandardButton.Ok | StandardButton.Cancel
-    modality: Qt.WindowModal
+    //modality: Qt.WindowModal
     width: 250
     height: 120
 

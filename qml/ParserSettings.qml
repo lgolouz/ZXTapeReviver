@@ -11,10 +11,10 @@
 // permission of the Author.
 //*******************************************************************************
 
-import QtQuick 2.3
-import QtQuick.Controls 1.3
-import QtQuick.Dialogs 1.3
-import QtQuick.Layouts 1.15
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Dialogs
+import QtQuick.Layouts
 
 import com.models.zxtapereviver 1.0
 import "."
@@ -25,7 +25,7 @@ Dialog {
     visible: false
     title: Translations.id_parser_settings_window_header
     standardButtons: StandardButton.Ok | StandardButton.RestoreDefaults
-    modality: Qt.WindowModal
+    //modality: Qt.WindowModal
     width: grid.width * 1.02
 
     Grid {

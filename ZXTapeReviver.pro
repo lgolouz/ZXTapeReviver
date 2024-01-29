@@ -23,7 +23,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
-CONFIG += c++14
+CONFIG += c++17
 
 #Dynamically generate translation names and country codes based on AVAILABLE_TRANSLATIONS variable
 AVAILABLE_TRANSLATIONS = English:en_US Russian:ru_RU
@@ -94,7 +94,8 @@ SOURCES += \
         sources/translations/translationmanager.cpp \
         sources/translations/translations.cpp \
         sources/util/enummetainfo.cpp \
-        sources/configuration/configurationmanager.cpp
+        sources/configuration/configurationmanager.cpp \
+        sources/models/controls/zxtablemodel.cpp
 
 HEADERS += \
     sources/actions/actionbase.h \
@@ -113,7 +114,8 @@ HEADERS += \
     sources/translations/translationmanager.h \
     sources/translations/translations.h \
     sources/util/enummetainfo.h \
-    sources/configuration/configurationmanager.h
+    sources/configuration/configurationmanager.h \
+    sources/models/controls/zxtablemodel.h
 
 RESOURCES += qml/qml.qrc
 
