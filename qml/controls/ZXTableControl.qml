@@ -13,6 +13,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import Qt.labs.qmlmodels
 
 Item {
     id: zxTableControlRoot
@@ -26,9 +27,12 @@ Item {
 
     property var horizontalHeaderModel: ["a", "b", "c", "d"]
     property var verticalHeaderModel: ["1", "2", "3"]
+    property alias model: tableControlRoot.tableModel
 
     Rectangle {
         id: tableControlRoot
+
+        property var tableModel
 
         anchors.fill: parent
 
@@ -50,8 +54,8 @@ Item {
             implicitHeight: 30
             implicitWidth: 50
 
-            width: verticalHeaderView.columnAtIndex(0).width > 0 ? verticalHeaderView.columnAtIndex(0).width : topCornerRect.implicitWidth
-            height: horizontalHeaderView.rowAtIndex(0).height > 0 ? horizontalHeaderView.rowAtIndex(0).height : topCornerRect.implicitHeight
+            width: verticalHeaderView.columnWidth(0) > 0 ? verticalHeaderView.columnWidth(0) : topCornerRect.implicitWidth
+            height: horizontalHeaderView.rowHeight(0) > 0 ? horizontalHeaderView.rowHeight(0) : topCornerRect.implicitHeight
         }
 
         VerticalHeaderView {
@@ -60,9 +64,10 @@ Item {
             anchors.top: topCornerRect.bottom
             anchors.bottom: tableControlRoot.bottom
 
-            //model: zxTableControlRoot.verticalHeaderModel
+            model: zxTableControlRoot.verticalHeaderModel
             syncView: zxTableView
             textRole: "verticalHeader"
+            clip: true
         }
 
         HorizontalHeaderView {
@@ -75,18 +80,58 @@ Item {
                 right: tableControlRoot.right
             }
 
-            //model: zxTableControlRoot.horizontalHeaderModel
+            model: zxTableControlRoot.horizontalHeaderModel
             syncView: zxTableView
             textRole: "horizontalHeader"
+            clip: true
         }
 
         TableView {
             id: zxTableView
-            model: TableModel {
-                rows: ["q", "w", "e", "r", "t"]
+            model: tableControlRoot.tableModel
+            anchors.top: topCornerRect.bottom
+            anchors.left: topCornerRect.right
+            delegate: Rectangle {
+                implicitHeight: 20
+                implicitWidth: 60
+                Text {
+                    text: model.display
+                }
+                color: "yellow"
             }
         }
 
         color: "red"
+
+        function initTableModel() {
+            var modelStr = "import Qt.labs.qmlmodels;TableModel{"
+            for (var i = 0; i < zxTableControlRoot.horizontalHeaderModel.length; ++i) {
+                modelStr += "TableModelColumn{display:'col_" + i + "';}"
+            }
+            modelStr += "}"
+
+            tableModel = Qt.createQmlObject(modelStr, tableControlRoot)
+            for (var j = 0; j < zxTableControlRoot.verticalHeaderModel.length; ++j) {
+                var obj = {}
+                for (var k = 0; k < zxTableControlRoot.horizontalHeaderModel.length; ++k) {
+                    obj['col_' + k] = "" + j + "; " + k
+                }
+                tableModel.appendRow(obj)
+            }
+        }
+
+        Connections {
+            target: zxTableControlRoot
+
+            function onHorizontalHeaderModelChanged() {
+                initTableModel();
+            }
+
+            function onVerticalHeaderModelChanged() {
+                initTableModel();
+            }
+        }
+
+        Component.onCompleted: _ => initTableModel()
     }
 }
