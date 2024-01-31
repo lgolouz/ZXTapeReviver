@@ -104,10 +104,10 @@ void WaveformParser::parse(uint chNum)
             if (it != parsed.end()) {
                 if ((isFreqFitsInDelta(sampleRate, it->length, parserSettings.synchroSecondHalfFreq, parserSettings.synchroDelta)) &&
                     (isFreqFitsInDelta(sampleRate, it->length + prevIt->length, parserSettings.synchroFreq, parserSettings.synchroDelta, 2.0))) {
-                    fillParsedWaveform(chNum, *prevIt, synchroSignal ^ sequenceMiddle);
-                    fillParsedWaveform(chNum, *it, synchroSignal ^ sequenceMiddle);
-                    parsedWaveform[prevIt->begin] = synchroSignal ^ sequenceBegin;
-                    parsedWaveform[it->end] = synchroSignal ^ sequenceEnd;
+                    fillParsedWaveform(chNum, *prevIt, synchroSignal | sequenceMiddle);
+                    fillParsedWaveform(chNum, *it, synchroSignal | sequenceMiddle);
+                    parsedWaveform[prevIt->begin] = synchroSignal | sequenceBegin;
+                    parsedWaveform[it->end] = synchroSignal | sequenceEnd;
 
                     currentState = DATA_SIGNAL;
                     //signalDirection = prevIt->sign;
@@ -138,13 +138,13 @@ void WaveformParser::parse(uint chNum)
             if (it != parsed.end()) {
                 const auto len = it->length + prevIt->length;
                 if (isFreqFitsInDelta2(sampleRate, len, parserSettings.zeroFreq, parserSettings.zeroDelta, 0.75) && isSineNormal(*prevIt, *it, true)) { //ZERO
-                    fillParsedWaveform(chNum, *prevIt, zeroBit ^ sequenceMiddle);
-                    fillParsedWaveform(chNum, *it, zeroBit ^ sequenceMiddle);
-                    parsedWaveform[prevIt->begin] = zeroBit ^ sequenceBegin;
-                    parsedWaveform[it->end] = zeroBit ^ sequenceEnd;
+                    fillParsedWaveform(chNum, *prevIt, zeroBit | sequenceMiddle);
+                    fillParsedWaveform(chNum, *it, zeroBit | sequenceMiddle);
+                    parsedWaveform[prevIt->begin] = zeroBit | sequenceBegin;
+                    parsedWaveform[it->end] = zeroBit | sequenceEnd;
 
                     if (bitIndex == 7) {
-                        parsedWaveform[prevIt->begin] ^= byteBound;
+                        parsedWaveform[prevIt->begin] |= byteBound;
                     }
 
 //                    WaveformData wd;
@@ -157,7 +157,7 @@ void WaveformParser::parse(uint chNum)
 //                    mParsedWaveform.insert(wd.waveBegin, wd);
                     --bitIndex;
                     if (bitIndex < 0) {
-                        parsedWaveform[it->end] ^= byteBound;
+                        parsedWaveform[it->end] |= byteBound;
                         bitIndex = 7;
                         data.append(bit);
                         waveformData.append(*it);
@@ -166,10 +166,10 @@ void WaveformParser::parse(uint chNum)
                     }
                 }
                 else if (isFreqFitsInDelta2(sampleRate, len, parserSettings.oneFreq, 0.75, parserSettings.oneDelta) && isSineNormal(*prevIt, *it, false)) { //ONE
-                    fillParsedWaveform(chNum, *prevIt, oneBit ^ sequenceMiddle);
-                    fillParsedWaveform(chNum, *it, oneBit ^ sequenceMiddle);
-                    parsedWaveform[prevIt->begin] = oneBit ^ sequenceBegin;
-                    parsedWaveform[it->end] = oneBit ^ sequenceEnd;
+                    fillParsedWaveform(chNum, *prevIt, oneBit | sequenceMiddle);
+                    fillParsedWaveform(chNum, *it, oneBit | sequenceMiddle);
+                    parsedWaveform[prevIt->begin] = oneBit | sequenceBegin;
+                    parsedWaveform[it->end] = oneBit | sequenceEnd;
 
 //                    WaveformData wd;
 //                    wd.begin = std::distance(parsed.begin(), prevIt);
@@ -181,7 +181,7 @@ void WaveformParser::parse(uint chNum)
 //                    mParsedWaveform.insert(wd.waveBegin, wd);
                     bit |= 1 << bitIndex--;
                     if (bitIndex < 0) {
-                        parsedWaveform[it->end] ^= byteBound;
+                        parsedWaveform[it->end] |= byteBound;
                         bitIndex = 7;
                         data.append(bit);
                         waveformData.append(*it);

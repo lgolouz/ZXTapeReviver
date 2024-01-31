@@ -16,6 +16,7 @@ import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Dialogs
 import Qt.labs.qmlmodels
+import Qt.labs.platform
 
 import WaveformControl 1.0
 import com.enums.zxtapereviver 1.0
@@ -53,7 +54,7 @@ ApplicationWindow {
         waveformControlCh1.wavePos = 0;
     }
 
-    menuBar: MenuBar {
+    MenuBar {
         Menu {
             title: Translations.id_file_menu_item
 
@@ -175,7 +176,7 @@ ApplicationWindow {
                         TranslationManager.setTranslation(countryCode);
                         mainWindow.show();
                         //Re-assign the menu items binding
-                        menuInstantiator.model = Qt.binding(function() { return TranslationManager.languages; });
+                        //menuInstantiator.model = Qt.binding(function() { return TranslationManager.languages; });
                     }
                 }
 
