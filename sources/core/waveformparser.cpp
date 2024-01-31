@@ -50,7 +50,7 @@ void WaveformParser::parse(uint chNum)
     QVector<WaveformPart> waveformData;
     //WaveformSign signalDirection = POSITIVE;
     uint32_t dataStart = 0;
-    int8_t bitIndex = 7;
+    uint8_t bitIndex = 0;
     uint8_t bit = 0;
     uint8_t parity = 0;
 
@@ -78,14 +78,14 @@ void WaveformParser::parse(uint chNum)
 
         case PILOT_TONE:
             it = std::find_if(it, parsed.end(), [&parserSettings, sampleRate, chNum, this](const WaveformPart& p) {
-                fillParsedWaveform(chNum, p, pilotTone ^ sequenceMiddle);
+                fillParsedWaveform(chNum, p, pilotTone | sequenceMiddle);
                 return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroFirstHalfFreq, parserSettings.synchroDelta);
             });
             if (it != parsed.end()) {
                 auto eIt = std::prev(it);
-                fillParsedWaveform(chNum, *eIt, pilotTone ^ sequenceMiddle);
-                parsedWaveform[prevIt->begin] = pilotTone ^ sequenceBegin;
-                parsedWaveform[eIt->end] = pilotTone ^ sequenceEnd;
+                fillParsedWaveform(chNum, *eIt, pilotTone | sequenceMiddle);
+                parsedWaveform[prevIt->begin] = pilotTone | sequenceBegin;
+                parsedWaveform[eIt->end] = pilotTone | sequenceEnd;
 
                 currentState = SYNCHRO_SIGNAL;
 //                WaveformData wd;
@@ -104,10 +104,10 @@ void WaveformParser::parse(uint chNum)
             if (it != parsed.end()) {
                 if ((isFreqFitsInDelta(sampleRate, it->length, parserSettings.synchroSecondHalfFreq, parserSettings.synchroDelta)) &&
                     (isFreqFitsInDelta(sampleRate, it->length + prevIt->length, parserSettings.synchroFreq, parserSettings.synchroDelta, 2.0))) {
-                    fillParsedWaveform(chNum, *prevIt, synchroSignal ^ sequenceMiddle);
-                    fillParsedWaveform(chNum, *it, synchroSignal ^ sequenceMiddle);
-                    parsedWaveform[prevIt->begin] = synchroSignal ^ sequenceBegin;
-                    parsedWaveform[it->end] = synchroSignal ^ sequenceEnd;
+                    fillParsedWaveform(chNum, *prevIt, synchroSignal | sequenceMiddle);
+                    fillParsedWaveform(chNum, *it, synchroSignal | sequenceMiddle);
+                    parsedWaveform[prevIt->begin] = synchroSignal | sequenceBegin;
+                    parsedWaveform[it->end] = synchroSignal | sequenceEnd;
 
                     currentState = DATA_SIGNAL;
                     //signalDirection = prevIt->sign;
@@ -124,7 +124,7 @@ void WaveformParser::parse(uint chNum)
                     dataStart = std::distance(parsed.begin(), it) + 1;
                     data.clear();
                     waveformData.clear();
-                    bitIndex = 7;
+                    bitIndex ^= bitIndex;
                     bit ^= bit;
                 }
                 else {
@@ -138,13 +138,13 @@ void WaveformParser::parse(uint chNum)
             if (it != parsed.end()) {
                 const auto len = it->length + prevIt->length;
                 if (isFreqFitsInDelta2(sampleRate, len, parserSettings.zeroFreq, parserSettings.zeroDelta, 0.75) && isSineNormal(*prevIt, *it, true)) { //ZERO
-                    fillParsedWaveform(chNum, *prevIt, zeroBit ^ sequenceMiddle);
-                    fillParsedWaveform(chNum, *it, zeroBit ^ sequenceMiddle);
-                    parsedWaveform[prevIt->begin] = zeroBit ^ sequenceBegin;
-                    parsedWaveform[it->end] = zeroBit ^ sequenceEnd;
+                    fillParsedWaveform(chNum, *prevIt, zeroBit | sequenceMiddle);
+                    fillParsedWaveform(chNum, *it, zeroBit | sequenceMiddle);
+                    parsedWaveform[prevIt->begin] = zeroBit | sequenceBegin;
+                    parsedWaveform[it->end] = zeroBit | sequenceEnd;
 
-                    if (bitIndex == 7) {
-                        parsedWaveform[prevIt->begin] ^= byteBound;
+                    if (bitIndex == 0) {
+                        parsedWaveform[prevIt->begin] |= byteBound;
                     }
 
 //                    WaveformData wd;
@@ -155,10 +155,9 @@ void WaveformParser::parse(uint chNum)
 //                    wd.value = SignalValue::ZERO;
 
 //                    mParsedWaveform.insert(wd.waveBegin, wd);
-                    --bitIndex;
-                    if (bitIndex < 0) {
-                        parsedWaveform[it->end] ^= byteBound;
-                        bitIndex = 7;
+                    if (bitIndex++ == 7) {
+                        parsedWaveform[it->end] |= byteBound;
+                        bitIndex ^= bitIndex;
                         data.append(bit);
                         waveformData.append(*it);
                         parity ^= bit;
@@ -166,10 +165,10 @@ void WaveformParser::parse(uint chNum)
                     }
                 }
                 else if (isFreqFitsInDelta2(sampleRate, len, parserSettings.oneFreq, 0.75, parserSettings.oneDelta) && isSineNormal(*prevIt, *it, false)) { //ONE
-                    fillParsedWaveform(chNum, *prevIt, oneBit ^ sequenceMiddle);
-                    fillParsedWaveform(chNum, *it, oneBit ^ sequenceMiddle);
-                    parsedWaveform[prevIt->begin] = oneBit ^ sequenceBegin;
-                    parsedWaveform[it->end] = oneBit ^ sequenceEnd;
+                    fillParsedWaveform(chNum, *prevIt, oneBit | sequenceMiddle);
+                    fillParsedWaveform(chNum, *it, oneBit | sequenceMiddle);
+                    parsedWaveform[prevIt->begin] = oneBit | sequenceBegin;
+                    parsedWaveform[it->end] = oneBit | sequenceEnd;
 
 //                    WaveformData wd;
 //                    wd.begin = std::distance(parsed.begin(), prevIt);
@@ -179,10 +178,10 @@ void WaveformParser::parse(uint chNum)
 //                    wd.value = SignalValue::ONE;
 
 //                    mParsedWaveform.insert(wd.waveBegin, wd);
-                    bit |= 1 << bitIndex--;
-                    if (bitIndex < 0) {
-                        parsedWaveform[it->end] ^= byteBound;
-                        bitIndex = 7;
+                    bit |= 1 << (7 - bitIndex);
+                    if (bitIndex++ == 7) {
+                        parsedWaveform[it->end] |= byteBound;
+                        bitIndex ^= bitIndex;
                         data.append(bit);
                         waveformData.append(*it);
                         parity ^= bit;
@@ -272,7 +271,7 @@ void WaveformParser::saveTap(uint chNum, const QString& fileName)
 void WaveformParser::fillParsedWaveform(uint chNum, const WaveformPart& p, uint8_t val)
 {
     auto& parsedWaveform = mParsedWaveform[chNum];
-    for (auto i = p.begin; i < p.end; ++i) {
+    for (auto i = p.begin; i <= p.end; ++i) {
         parsedWaveform[i] = val;
     }
 }
