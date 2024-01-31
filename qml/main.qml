@@ -836,6 +836,7 @@ ApplicationWindow {
                 right: parent.right
                 topMargin: 2
             }
+            model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
 
             //model: TableModel {
             //TableModelColumn {

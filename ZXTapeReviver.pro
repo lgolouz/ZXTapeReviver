@@ -81,6 +81,7 @@ SOURCES += \
         sources/actions/actionbase.cpp \
         sources/actions/editsampleaction.cpp \
         sources/actions/shiftwaveformaction.cpp \
+        sources/core/parseddata.cpp \
         sources/main.cpp \
         sources/models/actionsmodel.cpp \
         sources/models/dataplayermodel.cpp \
@@ -101,6 +102,7 @@ HEADERS += \
     sources/actions/actionbase.h \
     sources/actions/editsampleaction.h \
     sources/actions/shiftwaveformaction.h \
+    sources/core/parseddata.h \
     sources/defines.h \
     sources/models/actionsmodel.h \
     sources/models/dataplayermodel.h \
