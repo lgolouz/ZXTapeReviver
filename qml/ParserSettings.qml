@@ -118,6 +118,16 @@ Dialog {
                         ParserSettingsModel.synchroDelta = text;
                     }
                 }
+
+                CheckBox {
+                    id: preciseSynchroCheck
+                    text: Translations.id_precise_synchro_check
+
+                    checked: ParserSettingsModel.preciseSynchroCheck
+                    onCheckedChanged: {
+                        ParserSettingsModel.preciseSynchroCheck = checked;
+                    }
+                }
             }
         }
 

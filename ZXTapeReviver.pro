@@ -23,7 +23,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
-CONFIG += c++14
+CONFIG += c++17
 
 #Dynamically generate translation names and country codes based on AVAILABLE_TRANSLATIONS variable
 AVAILABLE_TRANSLATIONS = English:en_US Russian:ru_RU
@@ -81,6 +81,7 @@ SOURCES += \
         sources/actions/actionbase.cpp \
         sources/actions/editsampleaction.cpp \
         sources/actions/shiftwaveformaction.cpp \
+        sources/core/parseddata.cpp \
         sources/main.cpp \
         sources/models/actionsmodel.cpp \
         sources/models/dataplayermodel.cpp \
@@ -100,6 +101,7 @@ HEADERS += \
     sources/actions/actionbase.h \
     sources/actions/editsampleaction.h \
     sources/actions/shiftwaveformaction.h \
+    sources/core/parseddata.h \
     sources/defines.h \
     sources/models/actionsmodel.h \
     sources/models/dataplayermodel.h \

@@ -19,6 +19,7 @@
 #include <QVector>
 #include <QVariantMap>
 #include <QVariantList>
+#include "sources/core/parseddata.h"
 #include "sources/core/wavreader.h"
 #include "sources/defines.h"
 
@@ -113,8 +114,12 @@ private:
     }
 
     void fillParsedWaveform(uint chNum, const WaveformPart& p, uint8_t val);
+    //Helper methods intended to use in case of change we can made them only once
+    __attribute__((always_inline)) inline bool isZeroFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
+    __attribute__((always_inline)) inline bool isOneFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
 
     WavReader& mWavReader;
+    QScopedPointer<ParsedData> m_parsedData;
     QMap<uint, QVector<uint8_t>> mParsedWaveform;
     QMap<uint, QVector<DataBlock>> mParsedData;
     mutable QVector<bool> mSelectedBlocks;
@@ -133,6 +138,8 @@ public:
     void saveWaveform(uint chNum);
     QVector<uint8_t> getParsedWaveform(uint chNum) const;
     QPair<QVector<DataBlock>, QVector<bool>> getParsedData(uint chNum) const;
+
+    void repairWaveform2(uint chNum);
 
     Q_INVOKABLE void toggleBlockSelection(int blockNum);
     Q_INVOKABLE int getBlockDataStart(uint chNum, uint blockNum) const;

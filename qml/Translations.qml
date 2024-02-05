@@ -48,6 +48,7 @@ QtObject {
     property string id_synchro_second_half_frequency:        qsTrId("id_synchro_second_half_frequency") + TranslationManager.translationChanged
     property string id_synchro_frequency:                    qsTrId("id_synchro_frequency") + TranslationManager.translationChanged
     property string id_synchro_delta:                        qsTrId("id_synchro_delta") + TranslationManager.translationChanged
+    property string id_precise_synchro_check:                qsTrId("id_precise_synchro_check") + TranslationManager.translationChanged
     property string id_zero_digit_settings:                  qsTrId("id_zero_digit_settings") + TranslationManager.translationChanged
     property string id_zero_half_frequency:                  qsTrId("id_zero_half_frequency") + TranslationManager.translationChanged
     property string id_zero_frequency:                       qsTrId("id_zero_frequency") + TranslationManager.translationChanged
