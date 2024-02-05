@@ -28,14 +28,14 @@ inline bool isFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t sig
     const double freq = sampleRate / length;
     const double delta = signalFreq * (signalDelta / deltaDivider);
     return freq >= (signalFreq - delta) && freq <= (signalFreq + delta);
-};
+}
 
 inline bool isFreqFitsInDelta2(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) {
     const double freq = sampleRate / length;
     const double deltaB = signalFreq * signalDeltaBelow;
     const double deltaA = signalFreq * signalDeltaAbove;
     return freq >= (signalFreq - deltaB) && freq <= (signalFreq + deltaA);
-};
+}
 
 enum SignalFrequencies {
     PILOT_HALF_FREQ = 1660,
@@ -51,12 +51,13 @@ enum SignalFrequencies {
     ONE_FREQ = 1050
 };
 
-const bool checkForAbnormalSine = true;
+constexpr const bool preciseSynchroCheck = false;
+constexpr const bool checkForAbnormalSine = true;
 
-const double pilotDelta = 0.1;
-const double synchroDelta = 0.3;
-const double zeroDelta = 0.3;//0.3;//0.18;
-const double oneDelta = 0.25;//0.25;//0.1;
-const double sineCheckTolerance = 0.5;
+constexpr const double pilotDelta = 0.1;
+constexpr const double synchroDelta = 0.3;
+constexpr const double zeroDelta = 0.3;//0.3;//0.18;
+constexpr const double oneDelta = 0.25;//0.25;//0.1;
+constexpr const double sineCheckTolerance = 0.5;
 
 #endif // DEFINES_H

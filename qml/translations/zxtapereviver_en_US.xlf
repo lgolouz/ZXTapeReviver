@@ -52,6 +52,7 @@
 <trans-unit id="id_synchro_second_half_frequency"><source>Synchro second half frequency:</source><target>Synchro second half frequency:</target></trans-unit>
 <trans-unit id="id_synchro_frequency"><source>Synchro frequency:</source><target>Synchro frequency:</target></trans-unit>
 <trans-unit id="id_synchro_delta"><source>Synchro delta:</source><target>Synchro delta:</target></trans-unit>
+<trans-unit id="id_precise_synchro_check"><source>Precise synchro check</source><target>Precise synchro check</target></trans-unit>
 <trans-unit id="id_zero_digit_settings"><source>Zero digit settings:</source><target>Zero digit settings:</target></trans-unit>
 <trans-unit id="id_zero_half_frequency"><source>Zero half frequency:</source><target>Zero half frequency:</target></trans-unit>
 <trans-unit id="id_zero_frequency"><source>Zero frequency:</source><target>Zero frequency:</target></trans-unit>

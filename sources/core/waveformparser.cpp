@@ -20,11 +20,60 @@
 #include <QVariantMap>
 #include <algorithm>
 
+#define HARDCODED_DATA_SIGNAL_DELTA 0.75
+
 WaveformParser::WaveformParser(QObject* parent) :
     QObject(parent),
-    mWavReader(*WavReader::instance())
+    mWavReader(*WavReader::instance()),
+    m_parsedData(new ParsedData())
 {
 
+}
+
+void WaveformParser::repairWaveform2(uint chNum) {
+    if (chNum >= mWavReader.getNumberOfChannels()) {
+        qDebug() << "Trying to parse channel that exceeds overall number of channels";
+        return;
+    }
+
+    QWavVector& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
+    QVector<WaveformPart> parsed = parseChannel<QWavVectorType>(channel);
+
+    const auto& parserSettings = ParserSettingsModel::instance()->getParserSettings();
+    const double sampleRate = mWavReader.getSampleRate();
+    for (auto it { parsed.begin() }; it != parsed.end();) {
+        auto itprev = it++;
+        if (it != parsed.end()) {
+            bool isZero = isZeroFreqFitsInDelta(sampleRate, (*it).length + (*itprev).length, parserSettings.zeroFreq, parserSettings.zeroDelta, HARDCODED_DATA_SIGNAL_DELTA);
+            bool isOne = isOneFreqFitsInDelta(sampleRate, (*it).length + (*itprev).length, parserSettings.oneFreq, HARDCODED_DATA_SIGNAL_DELTA, parserSettings.oneDelta);
+            if (isZero || isOne) {
+                auto it1 = std::next(channel.begin(), (*itprev).begin);
+                auto it2 = std::next(channel.begin(), (*it).end);
+                auto itmiddle = std::next(it1, std::distance(it1, it2) / 2);
+                const auto min_max = std::minmax_element(it1, it2);
+                auto [val1, val2] = (*itprev).sign == WaveformSign::NEGATIVE ? min_max : decltype(min_max) {min_max.second, min_max.first};
+                auto itr = it1;
+                for (; itr != itmiddle; ++itr) {
+                    *itr  = *val1;
+                }
+                for (; itr != it2; ++itr) {
+                    *itr = *val2;
+                }
+            }
+            ++it;
+        }
+    }
+}
+
+inline bool WaveformParser::isZeroFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const
+{
+    return isFreqFitsInDelta2(sampleRate, length, signalFreq, signalDeltaBelow, signalDeltaAbove);
+}
+
+inline bool WaveformParser::isOneFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const
+{
+    Q_UNUSED(signalDeltaBelow)
+    return isFreqFitsInDelta2(sampleRate, length, signalFreq, signalDeltaBelow, signalDeltaAbove);
 }
 
 void WaveformParser::parse(uint chNum)
@@ -63,13 +112,23 @@ void WaveformParser::parse(uint chNum)
         return true;
     };
 
+    const auto isPilotHalfFreq = [&parserSettings, sampleRate](const WaveformPart& p) -> bool {
+        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.pilotHalfFreq, parserSettings.pilotDelta, 1.0);
+    };
+    const auto isSynchroFirstHalfFreq = [&parserSettings, sampleRate](const WaveformPart& p, double deltaDivider = 1.0) -> bool {
+        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroFirstHalfFreq, parserSettings.synchroDelta, deltaDivider);
+    };
+    const auto isSynchroSecondHalfFreq = [&parserSettings, sampleRate](const WaveformPart& p, double deltaDivider = 1.0) -> bool {
+        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroSecondHalfFreq, parserSettings.synchroDelta, deltaDivider);
+    };
+
     while (currentState != NO_MORE_DATA) {
         auto prevIt = it;
         switch (currentState) {
         case SEARCH_OF_PILOT_TONE:
-            it = std::find_if(it, parsed.end(), [&parserSettings, sampleRate, chNum, this](const WaveformPart& p) {
+            it = std::find_if(it, parsed.end(), [&isPilotHalfFreq, chNum, this](const WaveformPart& p) {
                 fillParsedWaveform(chNum, p, 0);
-                return isFreqFitsInDelta(sampleRate, p.length, parserSettings.pilotHalfFreq, parserSettings.pilotDelta, 2.0);
+                return isPilotHalfFreq(p);
             });
             if (it != parsed.end()) {
                 currentState = PILOT_TONE;
@@ -77,17 +136,24 @@ void WaveformParser::parse(uint chNum)
             break;
 
         case PILOT_TONE:
-            it = std::find_if(it, parsed.end(), [&parserSettings, sampleRate, chNum, this](const WaveformPart& p) {
-                fillParsedWaveform(chNum, p, pilotTone | sequenceMiddle);
-                return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroFirstHalfFreq, parserSettings.synchroDelta);
-            });
-            if (it != parsed.end()) {
-                auto eIt = std::prev(it);
-                fillParsedWaveform(chNum, *eIt, pilotTone | sequenceMiddle);
-                parsedWaveform[prevIt->begin] = pilotTone | sequenceBegin;
-                parsedWaveform[eIt->end] = pilotTone | sequenceEnd;
+            for (; it != parsed.end() && isPilotHalfFreq(*it); ++it) {
+                fillParsedWaveform(chNum, *it, pilotTone | sequenceMiddle);
+            };
 
-                currentState = SYNCHRO_SIGNAL;
+            //Found the first half of SYNCHRO signal
+            if (it != parsed.end()) {
+                if (auto itnext { std::next(it) };
+                    (parserSettings.preciseSynchroCheck && isSynchroFirstHalfFreq(*it)) ||
+                    (!parserSettings.preciseSynchroCheck &&
+                     (itnext != parsed.end() &&
+                      isFreqFitsInDelta(sampleRate, it->length + itnext->length, parserSettings.synchroFreq, parserSettings.synchroDelta, 1.0))))
+                {
+                    auto eIt = std::prev(it);
+                    fillParsedWaveform(chNum, *eIt, pilotTone | sequenceMiddle);
+                    parsedWaveform[prevIt->begin] = pilotTone | sequenceBegin;
+                    parsedWaveform[eIt->end] = pilotTone | sequenceEnd;
+
+                    currentState = SYNCHRO_SIGNAL;
 //                WaveformData wd;
 //                wd.begin = std::distance(parsed.begin(), prevIt);
 //                wd.end = std::distance(parsed.begin(), std::prev(it));
@@ -96,14 +162,21 @@ void WaveformParser::parse(uint chNum)
 //                wd.value = SYNCHRO;
 
 //                mParsedWaveform.insert(wd.waveBegin, wd);
+                }
+                else {
+                    currentState = SEARCH_OF_PILOT_TONE;
+                }
+            }
+            else {
+                currentState = SEARCH_OF_PILOT_TONE;
             }
             break;
 
         case SYNCHRO_SIGNAL:
             it = std::next(it);
             if (it != parsed.end()) {
-                if ((isFreqFitsInDelta(sampleRate, it->length, parserSettings.synchroSecondHalfFreq, parserSettings.synchroDelta)) &&
-                    (isFreqFitsInDelta(sampleRate, it->length + prevIt->length, parserSettings.synchroFreq, parserSettings.synchroDelta, 2.0))) {
+                //Check for second half of SYNCHRO signal or if `preciseSynchroCheck` option is off - assume there is synchro, because we did the check on the previous step
+                if (!parserSettings.preciseSynchroCheck || isSynchroSecondHalfFreq(*it)) {
                     fillParsedWaveform(chNum, *prevIt, synchroSignal | sequenceMiddle);
                     fillParsedWaveform(chNum, *it, synchroSignal | sequenceMiddle);
                     parsedWaveform[prevIt->begin] = synchroSignal | sequenceBegin;
@@ -121,7 +194,7 @@ void WaveformParser::parse(uint chNum)
 
 //                    mParsedWaveform.insert(wd.waveBegin, wd);
                     it = std::next(it);
-                    dataStart = std::distance(parsed.begin(), it) + 1;
+                    dataStart = std::distance(parsed.begin(), it);
                     data.clear();
                     waveformData.clear();
                     bitIndex ^= bitIndex;
@@ -137,7 +210,7 @@ void WaveformParser::parse(uint chNum)
             it = std::next(it);
             if (it != parsed.end()) {
                 const auto len = it->length + prevIt->length;
-                if (isFreqFitsInDelta2(sampleRate, len, parserSettings.zeroFreq, parserSettings.zeroDelta, 0.75) && isSineNormal(*prevIt, *it, true)) { //ZERO
+                if (isZeroFreqFitsInDelta(sampleRate, len, parserSettings.zeroFreq, parserSettings.zeroDelta, HARDCODED_DATA_SIGNAL_DELTA) && isSineNormal(*prevIt, *it, true)) { //ZERO
                     fillParsedWaveform(chNum, *prevIt, zeroBit | sequenceMiddle);
                     fillParsedWaveform(chNum, *it, zeroBit | sequenceMiddle);
                     parsedWaveform[prevIt->begin] = zeroBit | sequenceBegin;
@@ -164,7 +237,7 @@ void WaveformParser::parse(uint chNum)
                         bit ^= bit;
                     }
                 }
-                else if (isFreqFitsInDelta2(sampleRate, len, parserSettings.oneFreq, 0.75, parserSettings.oneDelta) && isSineNormal(*prevIt, *it, false)) { //ONE
+                else if (isOneFreqFitsInDelta(sampleRate, len, parserSettings.oneFreq, HARDCODED_DATA_SIGNAL_DELTA, parserSettings.oneDelta) && isSineNormal(*prevIt, *it, false)) { //ONE
                     fillParsedWaveform(chNum, *prevIt, oneBit | sequenceMiddle);
                     fillParsedWaveform(chNum, *it, oneBit | sequenceMiddle);
                     parsedWaveform[prevIt->begin] = oneBit | sequenceBegin;
