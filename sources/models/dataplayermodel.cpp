@@ -137,7 +137,7 @@ void DataPlayerModel::handleNextDataRecord() {
 }
 
 void DataPlayerModel::prepareNextDataRecord() {
-    const QVector<WaveformParser::DataBlock>& blockData { m_data.first };
+    const QVector<ParsedData::DataBlock>& blockData { m_data.first };
     const QVector<bool>& selectionData { m_data.second };
     while (m_currentBlock < (unsigned) blockData.size()) {
         if ((unsigned) selectionData.size() < m_currentBlock || selectionData.at(m_currentBlock)) {
