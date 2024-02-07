@@ -24,8 +24,7 @@
 
 WaveformParser::WaveformParser(QObject* parent) :
     QObject(parent),
-    mWavReader(*WavReader::instance()),
-    m_parsedData(new ParsedData())
+    mWavReader(*WavReader::instance())
 {
 
 }
@@ -37,7 +36,7 @@ void WaveformParser::repairWaveform2(uint chNum) {
     }
 
     QWavVector& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
-    QVector<WaveformPart> parsed = parseChannel<QWavVectorType>(channel);
+    QVector<ParsedData::WaveformPart> parsed = parseChannel<QWavVectorType>(channel);
 
     const auto& parserSettings = ParserSettingsModel::instance()->getParserSettings();
     const double sampleRate = mWavReader.getSampleRate();
@@ -51,7 +50,7 @@ void WaveformParser::repairWaveform2(uint chNum) {
                 auto it2 = std::next(channel.begin(), (*it).end);
                 auto itmiddle = std::next(it1, std::distance(it1, it2) / 2);
                 const auto min_max = std::minmax_element(it1, it2);
-                auto [val1, val2] = (*itprev).sign == WaveformSign::NEGATIVE ? min_max : decltype(min_max) {min_max.second, min_max.first};
+                auto [val1, val2] = (*itprev).sign == ParsedData::WaveformSign::NEGATIVE ? min_max : decltype(min_max) {min_max.second, min_max.first};
                 auto itr = it1;
                 for (; itr != itmiddle; ++itr) {
                     *itr  = *val1;
@@ -65,6 +64,28 @@ void WaveformParser::repairWaveform2(uint chNum) {
     }
 }
 
+inline ParsedData* WaveformParser::getOrCreateParsedDataPtr(uint chNum)
+{
+    auto it = m_parsedData.find(chNum);
+    return it == m_parsedData.end() ? *m_parsedData.insert(chNum, new ParsedData(this)) : *it;
+}
+
+inline ParsedData* WaveformParser::getParsedDataPtr(uint chNum) const
+{
+    auto parsedDataIt { m_parsedData.find(chNum) };
+    if (parsedDataIt == m_parsedData.end()) {
+        qWarning() << "Unable to access parsed data with requested channel number.";
+        return nullptr;
+    }
+    return *parsedDataIt;
+}
+
+QSharedPointer<QVector<ParsedData::DataBlock>> WaveformParser::getParsedDataSharedPtr(uint chNum) const
+{
+    auto p = getParsedDataPtr(chNum);
+    return p == nullptr ? QSharedPointer<QVector<ParsedData::DataBlock>> { } : p->getParsedData();
+}
+
 inline bool WaveformParser::isZeroFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const
 {
     return isFreqFitsInDelta2(sampleRate, length, signalFreq, signalDeltaBelow, signalDeltaAbove);
@@ -72,7 +93,6 @@ inline bool WaveformParser::isZeroFreqFitsInDelta(uint32_t sampleRate, uint32_t 
 
 inline bool WaveformParser::isOneFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const
 {
-    Q_UNUSED(signalDeltaBelow)
     return isFreqFitsInDelta2(sampleRate, length, signalFreq, signalDeltaBelow, signalDeltaAbove);
 }
 
@@ -84,19 +104,17 @@ void WaveformParser::parse(uint chNum)
     }
 
     QWavVector& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
-    QVector<WaveformPart> parsed = parseChannel<QWavVectorType>(channel);
+    QVector<ParsedData::WaveformPart> parsed = parseChannel<QWavVectorType>(channel);
 
     const double sampleRate = mWavReader.getSampleRate();
-    auto& parsedData = mParsedData[chNum];
-    parsedData.clear();
-
-    auto& parsedWaveform = mParsedWaveform[chNum];
-    parsedWaveform.resize(channel.size());
+    auto& parsedData = *getOrCreateParsedDataPtr(chNum);
+    parsedData.clear(channel.size());
 
     auto currentState = SEARCH_OF_PILOT_TONE;
     auto it = parsed.begin();
     QVector<uint8_t> data;
-    QVector<WaveformPart> waveformData;
+    QVector<ParsedData::WaveformPart> waveformData;
+    QMap<size_t, uint> data_mapping;
     //WaveformSign signalDirection = POSITIVE;
     uint32_t dataStart = 0;
     uint8_t bitIndex = 0;
@@ -104,7 +122,7 @@ void WaveformParser::parse(uint chNum)
     uint8_t parity = 0;
 
     const auto& parserSettings = ParserSettingsModel::instance()->getParserSettings();
-    auto isSineNormal = [&parserSettings, sampleRate](const WaveformPart& b, const WaveformPart& e, bool zeroCheck) -> bool {
+    auto isSineNormal = [&parserSettings, sampleRate](const ParsedData::WaveformPart& b, const ParsedData::WaveformPart& e, bool zeroCheck) -> bool {
         if (parserSettings.checkForAbnormalSine) {
             return isFreqFitsInDelta(sampleRate, b.length, zeroCheck ? parserSettings.zeroHalfFreq : parserSettings.oneHalfFreq, zeroCheck ? parserSettings.zeroDelta : parserSettings.oneDelta, parserSettings.sineCheckTolerance) &&
                    isFreqFitsInDelta(sampleRate, e.length, zeroCheck ? parserSettings.zeroHalfFreq : parserSettings.oneHalfFreq, zeroCheck ? parserSettings.zeroDelta : parserSettings.oneDelta, parserSettings.sineCheckTolerance);
@@ -112,13 +130,13 @@ void WaveformParser::parse(uint chNum)
         return true;
     };
 
-    const auto isPilotHalfFreq = [&parserSettings, sampleRate](const WaveformPart& p) -> bool {
+    const auto isPilotHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p) -> bool {
         return isFreqFitsInDelta(sampleRate, p.length, parserSettings.pilotHalfFreq, parserSettings.pilotDelta, 1.0);
     };
-    const auto isSynchroFirstHalfFreq = [&parserSettings, sampleRate](const WaveformPart& p, double deltaDivider = 1.0) -> bool {
+    const auto isSynchroFirstHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p, double deltaDivider = 1.0) -> bool {
         return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroFirstHalfFreq, parserSettings.synchroDelta, deltaDivider);
     };
-    const auto isSynchroSecondHalfFreq = [&parserSettings, sampleRate](const WaveformPart& p, double deltaDivider = 1.0) -> bool {
+    const auto isSynchroSecondHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p, double deltaDivider = 1.0) -> bool {
         return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroSecondHalfFreq, parserSettings.synchroDelta, deltaDivider);
     };
 
@@ -126,8 +144,8 @@ void WaveformParser::parse(uint chNum)
         auto prevIt = it;
         switch (currentState) {
         case SEARCH_OF_PILOT_TONE:
-            it = std::find_if(it, parsed.end(), [&isPilotHalfFreq, chNum, this](const WaveformPart& p) {
-                fillParsedWaveform(chNum, p, 0);
+            it = std::find_if(it, parsed.end(), [&isPilotHalfFreq, &parsedData, this](const ParsedData::WaveformPart& p) {
+                parsedData.fillParsedWaveform(p, 0);
                 return isPilotHalfFreq(p);
             });
             if (it != parsed.end()) {
@@ -137,7 +155,8 @@ void WaveformParser::parse(uint chNum)
 
         case PILOT_TONE:
             for (; it != parsed.end() && isPilotHalfFreq(*it); ++it) {
-                fillParsedWaveform(chNum, *it, pilotTone | sequenceMiddle);
+                //Mark parsed waveform as pilot-tone
+                parsedData.fillParsedWaveform(*it, ParsedData::pilotTone | ParsedData::sequenceMiddle);
             };
 
             //Found the first half of SYNCHRO signal
@@ -149,19 +168,11 @@ void WaveformParser::parse(uint chNum)
                       isFreqFitsInDelta(sampleRate, it->length + itnext->length, parserSettings.synchroFreq, parserSettings.synchroDelta, 1.0))))
                 {
                     auto eIt = std::prev(it);
-                    fillParsedWaveform(chNum, *eIt, pilotTone | sequenceMiddle);
-                    parsedWaveform[prevIt->begin] = pilotTone | sequenceBegin;
-                    parsedWaveform[eIt->end] = pilotTone | sequenceEnd;
-
+                    //Mark parsed waveform as pilot-tone and sets the begin and end bounds
+                    parsedData.fillParsedWaveform(*eIt, ParsedData::pilotTone | ParsedData::sequenceMiddle,
+                                                  prevIt->begin, ParsedData::pilotTone | ParsedData::sequenceBegin,
+                                                  eIt->end, ParsedData::pilotTone | ParsedData::sequenceEnd);
                     currentState = SYNCHRO_SIGNAL;
-//                WaveformData wd;
-//                wd.begin = std::distance(parsed.begin(), prevIt);
-//                wd.end = std::distance(parsed.begin(), std::prev(it));
-//                wd.waveBegin = prevIt->begin;
-//                wd.waveEnd = it->end;
-//                wd.value = SYNCHRO;
-
-//                mParsedWaveform.insert(wd.waveBegin, wd);
                 }
                 else {
                     currentState = SEARCH_OF_PILOT_TONE;
@@ -177,30 +188,24 @@ void WaveformParser::parse(uint chNum)
             if (it != parsed.end()) {
                 //Check for second half of SYNCHRO signal or if `preciseSynchroCheck` option is off - assume there is synchro, because we did the check on the previous step
                 if (!parserSettings.preciseSynchroCheck || isSynchroSecondHalfFreq(*it)) {
-                    fillParsedWaveform(chNum, *prevIt, synchroSignal | sequenceMiddle);
-                    fillParsedWaveform(chNum, *it, synchroSignal | sequenceMiddle);
-                    parsedWaveform[prevIt->begin] = synchroSignal | sequenceBegin;
-                    parsedWaveform[it->end] = synchroSignal | sequenceEnd;
+                    //Mark parsed waveform as syncro signal and sets the begin and end bounds
+                    parsedData.fillParsedWaveform(*prevIt, *it, ParsedData::synchroSignal | ParsedData::sequenceMiddle,
+                                                  ParsedData::synchroSignal | ParsedData::sequenceBegin,
+                                                  ParsedData::synchroSignal | ParsedData::sequenceEnd);
 
+                    //Initializing the currently parsing data block
                     currentState = DATA_SIGNAL;
-                    //signalDirection = prevIt->sign;
 
-//                    WaveformData wd;
-//                    wd.begin = std::distance(parsed.begin(), prevIt);
-//                    wd.end = std::distance(parsed.begin(), it);
-//                    wd.waveBegin = prevIt->begin;
-//                    wd.waveEnd = it->end;
-//                    wd.value = SYNCHRO;
-
-//                    mParsedWaveform.insert(wd.waveBegin, wd);
                     it = std::next(it);
                     dataStart = std::distance(parsed.begin(), it);
                     data.clear();
                     waveformData.clear();
+                    data_mapping.clear();
                     bitIndex ^= bitIndex;
                     bit ^= bit;
                 }
                 else {
+                    //Got the synchro error
                     currentState = SEARCH_OF_PILOT_TONE;
                 }
             }
@@ -210,90 +215,81 @@ void WaveformParser::parse(uint chNum)
             it = std::next(it);
             if (it != parsed.end()) {
                 const auto len = it->length + prevIt->length;
-                if (isZeroFreqFitsInDelta(sampleRate, len, parserSettings.zeroFreq, parserSettings.zeroDelta, HARDCODED_DATA_SIGNAL_DELTA) && isSineNormal(*prevIt, *it, true)) { //ZERO
-                    fillParsedWaveform(chNum, *prevIt, zeroBit | sequenceMiddle);
-                    fillParsedWaveform(chNum, *it, zeroBit | sequenceMiddle);
-                    parsedWaveform[prevIt->begin] = zeroBit | sequenceBegin;
-                    parsedWaveform[it->end] = zeroBit | sequenceEnd;
+                const auto storeParsedByte = [&parsedData, &bitIndex, &data, &waveformData, &parity, &bit, it]() {
+                    //Store parsed byte in data buffer
+                    bitIndex ^= bitIndex;
+                    data.append(bit);
+                    waveformData.append(*it);
+                    parity ^= bit;
+                    bit ^= bit;
+                };
+
+                //"0" - ZERO
+                if (isZeroFreqFitsInDelta(sampleRate, len, parserSettings.zeroFreq, parserSettings.zeroDelta, HARDCODED_DATA_SIGNAL_DELTA) && isSineNormal(*prevIt, *it, true)) {
+                    //Mark parsed waveform as "0"-bit and sets the begin and end bounds
+                    parsedData.fillParsedWaveform(*prevIt, *it, ParsedData::zeroBit | ParsedData::sequenceMiddle,
+                                                  ParsedData::zeroBit | ParsedData::sequenceBegin | (bitIndex == 0 ? ParsedData::byteBound : 0),
+                                                  ParsedData::zeroBit | ParsedData::sequenceEnd | (bitIndex == 7 ? ParsedData::byteBound : 0));
 
                     if (bitIndex == 0) {
-                        parsedWaveform[prevIt->begin] |= byteBound;
+                        data_mapping.insert((*prevIt).begin, data.size());
                     }
 
-//                    WaveformData wd;
-//                    wd.begin = std::distance(parsed.begin(), prevIt);
-//                    wd.end = std::distance(parsed.begin(), it);
-//                    wd.waveBegin = prevIt->begin;
-//                    wd.waveEnd = it->end;
-//                    wd.value = SignalValue::ZERO;
-
-//                    mParsedWaveform.insert(wd.waveBegin, wd);
                     if (bitIndex++ == 7) {
-                        parsedWaveform[it->end] |= byteBound;
-                        bitIndex ^= bitIndex;
-                        data.append(bit);
-                        waveformData.append(*it);
-                        parity ^= bit;
-                        bit ^= bit;
+                        data_mapping.insert((*it).end, data.size());
+                        storeParsedByte();
+                        // //Update byte bound mark
+                        // parsedData.orParsedWaveform(it->end, ParsedData::byteBound);
+                        // //Store parsed byte in data buffer
+                        // bitIndex ^= bitIndex;
+                        // data.append(bit);
+                        // waveformData.append(*it);
+                        // parity ^= bit;
+                        // bit ^= bit;
                     }
                 }
-                else if (isOneFreqFitsInDelta(sampleRate, len, parserSettings.oneFreq, HARDCODED_DATA_SIGNAL_DELTA, parserSettings.oneDelta) && isSineNormal(*prevIt, *it, false)) { //ONE
-                    fillParsedWaveform(chNum, *prevIt, oneBit | sequenceMiddle);
-                    fillParsedWaveform(chNum, *it, oneBit | sequenceMiddle);
-                    parsedWaveform[prevIt->begin] = oneBit | sequenceBegin;
-                    parsedWaveform[it->end] = oneBit | sequenceEnd;
+                // "1" - ONE
+                else if (isOneFreqFitsInDelta(sampleRate, len, parserSettings.oneFreq, HARDCODED_DATA_SIGNAL_DELTA, parserSettings.oneDelta) && isSineNormal(*prevIt, *it, false)) {
+                    //Mark parsed waveform as "1"-bit and sets the begin and end bounds
+                    parsedData.fillParsedWaveform(*prevIt, *it, ParsedData::oneBit | ParsedData::sequenceMiddle,
+                                                  ParsedData::oneBit | ParsedData::sequenceBegin | (bitIndex == 0 ? ParsedData::byteBound : 0),
+                                                  ParsedData::oneBit | ParsedData::sequenceEnd | (bitIndex == 7 ? ParsedData::byteBound : 0));
 
-//                    WaveformData wd;
-//                    wd.begin = std::distance(parsed.begin(), prevIt);
-//                    wd.end = std::distance(parsed.begin(), it);
-//                    wd.waveBegin = prevIt->begin;
-//                    wd.waveEnd = it->end;
-//                    wd.value = SignalValue::ONE;
+                    if (bitIndex == 0) {
+                        data_mapping.insert((*prevIt).begin, data.size());
+                    }
 
-//                    mParsedWaveform.insert(wd.waveBegin, wd);
+                    //Set the currently parsed bit
                     bit |= 1 << (7 - bitIndex);
                     if (bitIndex++ == 7) {
-                        parsedWaveform[it->end] |= byteBound;
-                        bitIndex ^= bitIndex;
-                        data.append(bit);
-                        waveformData.append(*it);
-                        parity ^= bit;
-                        bit ^= bit;
+                        data_mapping.insert((*it).end, data.size());
+                        storeParsedByte();
+                        // //Update byte bound mark
+                        // parsedData.orParsedWaveform(it->end, ParsedData::byteBound);
+                        // //Store parsed byte in data buffer
+                        // bitIndex ^= bitIndex;
+                        // data.append(bit);
+                        // waveformData.append(*it);
+                        // parity ^= bit;
+                        // bit ^= bit;
                     }
                 }
                 else {
                     currentState = END_OF_DATA;
                     if (!data.empty()) {
-                        DataBlock db;
-                        db.dataStart = parsed.at(dataStart).begin;
-                        db.dataEnd = parsed.at(std::distance(parsed.begin(), it)).end;
-                        db.data = data;
-                        db.waveformData = waveformData;
                         parity ^= data.last(); //Removing parity byte from overal parity check sum
-                        //Storing parity data
-                        db.parityAwaited = data.last();
-                        db.parityCalculated = parity;
-                        db.state = parity == db.parityAwaited ? DataState::OK : DataState::R_TAPE_LOADING_ERROR; //Should be checked with checksum
+                        //Storing parsed data
+                        parsedData.storeData(std::move(data), std::move(data_mapping), parsed.at(dataStart).begin, parsed.at(std::distance(parsed.begin(), it)).end, std::move(waveformData), parity);
                         parity ^= parity; //Zeroing parity byte
-                        parsedData.append(db);
                     }
                 }
                 it = std::next(it);
             }
             else if (!data.empty()) {
-                DataBlock db;
-                db.dataStart = parsed.at(dataStart).begin;
-                db.dataEnd = parsed.at(parsed.size() - 1).end;
-                db.data = data;
-                db.waveformData = waveformData;
                 parity ^= data.last(); //Remove parity byte from overal parity check sum
-                //Storing parity data
-                db.parityAwaited = data.last();
-                db.parityCalculated = parity;
-                db.state = parity == db.parityAwaited ? DataState::OK : DataState::R_TAPE_LOADING_ERROR; //Should be checked with checksum
+                //Storing parsed data
+                parsedData.storeData(std::move(data), std::move(data_mapping), parsed.at(dataStart).begin, parsed.at(parsed.size() - 1).end, std::move(waveformData), parity);
                 parity ^= parity; //Zeroing parity byte
-
-                parsedData.append(db);
             }
             break;
 
@@ -320,11 +316,17 @@ void WaveformParser::parse(uint chNum)
 
 void WaveformParser::saveTap(uint chNum, const QString& fileName)
 {
+    auto parsedDataPtr { getParsedDataPtr(chNum) };
+    if (parsedDataPtr == nullptr) {
+        return;
+    }
+
     QFile f(fileName.isEmpty() ? QString("tape_%1_%2.tap").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")).arg(chNum ? "R" : "L") : fileName);
     f.remove(); //Remove file if exists
     f.open(QIODevice::WriteOnly);
 
-    auto& parsedData = mParsedData[chNum];
+    auto parsedDataSPtr { parsedDataPtr->getParsedData() };
+    auto& parsedData = *parsedDataSPtr.data();
     for (auto i = 0; i < parsedData.size(); ++i) {
         if (i < mSelectedBlocks.size() && !mSelectedBlocks[i]) {
             continue;
@@ -341,20 +343,20 @@ void WaveformParser::saveTap(uint chNum, const QString& fileName)
     f.close();
 }
 
-void WaveformParser::fillParsedWaveform(uint chNum, const WaveformPart& p, uint8_t val)
-{
-    auto& parsedWaveform = mParsedWaveform[chNum];
-    for (auto i = p.begin; i <= p.end; ++i) {
-        parsedWaveform[i] = val;
-    }
-}
-
 QVector<uint8_t> WaveformParser::getParsedWaveform(uint chNum) const {
-    return mParsedWaveform[chNum];
+    auto parsedDataPtr { getParsedDataPtr(chNum) };
+    if (parsedDataPtr == nullptr) {
+        return {};
+    }
+    return *parsedDataPtr->getParsedWaveform();// mParsedWaveform[chNum];
 }
 
-QPair<QVector<WaveformParser::DataBlock>, QVector<bool>> WaveformParser::getParsedData(uint chNum) const {
-    return { mParsedData[chNum], mSelectedBlocks };
+QPair<QVector<ParsedData::DataBlock>, QVector<bool>> WaveformParser::getParsedData(uint chNum) const {
+    auto parsedDataPtr { getParsedDataPtr(chNum) };
+    if (parsedDataPtr == nullptr) {
+        return {};
+    }
+    return { *parsedDataPtr->getParsedData(), mSelectedBlocks };
 }
 
 void WaveformParser::toggleBlockSelection(int blockNum) {
@@ -369,30 +371,58 @@ void WaveformParser::toggleBlockSelection(int blockNum) {
 
 int WaveformParser::getBlockDataStart(uint chNum, uint blockNum) const
 {
-    if (chNum < (unsigned) mParsedData.size() && blockNum < (unsigned) mParsedData[chNum].size()) {
-        return mParsedData[chNum][blockNum].dataStart;
+    auto parsedDataPtr { getParsedDataPtr(chNum) };
+    if (parsedDataPtr == nullptr) {
+        return 0;
+    }
+    auto parsedDataSPtr { parsedDataPtr->getParsedData() };
+    auto& parsedData { *parsedDataSPtr };
+
+    if (blockNum < (unsigned) parsedData.size()) {
+        return parsedData[blockNum].dataStart;
     }
     return 0;
 }
 
 int WaveformParser::getBlockDataEnd(uint chNum, uint blockNum) const
 {
-    if (chNum < (unsigned) mParsedData.size() && blockNum < (unsigned) mParsedData[chNum].size()) {
-        return mParsedData[chNum][blockNum].dataEnd;
+    auto parsedDataPtr { getParsedDataPtr(chNum) };
+    if (parsedDataPtr == nullptr) {
+        return 0;
+    }
+    auto parsedDataSPtr { parsedDataPtr->getParsedData() };
+    auto& parsedData { *parsedDataSPtr };
+
+    if (blockNum < (unsigned) parsedData.size()) {
+        return parsedData[blockNum].dataEnd;
     }
     return 0;
 }
 
 int WaveformParser::getPositionByAddress(uint chNum, uint blockNum, uint addr) const
 {
-    if (chNum < (unsigned) mParsedData.size() && blockNum < (unsigned) mParsedData[chNum].size() && addr < (unsigned) mParsedData[chNum][blockNum].waveformData.size()) {
-        return mParsedData[chNum][blockNum].waveformData.at(addr).end;
+    auto parsedDataPtr { getParsedDataPtr(chNum) };
+    if (parsedDataPtr == nullptr) {
+        return 0;
+    }
+    auto parsedDataSPtr { parsedDataPtr->getParsedData() };
+    auto& parsedData { *parsedDataSPtr };
+
+    if (blockNum < (unsigned) parsedData.size() && addr < (unsigned) parsedData[blockNum].waveformData.size()) {
+        return parsedData[blockNum].waveformData[addr].begin;
     }
     return 0;
 }
 
 QVariantList WaveformParser::getParsedChannelData(uint chNum) const
 {
+    auto parsedDataPtr { getParsedDataPtr(chNum) };
+    if (parsedDataPtr == nullptr) {
+        return {};
+    }
+    auto parsedDataSPtr { parsedDataPtr->getParsedData() };
+    auto& parsedData { *parsedDataSPtr };
+
     static QMap<int, QString> blockTypes {
         {0x00, "Program"},
         {0x01, "Number Array"},
@@ -406,10 +436,9 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
     const QString id_unknown { qtTrId(ID_UNKNOWN) };
 
     QVariantList r;
-    const auto& ch = mParsedData[chNum];
     uint blockNumber = 0;
 
-    for (const auto& i: ch) {
+    for (const auto& i: parsedData) {
         QVariantMap m;
 
         m.insert("block", QVariantMap { {"blockSelected", blockNumber < (unsigned) mSelectedBlocks.size() ? mSelectedBlocks[blockNumber] : (mSelectedBlocks.append(true), true)}, {"blockNumber", blockNumber++} });
@@ -440,7 +469,7 @@ QVariantList WaveformParser::getParsedChannelData(uint chNum) const
                 nameText = QByteArray((const char*) &i.data.data()[2], loopRange > 1 ? loopRange - 2 : 0);
             }
             m.insert("blockName", nameText);
-            m.insert("blockStatus", (i.state == OK ? id_ok : id_error) + qtTrId(ID_PARITY_MESSAGE).arg(QString::number(i.parityCalculated, 16).toUpper().rightJustified(2, '0')).arg(QString::number(i.parityAwaited, 16).toUpper().rightJustified(2, '0')));
+            m.insert("blockStatus", (i.state == ParsedData::OK ? id_ok : id_error) + qtTrId(ID_PARITY_MESSAGE).arg(QString::number(i.parityCalculated, 16).toUpper().rightJustified(2, '0')).arg(QString::number(i.parityAwaited, 16).toUpper().rightJustified(2, '0')));
             m.insert("state", i.state);
         }
         else {

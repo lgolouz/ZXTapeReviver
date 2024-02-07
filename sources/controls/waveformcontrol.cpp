@@ -123,9 +123,14 @@ void WaveformControl::paint(QPainter* painter) {
     const int xinc = getXScaleFactor() > 16.0 ? getXScaleFactor() / 16 : 1;
     double dx = (bRect.width() / (double) scale) * xinc;
     const auto parsedWaveform = mWavParser.getParsedWaveform(m_channelNumber);
+    const auto parsedData = mWavParser.getParsedDataSharedPtr(m_channelNumber);
     bool printHint = false;
     m_allowToGrabPoint = dx > 2;
     const auto chsize = channel->size();
+
+    QFont fnt;
+    const auto pixelSize { painter->fontInfo().pixelSize() };
+
     for (int32_t t = pos; t < pos + scale; t += xinc) {
         if (t >= 0 && t < chsize) {
             const int val = channel->operator[](t);
@@ -139,42 +144,71 @@ void WaveformControl::paint(QPainter* painter) {
             }
 
             const auto pwf = parsedWaveform[t];
-            if (pwf & mWavParser.sequenceMiddle) {
+            if (pwf & ParsedData::sequenceMiddle) {
                 p.setWidth(3);
                 painter->setPen(p);
-                painter->drawLine(px, bRect.height() - 15, x, bRect.height() - 15);
-                if (pwf & mWavParser.zeroBit || pwf & mWavParser.oneBit) {
+                painter->drawLine(px, bRect.height() - 20, x, bRect.height() - 20);
+                if (pwf & ParsedData::zeroBit || pwf & ParsedData::oneBit) {
                     p.setColor(m_customData.blockMarkerColor());
                     painter->setPen(p);
                     painter->drawLine(px, bRect.height() - 3, x, bRect.height() - 3);
                 }
 
                 if (printHint) {
-                    QString text = pwf & mWavParser.pilotTone
+                    QString text = pwf & ParsedData::pilotTone
                             ? "PILOT"
-                            : pwf & mWavParser.synchroSignal
+                            : pwf & ParsedData::synchroSignal
                               ? "SYNC"
-                              : pwf & mWavParser.zeroBit
+                              : pwf & ParsedData::zeroBit
                                 ? "\"0\""
                                 : "\"1\"";
                     p.setWidth(1);
                     p.setColor(m_customData.textColor());
                     painter->setPen(p);
-                    painter->drawText(x + 3, bRect.height() - 15 - 10, text);
+                    painter->drawText(x + 3, bRect.height() - 20 - 10, text);
                     printHint = false;
                 }
             }
-            else if (pwf & mWavParser.sequenceBegin || pwf & mWavParser.sequenceEnd) {
-                printHint = pwf & mWavParser.sequenceBegin;
+            else if (pwf & ParsedData::sequenceBegin || pwf & ParsedData::sequenceEnd) {
+                printHint = pwf & ParsedData::sequenceBegin;
                 auto p = painter->pen();
                 p.setWidth(3);
                 painter->setPen(p);
-                painter->drawLine(x, waveHeight + 2, x, bRect.height() - 15);
+                painter->drawLine(x, waveHeight + 2, x, bRect.height() - 20);
 
-                if (pwf & mWavParser.byteBound) {
-                    p.setColor(pwf & mWavParser.sequenceBegin ? m_customData.blockStartColor() : m_customData.blockEndColor());
+                if (pwf & ParsedData::byteBound) {
+                    bool seqBegin = printHint;
+                    p.setColor(seqBegin ? m_customData.blockStartColor() : m_customData.blockEndColor());
                     painter->setPen(p);
                     painter->drawLine(x, bRect.height() - 10, x, bRect.height() - 3);
+
+                    auto parsedIt = std::find_if(parsedData->begin(), parsedData->end(), [t](const ParsedData::DataBlock& db) {
+                        return t >= db.dataStart && t <= db.dataEnd;
+                    });
+
+                    if (parsedIt != parsedData->end()) {
+                        fnt.setPixelSize(9);
+                        painter->setFont(fnt);
+                        p.setWidth(1);
+                        p.setColor(m_customData.textColor());
+                        painter->setPen(p);
+
+                        const auto toHexVal = [](uint val, uint count){
+                            return QString("0x%1").arg(QString("%1").arg(val, count, 16, QLatin1Char('0')).toUpper());
+                        };
+
+                        const auto addrIt = (*parsedIt).dataMapping.find(t);
+                        if (addrIt != (*parsedIt).dataMapping.end()) {
+                            if (seqBegin) {
+                                painter->drawText(x + 5, bRect.height() - 6, toHexVal(*addrIt, *addrIt <= 65535 ? 4 : 6));
+                            } else {
+                                painter->drawText(x - 5 - 19, bRect.height() - 6, toHexVal((*parsedIt).data[*addrIt], 2));
+                            }
+                        }
+
+                        fnt.setPixelSize(pixelSize);
+                        painter->setFont(fnt);
+                    }
                 }
             }
         }

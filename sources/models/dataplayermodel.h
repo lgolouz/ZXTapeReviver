@@ -37,7 +37,7 @@ class DataPlayerModel : public QObject
 
     PlayingState m_playingState;
     QScopedPointer<QAudioOutput> m_audio;
-    QPair<QVector<WaveformParser::DataBlock>, QVector<bool>> m_data;
+    QPair<QVector<ParsedData::DataBlock>, QVector<bool>> m_data;
     QVariantList m_parserData;
     unsigned m_currentBlock;
     QTimer m_delayTimer;

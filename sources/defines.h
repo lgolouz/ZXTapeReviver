@@ -24,13 +24,13 @@ inline bool lessThanZero(T t) {
     return t < 0;
 }
 
-inline bool isFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDelta, double deltaDivider = 1.0) {
+__attribute__((always_inline)) inline bool isFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDelta, double deltaDivider = 1.0) {
     const double freq = sampleRate / length;
     const double delta = signalFreq * (signalDelta / deltaDivider);
     return freq >= (signalFreq - delta) && freq <= (signalFreq + delta);
 }
 
-inline bool isFreqFitsInDelta2(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) {
+__attribute__((always_inline)) inline bool isFreqFitsInDelta2(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) {
     const double freq = sampleRate / length;
     const double deltaB = signalFreq * signalDeltaBelow;
     const double deltaA = signalFreq * signalDeltaAbove;
