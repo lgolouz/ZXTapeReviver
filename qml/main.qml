@@ -621,7 +621,7 @@ ApplicationWindow {
             width: hZoomOutButton.width
 
             onClicked: {
-                ActionsModel.shiftWaveform(1300);
+                ActionsModel.shiftWaveform(-300);
                 waveformControlCh0.update();
                 //getSelectedWaveform().shiftWaveform();
             }

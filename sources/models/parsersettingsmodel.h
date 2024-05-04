@@ -25,6 +25,7 @@ class ParserSettingsModel : public QObject
     Q_PROPERTY(int synchroFirstHalfFreq READ getSynchroFirstHalfFreq WRITE setSynchroFirstHalfFreq NOTIFY synchroFirstHalfFreqChanged)
     Q_PROPERTY(int synchroSecondHalfFreq READ getSynchroSecondHalfFreq WRITE setSynchroSecondHalfFreq NOTIFY synchroSecondHalfFreqChanged)
     Q_PROPERTY(int synchroFreq READ getSynchroFreq WRITE setSynchroFreq NOTIFY synchroFreqChanged)
+    Q_PROPERTY(bool preciseSynchroCheck READ getPreciseSynchroCheck WRITE setPreciseSynchroCheck NOTIFY preciseSychroCheckChanged)
     Q_PROPERTY(int zeroHalfFreq READ getZeroHalfFreq WRITE setZeroHalfFreq NOTIFY zeroHalfFreqChanged)
     Q_PROPERTY(int zeroFreq READ getZeroFreq WRITE setZeroFreq NOTIFY zeroFreqChanged)
     Q_PROPERTY(int oneHalfFreq READ getOneHalfFreq WRITE setOneHalfFreq NOTIFY oneHalfFreqChanged)
@@ -46,6 +47,7 @@ public:
         int32_t synchroFirstHalfFreq;
         int32_t synchroSecondHalfFreq;
         int32_t synchroFreq;
+        bool preciseSynchroCheck;
         int32_t zeroHalfFreq;
         int32_t zeroFreq;
         int32_t oneHalfFreq;
@@ -71,6 +73,7 @@ public:
     int getSynchroFirstHalfFreq() const;
     int getSynchroSecondHalfFreq() const;
     int getSynchroFreq() const;
+    bool getPreciseSynchroCheck() const;
     int getZeroHalfFreq() const;
     int getZeroFreq() const;
     int getOneHalfFreq() const;
@@ -88,6 +91,7 @@ public:
     void setSynchroFirstHalfFreq(int freq);
     void setSynchroSecondHalfFreq(int freq);
     void setSynchroFreq(int freq);
+    void setPreciseSynchroCheck(bool precise);
     void setZeroHalfFreq(int freq);
     void setZeroFreq(int freq);
     void setOneHalfFreq(int freq);
@@ -105,6 +109,7 @@ signals:
     void synchroFirstHalfFreqChanged();
     void synchroSecondHalfFreqChanged();
     void synchroFreqChanged();
+    void preciseSychroCheckChanged();
     void zeroHalfFreqChanged();
     void zeroFreqChanged();
     void oneHalfFreqChanged();

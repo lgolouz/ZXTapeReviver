@@ -23,6 +23,7 @@ ParserSettingsModel::ParserSettingsModel(QObject* parent) :
         SignalFrequencies::SYNCHRO_FIRST_HALF_FREQ,
         SignalFrequencies::SYNCHRO_SECOND_HALF_FREQ,
         SignalFrequencies::SYNCHRO_FREQ,
+        preciseSynchroCheck,
         SignalFrequencies::ZERO_HALF_FREQ,
         SignalFrequencies::ZERO_FREQ,
         SignalFrequencies::ONE_HALF_FREQ,
@@ -44,6 +45,7 @@ void ParserSettingsModel::restoreDefaultSettings()
     setSynchroFirstHalfFreq(SignalFrequencies::SYNCHRO_FIRST_HALF_FREQ);
     setSynchroSecondHalfFreq(SignalFrequencies::SYNCHRO_SECOND_HALF_FREQ);
     setSynchroFreq(SignalFrequencies::SYNCHRO_FREQ);
+    setPreciseSynchroCheck(preciseSynchroCheck);
     setZeroHalfFreq(SignalFrequencies::ZERO_HALF_FREQ);
     setZeroFreq(SignalFrequencies::ZERO_FREQ);
     setOneHalfFreq(SignalFrequencies::ONE_HALF_FREQ);
@@ -84,6 +86,11 @@ int ParserSettingsModel::getSynchroSecondHalfFreq() const
 int ParserSettingsModel::getSynchroFreq() const
 {
     return m_parserSettings.synchroFreq;
+}
+
+bool ParserSettingsModel::getPreciseSynchroCheck() const
+{
+    return m_parserSettings.preciseSynchroCheck;
 }
 
 int ParserSettingsModel::getZeroHalfFreq() const
@@ -172,6 +179,14 @@ void ParserSettingsModel::setSynchroFreq(int freq)
     if (m_parserSettings.synchroFreq != freq) {
         m_parserSettings.synchroFreq = freq;
         emit synchroFreqChanged();
+    }
+}
+
+void ParserSettingsModel::setPreciseSynchroCheck(bool precise)
+{
+    if (m_parserSettings.preciseSynchroCheck != precise) {
+        m_parserSettings.preciseSynchroCheck = precise;
+        emit preciseSychroCheckChanged();
     }
 }
 
