@@ -12,9 +12,9 @@
 //*******************************************************************************
 
 import QtQuick 2.3
-import QtQuick.Controls
-import QtQuick.Dialogs
-import QtQuick.Layouts
+import QtQuick.Controls 2.15
+import QtQuick.Dialogs 1.3
+import QtQuick.Layouts 1.15
 
 Dialog {
     id: aboutDialog
