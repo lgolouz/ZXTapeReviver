@@ -23,7 +23,7 @@ Window {
     visible: false
     title: Translations.id_measured_frequency_window_header
     //standardButtons: StandardButton.Ok
-    //modality: Qt.WindowModal
+    modality: Qt.WindowModal
     width: componentsContainer.childrenRect.width + 2 * margin_size
     height: componentsContainer.childrenRect.height + 2 * margin_size
 

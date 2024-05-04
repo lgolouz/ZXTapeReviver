@@ -22,8 +22,7 @@ Window {
 
     visible: false
     title: Translations.id_goto_address_window_header
-    //standardButtons: StandardButton.Ok | StandardButton.Cancel
-    //modality: Qt.WindowModal
+    modality: Qt.WindowModal
     width: containerItem.childrenRect.width + 2 * margin_size
     height: containerItem.childrenRect.height + 2 * margin_size
 

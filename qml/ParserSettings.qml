@@ -25,7 +25,7 @@ Window {
     visible: false
     title: Translations.id_parser_settings_window_header
     //flags: Qt.Dialog
-    //modality: Qt.WindowModal
+    modality: Qt.WindowModal
     width: controlsContainer.childrenRect.width + 2 * margin_size
     height: controlsContainer.childrenRect.height + 2 * margin_size
 
