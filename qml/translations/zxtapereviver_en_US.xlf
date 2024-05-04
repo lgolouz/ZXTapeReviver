@@ -14,6 +14,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
  <file source-language="en-US" target-language="en-US">
   <body>
+<trans-unit id="id_close_button_text"><source>Close</source><target>Close</target></trans-unit>
+<trans-unit id="id_ok_button_text"><source>OK</source><target>OK</target></trans-unit>
+<trans-unit id="id_restore_defaults_button_text"><source>Restore defaults</source><target>Restore defaults</target></trans-unit>
+<trans-unit id="id_goto_button_text"><source>Go to</source><target>Go to</target></trans-unit>
+<trans-unit id="id_cancel_button_text"><source>Cancel</source><target>Cancel</target></trans-unit>
 <trans-unit id="id_timeline_sec"><source>%1 sec</source><target>%1 sec</target></trans-unit>
 <trans-unit id="id_about_window_header"><source>About</source><target>About</target></trans-unit>
 <trans-unit id="id_email_link"><source>E-mail: %1</source><target>E-mail: %1</target></trans-unit>

@@ -15,52 +15,82 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
 
-Dialog {
+Window {
     id: gotoAddressDialog
 
     signal gotoAddress(int adr);
 
     visible: false
     title: Translations.id_goto_address_window_header
-    standardButtons: StandardButton.Ok | StandardButton.Cancel
+    //standardButtons: StandardButton.Ok | StandardButton.Cancel
     //modality: Qt.WindowModal
-    width: 250
-    height: 120
+    width: containerItem.childrenRect.width + 2 * margin_size
+    height: containerItem.childrenRect.height + 2 * margin_size
 
-    Text {
-        id: textWithField
-        text: Translations.id_please_enter_address
-    }
+    readonly property int margin_size: 10
 
-    TextField {
-        id: textField
-        anchors.top: textWithField.bottom
-        width: parent.width
-    }
-
-    CheckBox {
-        id: hexCheckbox
-
-        anchors.top: textField.bottom
-        anchors.topMargin: 3
-        checked: true
-        text: Translations.id_hexadecimal
-    }
-
-    Text {
-        id: conversionField
-
-        function convertAddress(adr) {
-            return hexCheckbox.checked ? parseInt(adr, 16) : "0x" + parseInt(adr, 10).toString(16).toUpperCase();
+    Item {
+        id: containerItem
+        anchors {
+            fill: parent
+            topMargin: gotoAddressDialog.margin_size
+            leftMargin: gotoAddressDialog.margin_size
         }
 
-        text: "(" + convertAddress(textField.text) + ")"
-        anchors.left: hexCheckbox.right
-        anchors.leftMargin: 3
-        anchors.top: hexCheckbox.top
-    }
+        Text {
+            id: textWithField
+            text: Translations.id_please_enter_address
+        }
 
-    onAccepted: {
-        gotoAddress(parseInt(textField.text, hexCheckbox.checked ? 16 : 10));
+        TextField {
+            id: textField
+            anchors.top: textWithField.bottom
+            width: 250
+        }
+
+        CheckBox {
+            id: hexCheckbox
+
+            anchors.top: textField.bottom
+            anchors.topMargin: 3
+            checked: true
+            text: Translations.id_hexadecimal
+        }
+
+        Text {
+            id: conversionField
+
+            function convertAddress(adr) {
+                return hexCheckbox.checked ? parseInt(adr, 16) : "0x" + parseInt(adr, 10).toString(16).toUpperCase();
+            }
+
+            text: "(" + convertAddress(textField.text) + ")"
+            anchors.left: hexCheckbox.right
+            anchors.leftMargin: 3
+            anchors.top: hexCheckbox.top
+        }
+
+        Button {
+            id: okButton
+            anchors.right: textField.right
+            anchors.top: conversionField.bottom
+            anchors.topMargin: gotoAddressDialog.margin_size
+            text: Translations.id_goto_button_text
+            onClicked: {
+                gotoAddress(parseInt(textField.text, hexCheckbox.checked ? 16 : 10));
+                close();
+            }
+        }
+
+        Button {
+            anchors.right: okButton.left
+            anchors.rightMargin: gotoAddressDialog.margin_size / 2
+            anchors.top: conversionField.bottom
+            anchors.topMargin: gotoAddressDialog.margin_size
+            text: Translations.id_cancel_button_text
+            onClicked: {
+                close();
+            }
+        }
     }
 }

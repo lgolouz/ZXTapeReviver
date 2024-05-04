@@ -21,7 +21,7 @@ import Qt.labs.qmlmodels
 import com.models.zxtapereviver 1.0
 import "."
 
-Dialog {
+Window {
     id: dataPlayerDialog
 
     property int selectedChannel: 0
@@ -29,8 +29,8 @@ Dialog {
 
     visible: false
     title: Translations.id_playing_parsed_data_window_header
-    standardButtons: StandardButton.Close
-    //modality: Qt.WindowModal
+    //standardButtons: StandardButton.Close
+    modality: Qt.WindowModal
     width: 500
     height: 400
 
@@ -65,23 +65,16 @@ Dialog {
 //                property bool blkSelected: styleData.value.blockSelected
 //                property int blkNumber: styleData.value.blockNumber
 
-//                Rectangle {
-//                    anchors.fill: parent
-//                    border.width: 0
-//                    color: parent.blkSelected ? "#A00000FF" : "transparent"
-//                    Text {
-//                        anchors.centerIn: parent
-//                        color: parent.parent.blkSelected ? "white" : "black"
-//                        text: blkNumber + 1
-//                    }
-//                }
-
-//                MouseArea {
-//                    anchors.fill: parent
-//                    onClicked: {
-//                        WaveformParser.toggleBlockSelection(blkNumber);
-//                    }
-//                }
+//                 Rectangle {
+//                     anchors.fill: parent
+//                     border.width: 0
+//                     color: parent.blkSelected ? "#A00000FF" : "transparent"
+//                     Text {
+//                         anchors.centerIn: parent
+//                         color: parent.parent.blkSelected ? "white" : "black"
+//                         text: blkNumber + 1
+//                     }
+//                 }
 //            }
         }
 
@@ -108,7 +101,13 @@ Dialog {
             //width: rightArea.width * 0.45
             //role: "blockStatus"
         }
-        }
+        //     title: Translations.id_block_status
+        //     width: rightArea.width * 0.45
+        //     role: "blockStatus"
+        // }
+
+//        selectionMode: SelectionMode.SingleSelection
+        // }
 
         //selectionMode: SelectionMode.SingleSelection
         //model: parsedChannel
@@ -116,6 +115,7 @@ Dialog {
 //            text: styleData.value
 //            color: modelData.state === 0 ? "black" : "red"
 //        }
+        }
 
     }
 
@@ -187,7 +187,7 @@ Dialog {
                 horizontalAlignment: Text.AlignHCenter
                 text: {
                     var b = DataPlayerModel.blockData;
-                    return b == undefined ? "" : (b.block.blockNumber + 1) + ": " + b.blockType + " " + b.blockName;
+                    return b === undefined ? "" : (b.block.blockNumber + 1) + ": " + b.blockType + " " + b.blockName;
                 }
             }
             FontMetrics {

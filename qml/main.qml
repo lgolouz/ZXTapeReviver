@@ -153,7 +153,7 @@ ApplicationWindow {
             MenuItem {
                 text: Translations.id_parser_settings_menu_item
                 onTriggered: {
-                    parserSettingsDialog.open();
+                    parserSettingsDialog.show();
                 }
             }
         }
@@ -180,8 +180,8 @@ ApplicationWindow {
                     }
                 }
 
-                onObjectAdded: (index, object) => languageMenu.insertItem(index, object)
-                onObjectRemoved: (object) => languageMenu.removeItem(object)
+                onObjectAdded: (index, object) => { languageMenu.insertItem(index, object) }
+                onObjectRemoved: (object) => { languageMenu.removeItem(object) }
             }
         }
 
@@ -191,7 +191,7 @@ ApplicationWindow {
             MenuItem {
                 text: Translations.id_about_menu_item
                 onTriggered: {
-                    aboutDialog.open();
+                    aboutDialog.show();
                 }
             }
         }
@@ -214,6 +214,7 @@ ApplicationWindow {
 
         //selectMultiple: false
         //sidebarVisible: true
+        fileMode: FileDialog.OpenFile
 
         defaultSuffix: openDialogType === openFileDialog.openWfm
                        ? Translations.wfm_file_suffix
@@ -234,12 +235,12 @@ ApplicationWindow {
                                ? "TAP"
                                : "WAV";
 
-            console.log("Selected %1 file: ".arg(filetype) + openFileDialog.fileUrl);
+            console.log("Selected %1 file: ".arg(filetype) + openFileDialog.currentFile);
             var res = (openDialogType === openFileDialog.openWfm
-                        ? FileWorkerModel.openWaveformFileByUrl(openFileDialog.fileUrl)
+                        ? FileWorkerModel.openWaveformFileByUrl(openFileDialog.currentFile)
                         : openDialogType === openFileDialog.openTap
-                           ? FileWorkerModel.openTapFileByUrl(openFileDialog.fileUrl)
-                           : FileWorkerModel.openWavFileByUrl(openFileDialog.fileUrl));
+                           ? FileWorkerModel.openTapFileByUrl(openFileDialog.currentFile)
+                           : FileWorkerModel.openWavFileByUrl(openFileDialog.currentFile));
 
             console.log("Open %1 file result: ".arg(filetype) + res);
             if (res === 0) {
@@ -267,16 +268,17 @@ ApplicationWindow {
         //sidebarVisible: true
         defaultSuffix: saveParsed ? Translations.tap_file_suffix : Translations.wfm_file_suffix
         nameFilters: saveParsed ? [ Translations.id_tap_files ] : [ Translations.id_wfm_files ]
+        fileMode: FileDialog.SaveFile
 
         onAccepted: {
             if (saveParsed) {
                 if (channelNumber == 0) {
-                    waveformControlCh0.saveTap(saveFileDialog.fileUrl);
+                    waveformControlCh0.saveTap(saveFileDialog.currentFile);
                 }
                 else {
-                    waveformControlCh1.saveTap(saveFileDialog.fileUrl);
+                    waveformControlCh1.saveTap(saveFileDialog.currentFile);
                 }
-                console.log("Tap saved: " + saveFileDialog.fileUrl)
+                console.log("Tap saved: " + saveFileDialog.currentFile)
             }
             else {
                 FileWorkerModel.saveWaveformFileByUrl(saveFileDialog.fileUrl);
@@ -319,7 +321,7 @@ ApplicationWindow {
             width: parent.width - (parent.width * 0.11)
             height: parent.height - parent.height / 2 - parent.spacerHeight / 2
 
-            onDoubleClick: {
+            onDoubleClick: (idx) => {
                 SuspiciousPointsModel.addSuspiciousPoint(idx);
             }
         }
@@ -336,7 +338,7 @@ ApplicationWindow {
             width: parent.width - (parent.width * 0.11)
             height: waveformControlCh0.height
 
-            onDoubleClick: {
+            onDoubleClick: (idx) => {
                 SuspiciousPointsModel.addSuspiciousPoint(idx);
             }
         }
@@ -640,7 +642,7 @@ ApplicationWindow {
             width: hZoomOutButton.width
 
             onClicked: {
-                gotoAddressDialog.open();
+                gotoAddressDialog.show();
             }
         }
 
@@ -839,67 +841,68 @@ ApplicationWindow {
             }
             model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
 
-            //model: TableModel {
-            //TableModelColumn {
-//                title: Translations.id_block_number
-//                width: rightArea.width * 0.07
-//                role: "block"
-//                delegate: Item {
-//                    property bool blkSelected: styleData.value.blockSelected
+//             TableModelColumn {
+//                 title: Translations.id_block_number
+// //                width: rightArea.width * 0.07
+//                 role: "block"
+//                 delegate: Item {
+//                     property bool blkSelected: styleData.value.blockSelected
+//                     property int blkNumber: styleData.value.blockNumber
 //                    property int blkNumber: styleData.value.blockNumber
 
-//                    Rectangle {
-//                        anchors.fill: parent
-//                        border.width: 0
-//                        color: parent.blkSelected ? "#A00000FF" : "transparent"
-//                        Text {
-//                            anchors.centerIn: parent
-//                            color: parent.parent.blkSelected ? "white" : "black"
-//                            text: blkNumber + 1
-//                        }
-//                    }
+//                     Rectangle {
+//                         anchors.fill: parent
+//                         border.width: 0
+//                         color: parent.blkSelected ? "#A00000FF" : "transparent"
+//                         Text {
+//                             anchors.centerIn: parent
+//                             color: parent.parent.blkSelected ? "white" : "black"
+//                             text: blkNumber + 1
+//                         }
+//                     }
 
-//                    MouseArea {
-//                        anchors.fill: parent
-//                        onClicked: {
-//                            WaveformParser.toggleBlockSelection(blkNumber);
-//                        }
-//                    }
-//                }
-            //}
+//                     MouseArea {
+//                         anchors.fill: parent
+//                         onClicked: {
+//                             WaveformParser.toggleBlockSelection(blkNumber);
+//                         }
+//                     }
+//                 }
+//             }
 
-            //TableModelColumn {
-//                title: Translations.id_block_type
-//                width: rightArea.width * 0.23
-//                role: "blockType"
-            //}
+//             TableViewColumn {
+//                 title: Translations.id_block_type
+//                 width: rightArea.width * 0.23
+//                 role: "blockType"
+//             }
 
-            //TableModelColumn {
-//                title: Translations.id_block_name
-//                width: rightArea.width * 0.3
-//                role: "blockName"
-            //}
+//             TableViewColumn {
+//                 title: Translations.id_block_name
+//                 width: rightArea.width * 0.3
+//                 role: "blockName"
+//             }
 
-            //TableModelColumn {
-//                title: Translations.id_block_size
-//                width: rightArea.width * 0.25
-//                role: "blockSize"
-            //}
+//             TableModelColumn {
+//                 title: Translations.id_block_size
+// //                width: rightArea.width * 0.25
+// //                role: "blockSize"
+//             }
 
-            //TableModelColumn {
-//                title: Translations.id_block_status
-//                width: rightArea.width * 0.45
-//                role: "blockStatus"
-            //}
-            //}
+//             TableModelColumn {
+//                 title: Translations.id_block_status
+//                 width: rightArea.width * 0.45
+// //                role: "blockStatus"
+//             }
 
-//            selectionMode: SelectionMode.SingleSelection
-            //model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
-//            itemDelegate: Text {
-//                text: styleData.value
-//                color: modelData.state === 0 ? "black" : "red"
-//            }
+// //            selectionMode: SelectionMode.SingleSelection
+//             model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
+// //            itemDelegate: Text {
+// //                text: styleData.value
+// //                color: modelData.state === 0 ? "black" : "red"
+// //            }
+//         }
         }
+
 
         Button {
             id: gotoPointButton
@@ -949,37 +952,36 @@ ApplicationWindow {
             }
         }
 
-        TableView {
-            id: suspiciousPointsView
+//         TableView {
+//             id: suspiciousPointsView
 
-            anchors {
-                top: gotoPointButton.bottom
-                //bottom: parent.bottom
-                left: parent.left
-                right: parent.right
-                topMargin: 2
-            }
-            height: parent.height * 0.25
-            implicitHeight: parent.height * 0.25
+//             anchors {
+//                 top: gotoPointButton.bottom
+//                 //bottom: parent.bottom
+//                 left: parent.left
+//                 right: parent.right
+//                 topMargin: 2
+//             }
+//             height: parent.height * 0.25
+//             implicitHeight: parent.height * 0.25
 
-//            selectionMode: SelectionMode.SingleSelection
-            //model: suspiciousPoints
-//            itemDelegate: Text {
-//                text: styleData.column === 0 ? styleData.row + 1 : styleData.value
-//            }
+//             //selectionMode: SelectionMode.SingleSelection
+//             model: suspiciousPoints
+// //            itemDelegate: Text {
+// //                text: styleData.column === 0 ? styleData.row + 1 : styleData.value
+// //            }
 
-            model: TableModel {
-            TableModelColumn {
-//                title: Translations.id_suspicious_point_number
-//                width: rightArea.width * 0.1
-            }
+// //            TableModelColumn {
+//                 title: Translations.id_suspicious_point_number
+// ////                width: rightArea.width * 0.1
+// //            }
 
-            TableModelColumn {
-//                title: Translations.id_suspicious_point_position
-//                width: rightArea.width * 0.9
-            }
-            }
-        }
+// //            TableModelColumn {
+//                 title: Translations.id_suspicious_point_position
+//                 width: rightArea.width * 0.9
+//             }
+        //     }
+        // }
 
         Button {
             id: removeActionButton
@@ -1001,35 +1003,33 @@ ApplicationWindow {
             }
         }
 
-        TableView {
-            id: actionsView
+        // TableView {
+        //     id: actionsView
 
-            anchors {
-                top: removeActionButton.bottom
-                bottom: parent.bottom
-                left: parent.left
-                right: parent.right
-                topMargin: 2
-            }
+        //     anchors {
+        //         top: removeActionButton.bottom
+        //         bottom: parent.bottom
+        //         left: parent.left
+        //         right: parent.right
+        //         topMargin: 2
+        //     }
 
-//            selectionMode: SelectionMode.SingleSelection
-            //model: ActionsModel.actions
-//            itemDelegate: Text {
-//                text: styleData.column === 0 ? styleData.row + 1 : modelData.name
-//            }
+        //     selectionMode: SelectionMode.SingleSelection
+        //     model: ActionsModel.actions
+        //     itemDelegate: Text {
+        //         text: styleData.column === 0 ? styleData.row + 1 : modelData.name
+        //     }
 
-            model: TableModel {
-            TableModelColumn {
+            // model: TableModel {
+            // TableModelColumn {
 //                title: Translations.id_suspicious_point_number
 //                width: rightArea.width * 0.1
-            }
 
-            TableModelColumn {
-//                title: Translations.id_action_name
-//                width: rightArea.width * 0.9
-            }
-            }
-        }
+        //     TableViewColumn {
+        //         title: Translations.id_action_name
+        //         width: rightArea.width * 0.9
+        //     }
+        // }
     }
 
     GoToAddress {
@@ -1050,16 +1050,20 @@ ApplicationWindow {
 
     About {
         id: aboutDialog
+        transientParent: parent
     }
 
     ParserSettings {
         id: parserSettingsDialog
+        transientParent: parent
     }
 
     Frequency {
         id: frequencyDialog
+        parent: parent
+
         Component.onCompleted: {
-            var func = function(fr) { frequency = fr; frequencyDialog.open(); };
+            var func = function(fr) { frequency = fr; frequencyDialog.show(); };
             waveformControlCh0.frequency.connect(func);
             waveformControlCh1.frequency.connect(func);
         }
@@ -1067,6 +1071,7 @@ ApplicationWindow {
 
     DataPlayer {
         id: dataPlayerDialog
+        parent: parent
 
         selectedChannel: channelsComboBox.currentIndex
         parsedChannel: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1

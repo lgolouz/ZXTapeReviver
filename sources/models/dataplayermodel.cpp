@@ -33,6 +33,7 @@ void DataPlayerModel::playParsedData(uint chNum, uint currentBlock) {
         return;
     }
 
+#if (0)
 #if (Q_BYTE_ORDER == Q_BIG_ENDIAN)
     //const auto endianness { QAudioFormat::BigEndian };
 #else
@@ -64,6 +65,7 @@ void DataPlayerModel::playParsedData(uint chNum, uint currentBlock) {
     m_data = WaveformParser::instance()->getParsedData(chNum);
     m_parserData = chNum == 0 ? WaveformParser::instance()->getParsedChannel0() : WaveformParser::instance()->getParsedChannel1();
     handleNextDataRecord();
+#endif
 }
 
 void DataPlayerModel::handleNextDataRecord() {
@@ -138,7 +140,9 @@ void DataPlayerModel::handleNextDataRecord() {
 
     m_buffer.setData(array);
     m_buffer.open(QIODevice::ReadOnly);
+#if (0)
     m_audio->start(&m_buffer);
+#endif
 }
 
 void DataPlayerModel::prepareNextDataRecord() {
@@ -162,7 +166,9 @@ void DataPlayerModel::prepareNextDataRecord() {
         });
     } else {
         m_notifyTimer.stop();
+#if (0)
         m_audio->stop();
+#endif
         m_audio.reset();
         m_playingState = DP_Stopped;
         emit currentBlockChanged();
@@ -177,9 +183,11 @@ void DataPlayerModel::handleAudioOutputStateChanged(QAudio::State state) {
             break;
 
         case QAudio::StoppedState:
+#if (0)
             if (m_audio->error() != QAudio::NoError) {
                 qDebug() << "Error playing: " << m_audio->error();
             }
+#endif
             break;
 
         case QAudio::ActiveState:
@@ -200,7 +208,9 @@ void DataPlayerModel::stop() {
 }
 
 void DataPlayerModel::handleAudioOutputNotify() {
+#if (0)
     m_processedTime = m_audio->processedUSecs() / 1000;
+#endif
     emit processedTimeChanged();
 }
 
