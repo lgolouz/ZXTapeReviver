@@ -31,13 +31,15 @@ public:
     Q_ENUM(FileWorkerResults)
 
     explicit FileWorkerModel(QObject* parent = nullptr);
-    ~FileWorkerModel();
+    virtual ~FileWorkerModel() override;
     //getters
     QString getWavFileName() const;
 
     //setters
 
     //QML invokable members
+    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openTapFileByUrl(const QString& fileNameUrl);
+    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openTapFile(const QString& fileName);
     Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWavFileByUrl(const QString& fileNameUrl);
     Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWavFile(const QString& fileName);
     Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWaveformFileByUrl(const QString& fileNameUrl);

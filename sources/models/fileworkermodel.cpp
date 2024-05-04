@@ -23,6 +23,21 @@ FileWorkerModel::FileWorkerModel(QObject* parent) :
 
 }
 
+/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::openTapFileByUrl(const QString& fileNameUrl) {
+    QUrl u(fileNameUrl);
+    return openTapFile(u.toLocalFile());
+}
+
+/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::openTapFile(const QString& fileName) {
+    auto& r = *WavReader::instance();
+    r.close();
+
+    r.loadTap(fileName);
+    m_wavFileName = fileName;
+    emit wavFileNameChanged();
+    return WavReader::Ok;
+}
+
 /*WavReader::ErrorCodesEnum*/ int FileWorkerModel::openWavFileByUrl(const QString& fileNameUrl)
 {
     QUrl u(fileNameUrl);

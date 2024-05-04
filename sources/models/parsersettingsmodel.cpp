@@ -23,6 +23,7 @@ ParserSettingsModel::ParserSettingsModel(QObject* parent) :
         SignalFrequencies::SYNCHRO_FIRST_HALF_FREQ,
         SignalFrequencies::SYNCHRO_SECOND_HALF_FREQ,
         SignalFrequencies::SYNCHRO_FREQ,
+        preciseSynchroCheck,
         SignalFrequencies::ZERO_HALF_FREQ,
         SignalFrequencies::ZERO_FREQ,
         SignalFrequencies::ONE_HALF_FREQ,
@@ -31,7 +32,8 @@ ParserSettingsModel::ParserSettingsModel(QObject* parent) :
         synchroDelta,
         zeroDelta,
         oneDelta,
-        checkForAbnormalSine }
+        checkForAbnormalSine,
+        sineCheckTolerance }
 {
 
 }
@@ -43,6 +45,7 @@ void ParserSettingsModel::restoreDefaultSettings()
     setSynchroFirstHalfFreq(SignalFrequencies::SYNCHRO_FIRST_HALF_FREQ);
     setSynchroSecondHalfFreq(SignalFrequencies::SYNCHRO_SECOND_HALF_FREQ);
     setSynchroFreq(SignalFrequencies::SYNCHRO_FREQ);
+    setPreciseSynchroCheck(preciseSynchroCheck);
     setZeroHalfFreq(SignalFrequencies::ZERO_HALF_FREQ);
     setZeroFreq(SignalFrequencies::ZERO_FREQ);
     setOneHalfFreq(SignalFrequencies::ONE_HALF_FREQ);
@@ -52,6 +55,7 @@ void ParserSettingsModel::restoreDefaultSettings()
     setZeroDelta(zeroDelta);
     setOneDelta(oneDelta);
     setCheckForAbnormalSine(checkForAbnormalSine);
+    setSineCheckTolerance(sineCheckTolerance);
 }
 
 const ParserSettingsModel::ParserSettings& ParserSettingsModel::getParserSettings() const
@@ -82,6 +86,11 @@ int ParserSettingsModel::getSynchroSecondHalfFreq() const
 int ParserSettingsModel::getSynchroFreq() const
 {
     return m_parserSettings.synchroFreq;
+}
+
+bool ParserSettingsModel::getPreciseSynchroCheck() const
+{
+    return m_parserSettings.preciseSynchroCheck;
 }
 
 int ParserSettingsModel::getZeroHalfFreq() const
@@ -129,6 +138,10 @@ bool ParserSettingsModel::getCheckForAbnormalSine() const
     return m_parserSettings.checkForAbnormalSine;
 }
 
+double ParserSettingsModel::getSineCheckTolerance() const {
+    return m_parserSettings.sineCheckTolerance;
+}
+
 void ParserSettingsModel::setPilotHalfFreq(int freq)
 {
     if (m_parserSettings.pilotHalfFreq != freq) {
@@ -166,6 +179,14 @@ void ParserSettingsModel::setSynchroFreq(int freq)
     if (m_parserSettings.synchroFreq != freq) {
         m_parserSettings.synchroFreq = freq;
         emit synchroFreqChanged();
+    }
+}
+
+void ParserSettingsModel::setPreciseSynchroCheck(bool precise)
+{
+    if (m_parserSettings.preciseSynchroCheck != precise) {
+        m_parserSettings.preciseSynchroCheck = precise;
+        emit preciseSychroCheckChanged();
     }
 }
 
@@ -238,6 +259,13 @@ void ParserSettingsModel::setCheckForAbnormalSine(bool check)
     if (m_parserSettings.checkForAbnormalSine != check) {
         m_parserSettings.checkForAbnormalSine = check;
         emit checkForAbnormalSineChanged();
+    }
+}
+
+void ParserSettingsModel::setSineCheckTolerance(double value) {
+    if (m_parserSettings.sineCheckTolerance != value) {
+        m_parserSettings.sineCheckTolerance = value;
+        emit sineCheckToleranceChanged();
     }
 }
 

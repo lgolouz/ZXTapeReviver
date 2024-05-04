@@ -14,16 +14,23 @@
 #include "waveformcontrol.h"
 #include <cmath>
 #include <climits>
+#include <QList>
 #include <QColor>
 #include <QBrush>
 #include <QPen>
 #include <QPainter>
 #include <QDebug>
+#include <QGuiApplication>
+#include "sources/translations/translations.h"
+#include "sources/models/actionsmodel.h"
+#include "sources/actions/editsampleaction.h"
 
 WaveformControl::WaveformControl(QQuickItem* parent) :
     QQuickPaintedItem(parent),
     mWavReader(*WavReader::instance()),
     mWavParser(*WaveformParser::instance()),
+    mWaveFormModel(*WaveFormModel::instance()),
+    m_customData(*ConfigurationManager::instance()->getWaveformCustomization()),
     m_channelNumber(0),
     m_isWaveformRepaired(false),
     m_wavePos(0),
@@ -39,31 +46,22 @@ WaveformControl::WaveformControl(QQuickItem* parent) :
     setEnabled(true);
 }
 
-QColor WaveformControl::getBackgroundColor() const
-{
-    QColor r;
-    switch (m_operationMode)
-    {
+QColor WaveformControl::getBackgroundColor() const {
+    switch (m_operationMode) {
         case WaveformSelectionMode:
-            r = QColor(37, 37, 37);
-            break;
+            return m_customData.selectioModeBgColor();
 
         case WaveformMeasurementMode:
-            r = QColor(0, 17, 17);
-            break;
+            return m_customData.measurementModeBgColor();
 
         default:
-            r = QColor(7, 7, 36);
-            break;
+            return m_customData.operationModeBgColor();
     }
-
-    return r;
 }
 
-QWavVector* WaveformControl::getChannel(uint* chNum) const
-{
+QSharedPointer<QWavVector> WaveformControl::getChannel(uint* chNum) const {
     const auto c = chNum ? *chNum : m_channelNumber;
-    return c == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1();
+    return mWaveFormModel.getChannel(c);
 }
 
 int WaveformControl::getWavPositionByMouseX(int x, int* point, double* dx) const
@@ -79,11 +77,11 @@ int WaveformControl::getWavPositionByMouseX(int x, int* point, double* dx) const
     return rpoint + getWavePos() * xinc;
 }
 
-void WaveformControl::paint(QPainter* painter)
-{
+void WaveformControl::paint(QPainter* painter) {
+    auto p = painter->pen();
     painter->setBackground(QBrush(getBackgroundColor()));
     painter->setBackgroundMode(Qt::OpaqueMode);
-    painter->setPen(QColor(11, 60, 0));
+    painter->setPen(m_customData.xAxisColor());
     const auto& bRect = boundingRect();
     const double waveHeight = bRect.height() - 100;
     const double halfHeight = waveHeight / 2;
@@ -91,70 +89,126 @@ void WaveformControl::paint(QPainter* painter)
     painter->drawLine(0, halfHeight, bRect.width(), halfHeight);
     int32_t scale = bRect.width() * getXScaleFactor();
     int32_t pos = getWavePos();
-    const auto* channel = getChannel();
+    const auto channel = getChannel();
     if (channel == nullptr) {
         return;
     }
 
+    // Time Marker
+    // It should be painted only once
+    p.setColor(m_customData.textColor());
+    painter->setPen(p);
+    uint32_t sampleRate = mWavReader.getSampleRate();
+    double posStartSec = (double) pos / sampleRate;
+    double posMidSec = (double) (pos + scale / 2) / sampleRate;
+    double posEndSec = (double) (pos + scale) / sampleRate;
+    painter->drawText(3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posStartSec, 'f', 3)));
+    painter->drawText((int) bRect.width() / 2 + 3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posMidSec, 'f', 3)));
+    painter->drawText((int) bRect.width() - 100, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignRight, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posEndSec, 'f', 3)));
+    p.setColor(m_customData.yAxisColor());
+    p.setWidth(1);
+    p.setStyle(Qt::DashLine);
+    painter->setPen(p);
+    painter->drawLine((int) bRect.width() / 2, 0, (int) bRect.width() / 2, waveHeight);
+
+    //Restore default line style
+    p.setStyle(Qt::SolidLine);
+    painter->setPen(p);
+
     const double maxy = getYScaleFactor();
     double px = 0;
-    double py = bRect.height() / 2;
+    double py = halfHeight;
     double x = 0;
     double y = py;
     const int xinc = getXScaleFactor() > 16.0 ? getXScaleFactor() / 16 : 1;
     double dx = (bRect.width() / (double) scale) * xinc;
     const auto parsedWaveform = mWavParser.getParsedWaveform(m_channelNumber);
+    const auto parsedData = mWavParser.getParsedDataSharedPtr(m_channelNumber);
     bool printHint = false;
     m_allowToGrabPoint = dx > 2;
     const auto chsize = channel->size();
+
+    QFont fnt;
+    const auto pixelSize { painter->fontInfo().pixelSize() };
+
     for (int32_t t = pos; t < pos + scale; t += xinc) {
         if (t >= 0 && t < chsize) {
             const int val = channel->operator[](t);
             y = halfHeight - ((double) (val) / maxy) * waveHeight;
-            painter->setPen(val >= 0 ? QColor(50, 150, 0) : QColor(200, 0 , 0));
+            p.setWidth(m_customData.waveLineThickness());
+            p.setColor(val >= 0 ? m_customData.wavePositiveColor() : m_customData.waveNegativeColor());
+            painter->setPen(p);
             painter->drawLine(px, py, x, y);
             if (m_allowToGrabPoint) {
-                painter->drawEllipse(QPoint(x, y), 2, 2);
+                painter->drawEllipse(QPoint(x, y), m_customData.circleRadius(), m_customData.circleRadius());
             }
 
             const auto pwf = parsedWaveform[t];
-            if (pwf & mWavParser.sequenceMiddle) {
-                auto p = painter->pen();
+            if (pwf & ParsedData::sequenceMiddle) {
                 p.setWidth(3);
                 painter->setPen(p);
-                painter->drawLine(px, bRect.height() - 15, x, bRect.height() - 15);
-                if (pwf & mWavParser.zeroBit || pwf & mWavParser.oneBit) {
-                    p.setColor(QColor(0, 0, 250));
+                painter->drawLine(px, bRect.height() - 20, x, bRect.height() - 20);
+                if (pwf & ParsedData::zeroBit || pwf & ParsedData::oneBit) {
+                    p.setColor(m_customData.blockMarkerColor());
                     painter->setPen(p);
                     painter->drawLine(px, bRect.height() - 3, x, bRect.height() - 3);
                 }
 
                 if (printHint) {
-                    QString text = pwf & mWavParser.pilotTone
+                    QString text = pwf & ParsedData::pilotTone
                             ? "PILOT"
-                            : pwf & mWavParser.synchroSignal
+                            : pwf & ParsedData::synchroSignal
                               ? "SYNC"
-                              : pwf & mWavParser.zeroBit
+                              : pwf & ParsedData::zeroBit
                                 ? "\"0\""
                                 : "\"1\"";
                     p.setWidth(1);
-                    p.setColor(QColor(255, 255, 255));
+                    p.setColor(m_customData.textColor());
                     painter->setPen(p);
-                    painter->drawText(x + 3, bRect.height() - 15 - 10, text);
+                    painter->drawText(x + 3, bRect.height() - 20 - 10, text);
                     printHint = false;
                 }
             }
-            else if (pwf & mWavParser.sequenceBegin || pwf & mWavParser.sequenceEnd) {
-                printHint = pwf & mWavParser.sequenceBegin;
+            else if (pwf & ParsedData::sequenceBegin || pwf & ParsedData::sequenceEnd) {
+                printHint = pwf & ParsedData::sequenceBegin;
                 auto p = painter->pen();
                 p.setWidth(3);
                 painter->setPen(p);
-                painter->drawLine(x, waveHeight + 2, x, bRect.height() - 15);
+                painter->drawLine(x, waveHeight + 2, x, bRect.height() - 20);
 
-                if (pwf & mWavParser.byteBound) {
-                    p.setColor(pwf & mWavParser.sequenceBegin ? QColor(0, 0, 250) : QColor(255, 242, 0));
+                if (pwf & ParsedData::byteBound) {
+                    bool seqBegin = printHint;
+                    p.setColor(seqBegin ? m_customData.blockStartColor() : m_customData.blockEndColor());
                     painter->setPen(p);
                     painter->drawLine(x, bRect.height() - 10, x, bRect.height() - 3);
+
+                    auto parsedIt = std::find_if(parsedData->begin(), parsedData->end(), [t](const ParsedData::DataBlock& db) {
+                        return t >= db.dataStart && t <= db.dataEnd;
+                    });
+
+                    if (parsedIt != parsedData->end()) {
+                        fnt.setPixelSize(9);
+                        painter->setFont(fnt);
+                        p.setWidth(1);
+                        p.setColor(m_customData.textColor());
+                        painter->setPen(p);
+
+                        const auto toHexVal = [](uint val, uint count){
+                            return QString("0x%1").arg(QString("%1").arg(val, count, 16, QLatin1Char('0')).toUpper());
+                        };
+
+                        const auto addrIt = (*parsedIt).dataMapping.find(t);
+                        if (addrIt != (*parsedIt).dataMapping.end()) {
+                            if (seqBegin) {
+                                painter->drawText(x + 5, bRect.height() - 6, toHexVal(*addrIt, *addrIt <= 65535 ? 4 : 6));
+                            } else {
+                                painter->drawText(x - 5 - 19, bRect.height() - 6, toHexVal((*parsedIt).data[*addrIt], 2));
+                            }
+                        }
+
+                        fnt.setPixelSize(pixelSize);
+                        painter->setFont(fnt);
+                    }
                 }
             }
         }
@@ -165,7 +219,7 @@ void WaveformControl::paint(QPainter* painter)
     }
 
     if (m_operationMode == WaveformSelectionMode && m_rangeSelected) {
-        painter->setBackground(QBrush(QColor(7, 7, 137, 128)));
+        painter->setBackground(QBrush(m_customData.rangeSelectionColor()));
         auto bRect = boundingRect();
         bRect.setX(m_selectionRange.first);
         bRect.setRight(m_selectionRange.second);
@@ -298,19 +352,24 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
                 update();
             }
             else {
-                if (dpoint >= event->x() - 2.0 && dpoint <= event->x() + 2) {
+                if (dpoint >= (event->x() - dx/2) && dpoint <= (event->x() + dx/2)) {
                     const double maxy = getYScaleFactor();
-                    double y = halfHeight - ((double) (getChannel()->operator[](m_clickPosition)) / maxy) * waveHeight;
-                    if (y >= event->y() - 2 && y <= event->y() + 2) {
+                    auto initialVal { getChannel()->operator[](m_clickPosition) };
+                    double y = halfHeight - ((double) (initialVal) / maxy) * waveHeight;
+                    if (!m_customData.checkVerticalRange() || (y >= event->y() - 2 && y <= event->y() + 2)) {
                         if (event->button() == Qt::LeftButton) {
                             m_pointIndex = point;
+                            m_initialValue = initialVal;
                             m_pointGrabbed = true;
-                            qDebug() << "Grabbed point: " << getChannel()->operator[](m_clickPosition);
+                            qDebug() << "Grabbed point: " << initialVal; //getChannel()->operator[](m_clickPosition);
                         }
                         else {
-                            m_pointGrabbed = false;
-                            getChannel()->remove(m_clickPosition);
-                            update();
+                            if (QGuiApplication::queryKeyboardModifiers() != Qt::ShiftModifier) {
+                                m_pointGrabbed = false;
+                                qDebug() << "Deleting point";
+                                getChannel()->remove(m_clickPosition);
+                                update();
+                            }
                         }
                     }
                 }
@@ -337,7 +396,7 @@ void WaveformControl::mouseReleaseEvent(QMouseEvent* event)
             }
 
             if (m_operationMode == WaveformRepairMode || m_operationMode == WaveformSelectionMode) {
-                if ( m_clickState == WaitForFirstRelease && m_clickTime.msecsTo(now) <= 500) {
+                if (m_clickState == WaitForFirstRelease && m_clickTime.msecsTo(now) <= 500) {
                     m_clickState = WaitForSecondPress;
                 }
                 else if (m_clickState == WaitForSecondRelease && m_clickTime.msecsTo(now) <= 500) {
@@ -347,8 +406,11 @@ void WaveformControl::mouseReleaseEvent(QMouseEvent* event)
                 else {
                     m_clickState = WaitForFirstPress;
                 }
-            }
-            else if (m_operationMode == WaveformMeasurementMode) {
+
+                if (m_pointGrabbed) {
+                    ActionsModel::instance()->addAction(QSharedPointer<EditSampleAction>::create(m_channelNumber, EditSampleActionParams { m_initialValue, m_newValue, m_clickPosition }));
+                }
+            } else if (m_operationMode == WaveformMeasurementMode) {
                 auto& clickPoint = m_clickCount == 0 ? m_selectionRange.first : m_selectionRange.second;
                 clickPoint = getWavPositionByMouseX(event->x());
                 if (m_clickCount == 1) {
@@ -388,7 +450,7 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
                 }
             }
             else if (m_operationMode == WaveformRepairMode) {
-                const auto* ch = getChannel();
+                const auto ch = getChannel();
                 if (!ch) {
                     return;
                 }
@@ -398,9 +460,31 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
                 const auto pointerPos = halfHeight - event->y();
                 double val = halfHeight + (m_yScaleFactor / waveHeight * pointerPos);
                 if (m_pointIndex + getWavePos() >= 0 && m_pointIndex + getWavePos() < ch->size()) {
+                    m_newValue = val;
                     getChannel()->operator[](m_pointIndex + getWavePos()) = val;
                 }
                 qDebug() << "Setting point: " << m_pointIndex + getWavePos();
+            }
+            event->accept();
+            update();
+        }
+        break;
+
+        // Smooth drawing at Repair mode
+        case Qt::RightButton: {
+            if (m_operationMode == WaveformRepairMode && QGuiApplication::queryKeyboardModifiers() == Qt::ShiftModifier) {
+                const auto ch = getChannel();
+                if (!ch) {
+                    return;
+                }
+                double dx;
+                int point;
+                m_clickPosition = getWavPositionByMouseX(event->x(), &point, &dx);
+                const double waveHeight = boundingRect().height() - 100;
+                const double halfHeight = waveHeight / 2;
+                const auto pointerPosY = halfHeight - event->y();
+                double val = halfHeight + (m_yScaleFactor / waveHeight * pointerPosY);
+                getChannel()->operator[](m_clickPosition) = val;
             }
             event->accept();
             update();
@@ -446,15 +530,14 @@ void WaveformControl::saveWaveform()
 void WaveformControl::repairWaveform()
 {
     if (!m_isWaveformRepaired) {
+        mWavParser.repairWaveform2(m_channelNumber);
         //mWavReader.repairWaveform(m_channelNumber);
-        mWavReader.normalizeWaveform2(m_channelNumber);
+        //mWavReader.normalizeWaveform2(m_channelNumber);
         update();
         m_isWaveformRepaired = true;
         emit isWaveformRepairedChanged();
     }
 }
-
-
 
 void WaveformControl::restoreWaveform()
 {

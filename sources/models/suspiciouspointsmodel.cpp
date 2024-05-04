@@ -22,20 +22,15 @@ SuspiciousPointsModel::SuspiciousPointsModel(QObject* parent) : QObject(parent)
 bool SuspiciousPointsModel::addSuspiciousPoint(uint idx)
 {
     qDebug() << QString("Adding suspicious point: %1").arg(idx);
-    for (auto i = 0; i < mSuspiciousPoints.size(); ++i) {
-        auto& p = mSuspiciousPoints[i];
-        if (p == idx) {
-            return false;
-        }
-        else if (p.toUInt() > idx) {
-            mSuspiciousPoints.insert(i, idx);
-            emit suspiciousPointsChanged();
-            emit sizeChanged();
-            return true;
-        }
+    const auto it { std::lower_bound(mSuspiciousPoints.begin(), mSuspiciousPoints.end(), idx, [](const QVariant& t1, uint t2) { return t1.toUInt() < t2; }) };
+    if (it == mSuspiciousPoints.end()) {
+        mSuspiciousPoints.append(idx);
+    } else if (idx == it->toUInt()) {
+        return false;
+    } else {
+        mSuspiciousPoints.insert(it, idx);
     }
 
-    mSuspiciousPoints.append(idx);
     emit suspiciousPointsChanged();
     emit sizeChanged();
     return true;

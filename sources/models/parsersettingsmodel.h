@@ -25,6 +25,7 @@ class ParserSettingsModel : public QObject
     Q_PROPERTY(int synchroFirstHalfFreq READ getSynchroFirstHalfFreq WRITE setSynchroFirstHalfFreq NOTIFY synchroFirstHalfFreqChanged)
     Q_PROPERTY(int synchroSecondHalfFreq READ getSynchroSecondHalfFreq WRITE setSynchroSecondHalfFreq NOTIFY synchroSecondHalfFreqChanged)
     Q_PROPERTY(int synchroFreq READ getSynchroFreq WRITE setSynchroFreq NOTIFY synchroFreqChanged)
+    Q_PROPERTY(bool preciseSynchroCheck READ getPreciseSynchroCheck WRITE setPreciseSynchroCheck NOTIFY preciseSychroCheckChanged)
     Q_PROPERTY(int zeroHalfFreq READ getZeroHalfFreq WRITE setZeroHalfFreq NOTIFY zeroHalfFreqChanged)
     Q_PROPERTY(int zeroFreq READ getZeroFreq WRITE setZeroFreq NOTIFY zeroFreqChanged)
     Q_PROPERTY(int oneHalfFreq READ getOneHalfFreq WRITE setOneHalfFreq NOTIFY oneHalfFreqChanged)
@@ -34,6 +35,10 @@ class ParserSettingsModel : public QObject
     Q_PROPERTY(double zeroDelta READ getZeroDelta WRITE setZeroDelta NOTIFY zeroDeltaChanged)
     Q_PROPERTY(double oneDelta READ getOneDelta WRITE setOneDelta NOTIFY oneDeltaChanged)
     Q_PROPERTY(bool checkForAbnormalSine READ getCheckForAbnormalSine WRITE setCheckForAbnormalSine NOTIFY checkForAbnormalSineChanged)
+    Q_PROPERTY(double sineCheckTolerance READ getSineCheckTolerance WRITE setSineCheckTolerance NOTIFY sineCheckToleranceChanged)
+
+protected:
+    explicit ParserSettingsModel(QObject* parent = nullptr);
 
 public:
     struct ParserSettings {
@@ -42,6 +47,7 @@ public:
         int32_t synchroFirstHalfFreq;
         int32_t synchroSecondHalfFreq;
         int32_t synchroFreq;
+        bool preciseSynchroCheck;
         int32_t zeroHalfFreq;
         int32_t zeroFreq;
         int32_t oneHalfFreq;
@@ -51,9 +57,9 @@ public:
         double zeroDelta;
         double oneDelta;
         bool checkForAbnormalSine;
+        double sineCheckTolerance;
     };
 
-    explicit ParserSettingsModel(QObject* parent = nullptr);
     virtual ~ParserSettingsModel() = default;
     const ParserSettings& getParserSettings() const;
 
@@ -67,6 +73,7 @@ public:
     int getSynchroFirstHalfFreq() const;
     int getSynchroSecondHalfFreq() const;
     int getSynchroFreq() const;
+    bool getPreciseSynchroCheck() const;
     int getZeroHalfFreq() const;
     int getZeroFreq() const;
     int getOneHalfFreq() const;
@@ -76,6 +83,7 @@ public:
     double getZeroDelta() const;
     double getOneDelta() const;
     bool getCheckForAbnormalSine() const;
+    double getSineCheckTolerance() const;
 
     //Setters
     void setPilotHalfFreq(int freq);
@@ -83,6 +91,7 @@ public:
     void setSynchroFirstHalfFreq(int freq);
     void setSynchroSecondHalfFreq(int freq);
     void setSynchroFreq(int freq);
+    void setPreciseSynchroCheck(bool precise);
     void setZeroHalfFreq(int freq);
     void setZeroFreq(int freq);
     void setOneHalfFreq(int freq);
@@ -92,6 +101,7 @@ public:
     void setZeroDelta(double delta);
     void setOneDelta(double delta);
     void setCheckForAbnormalSine(bool check);
+    void setSineCheckTolerance(double value);
 
 signals:
     void pilotHalfFreqChanged();
@@ -99,6 +109,7 @@ signals:
     void synchroFirstHalfFreqChanged();
     void synchroSecondHalfFreqChanged();
     void synchroFreqChanged();
+    void preciseSychroCheckChanged();
     void zeroHalfFreqChanged();
     void zeroFreqChanged();
     void oneHalfFreqChanged();
@@ -108,6 +119,7 @@ signals:
     void zeroDeltaChanged();
     void oneDeltaChanged();
     void checkForAbnormalSineChanged();
+    void sineCheckToleranceChanged();
 
 private:
     ParserSettings m_parserSettings;
