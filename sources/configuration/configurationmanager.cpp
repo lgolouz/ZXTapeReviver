@@ -201,7 +201,7 @@ bool ConfigurationManager::ApplicationCustomization::setTranslationLanguage(Tran
 //ConfigurationManager class
 ConfigurationManager::ConfigurationManager(QObject* parent) :
     QObject(parent),
-    m_customizations({ &m_waveformCustomization, &m_applicationCustomization }),
+    m_customizations({ getWaveformCustomization(), getApplicationCustomization() }),
     m_configurationFile("config.ini")
 {
     // UI settings
