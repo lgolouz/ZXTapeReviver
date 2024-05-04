@@ -12,10 +12,10 @@
 //*******************************************************************************
 
 import QtQuick 2.15
-import QtQuick.Controls 1.3
-import QtQuick.Dialogs 1.3
+import QtQuick.Controls
+import QtQuick.Dialogs
 import QtQuick.Layouts 1.15
-import QtGraphicalEffects 1.12
+//import QtGraphicalEffects 1.12
 
 import com.models.zxtapereviver 1.0
 import "."
@@ -29,7 +29,7 @@ Dialog {
     visible: false
     title: Translations.id_playing_parsed_data_window_header
     standardButtons: StandardButton.Close
-    modality: Qt.WindowModal
+//    modality: Qt.WindowModal
     width: 500
     height: 400
 
@@ -55,64 +55,64 @@ Dialog {
             bottomMargin: 5
         }
 
-        TableViewColumn {
-            title: Translations.id_block_number
-            width: rightArea.width * 0.07
-            role: "block"
-            delegate: Item {
-                property bool blkSelected: styleData.value.blockSelected
-                property int blkNumber: styleData.value.blockNumber
+//         TableViewColumn {
+//             title: Translations.id_block_number
+//             width: rightArea.width * 0.07
+//             role: "block"
+//             delegate: Item {
+//                 property bool blkSelected: styleData.value.blockSelected
+//                 property int blkNumber: styleData.value.blockNumber
 
-                Rectangle {
-                    anchors.fill: parent
-                    border.width: 0
-                    color: parent.blkSelected ? "#A00000FF" : "transparent"
-                    Text {
-                        anchors.centerIn: parent
-                        color: parent.parent.blkSelected ? "white" : "black"
-                        text: blkNumber + 1
-                    }
-                }
+//                 Rectangle {
+//                     anchors.fill: parent
+//                     border.width: 0
+//                     color: parent.blkSelected ? "#A00000FF" : "transparent"
+//                     Text {
+//                         anchors.centerIn: parent
+//                         color: parent.parent.blkSelected ? "white" : "black"
+//                         text: blkNumber + 1
+//                     }
+//                 }
 
-//                MouseArea {
-//                    anchors.fill: parent
-//                    onClicked: {
-//                        WaveformParser.toggleBlockSelection(blkNumber);
-//                    }
-//                }
-            }
-        }
+// //                MouseArea {
+// //                    anchors.fill: parent
+// //                    onClicked: {
+// //                        WaveformParser.toggleBlockSelection(blkNumber);
+// //                    }
+// //                }
+//             }
+//         }
 
-        TableViewColumn {
-            title: Translations.id_block_type
-            width: rightArea.width * 0.23
-            role: "blockType"
-        }
+        // TableViewColumn {
+        //     title: Translations.id_block_type
+        //     width: rightArea.width * 0.23
+        //     role: "blockType"
+        // }
 
-        TableViewColumn {
-            title: Translations.id_block_name
-            width: rightArea.width * 0.3
-            role: "blockName"
-        }
+        // TableViewColumn {
+        //     title: Translations.id_block_name
+        //     width: rightArea.width * 0.3
+        //     role: "blockName"
+        // }
 
-        TableViewColumn {
-            title: Translations.id_block_size
-            width: rightArea.width * 0.25
-            role: "blockSize"
-        }
+        // TableViewColumn {
+        //     title: Translations.id_block_size
+        //     width: rightArea.width * 0.25
+        //     role: "blockSize"
+        // }
 
-        TableViewColumn {
-            title: Translations.id_block_status
-            width: rightArea.width * 0.45
-            role: "blockStatus"
-        }
+        // TableViewColumn {
+        //     title: Translations.id_block_status
+        //     width: rightArea.width * 0.45
+        //     role: "blockStatus"
+        // }
 
-        selectionMode: SelectionMode.SingleSelection
+//        selectionMode: SelectionMode.SingleSelection
         model: parsedChannel
-        itemDelegate: Text {
-            text: styleData.value
-            color: modelData.state === 0 ? "black" : "red"
-        }
+        // itemDelegate: Text {
+        //     text: styleData.value
+        //     color: modelData.state === 0 ? "black" : "red"
+        // }
     }
 
     Button {
@@ -164,15 +164,15 @@ Dialog {
                     leftMargin: parent.border.width
                 }
                 width: (parent.width - 2 * parent.border.width) * (DataPlayerModel.processedTime / DataPlayerModel.blockTime)
-                LinearGradient {
-                    anchors.fill: parent
-                    gradient: Gradient {
-                            GradientStop { position: 0.0; color: "#1B94EF" }
-                            GradientStop { position: 1.0; color: "#92C1E4" }
-                        }
-                    start: Qt.point(0, 0)
-                    end: Qt.point(parent.width, 0)
-                }
+                // LinearGradient {
+                //     anchors.fill: parent
+                //     gradient: Gradient {
+                //             GradientStop { position: 0.0; color: "#1B94EF" }
+                //             GradientStop { position: 1.0; color: "#92C1E4" }
+                //         }
+                //     start: Qt.point(0, 0)
+                //     end: Qt.point(parent.width, 0)
+                // }
             }
 
             Text {
@@ -183,7 +183,7 @@ Dialog {
                 horizontalAlignment: Text.AlignHCenter
                 text: {
                     var b = DataPlayerModel.blockData;
-                    return b == undefined ? "" : (b.block.blockNumber + 1) + ": " + b.blockType + " " + b.blockName;
+                    return b === undefined ? "" : (b.block.blockNumber + 1) + ": " + b.blockType + " " + b.blockName;
                 }
             }
             FontMetrics {

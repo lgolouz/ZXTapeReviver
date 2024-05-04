@@ -11,12 +11,17 @@ QtObject {
     readonly property string tap_file_suffix: "tap"
     readonly property string filename_wildcard: "*."
 
+    property string id_close_button_text:                    qsTrId("id_close_button_text") + TranslationManager.translationChanged
+    property string id_ok_button_text:                       qsTrId("id_ok_button_text") + TranslationManager.translationChanged
+    property string id_restore_defaults_button_text:         qsTrId("id_restore_defaults_button_text") + TranslationManager.translationChanged
+    property string id_goto_button_text:                     qsTrId("id_goto_button_text") + TranslationManager.translationChanged
+    property string id_cancel_button_text:                   qsTrId("id_cancel_button_text") + TranslationManager.translationChanged
     property string id_about_window_header:                  qsTrId("id_about_window_header") + TranslationManager.translationChanged
     property string id_please_click_to_open_link:            qsTrId("id_please_click_to_open_link") + TranslationManager.translationChanged
     property string id_email_link:                           qsTrId("id_email_link").arg('<a href="mailto:computerenthusiasttips@mail.ru">computerenthusiasttips@mail.ru</a>') + TranslationManager.translationChanged
     property string id_youtube_channel_name:                 qsTrId("id_youtube_channel_name") + TranslationManager.translationChanged
-    property string id_youtube_channel_link:                 qsTrId("id_youtube_channel_link").arg('<a href="https://www.youtube.com/channel/UCz_ktTqWVekT0P4zVW8Xgcg">%1</a>'.arg(id_youtube_channel_name))
-    property string id_donations_link:                       qsTrId("id_donations_link").arg('<a href="https://destream.net/live/lgolouz/donate">https://destream.net/live/lgolouz/donate</a>')
+    property string id_youtube_channel_link:                 qsTrId("id_youtube_channel_link").arg('<a href="https://www.youtube.com/channel/UCz_ktTqWVekT0P4zVW8Xgcg">%1</a>'.arg(id_youtube_channel_name)) + TranslationManager.translationChanged
+    property string id_donations_link:                       qsTrId("id_donations_link").arg('<a href="https://destream.net/live/lgolouz/donate">https://destream.net/live/lgolouz/donate</a>') + TranslationManager.translationChanged
     property string id_measured_frequency_window_header:     qsTrId("id_measured_frequency_window_header") + TranslationManager.translationChanged
     property string id_measured_frequency:                   qsTrId("id_measured_frequency") + TranslationManager.translationChanged
     property string id_goto_address_window_header:           qsTrId("id_goto_address_window_header") + TranslationManager.translationChanged

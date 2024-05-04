@@ -11,32 +11,56 @@
 // permission of the Author.
 //*******************************************************************************
 
-import QtQuick 2.3
-import QtQuick.Controls 2.15
-import QtQuick.Dialogs 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Dialogs
 
-Dialog {
+Window {
     id: frequencyDialog
 
-    property var frequency: 0
+    property real frequency: 0
 
     visible: false
     title: Translations.id_measured_frequency_window_header
-    standardButtons: StandardButton.Ok
-    //modality: Qt.WindowModal
-    width: 200
-    height: 120
+    //standardButtons: StandardButton.Ok
+    modality: Qt.WindowModal
+    width: componentsContainer.childrenRect.width + 2 * margin_size
+    height: componentsContainer.childrenRect.height + 2 * margin_size
 
-    Text {
-        id: textWithField
-        text: Translations.id_measured_frequency
-    }
+    readonly property int margin_size: 10
 
-    TextField {
-        id: textField
-        anchors.top: textWithField.bottom
-        anchors.topMargin: 5
-        width: parent.width
-        text: frequency
+    Item {
+        id: componentsContainer
+
+        anchors {
+            fill: parent
+            topMargin: aboutDialog.margin_size
+            leftMargin: aboutDialog.margin_size
+        }
+
+        Text {
+            id: textWithField
+            text: Translations.id_measured_frequency
+        }
+
+        TextField {
+            id: textField
+            anchors.top: textWithField.bottom
+            anchors.topMargin: 5
+            width: 200
+            text: frequency
+            readOnly: true
+        }
+
+        Button {
+            anchors.right: textField.right
+            anchors.top: textField.bottom
+            anchors.topMargin: frequencyDialog.margin_size
+            text: Translations.id_close_button_text
+
+            onClicked: {
+                close();
+            }
+        }
     }
 }
