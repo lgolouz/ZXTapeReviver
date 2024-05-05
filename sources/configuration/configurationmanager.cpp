@@ -15,6 +15,15 @@
 #include <QFileInfo>
 #include <QSettings>
 
+namespace {
+
+template <typename T, typename Arg>
+auto make_ptr(Arg&& arg) {
+    return new T(std::forward<Arg>(arg));
+}
+
+}
+
 //INI Value helper classes
 ConfigurationManager::INIQColorValue::INIQColorValue(QColor& val) : INIValueTypedBase(val)
 {
@@ -61,13 +70,13 @@ void ConfigurationManager::INITranslationLanguageValue::setValue(const QVariant&
 }
 
 
-ConfigurationManager::CustomizationBase::CustomizationBase(const QMap<INISections, QList<QPair<INIKeys, std::shared_ptr<INIValueBase>>>>& sections) :
+ConfigurationManager::CustomizationBase::CustomizationBase(const QMap<INISections, QList<QPair<INIKeys, InitializerListScopedPtr<INIValueBase>>>>& sections) :
     m_ini(sections)
 {
 
 }
 
-const QMap<ConfigurationManager::INISections, QList<QPair<ConfigurationManager::INIKeys, std::shared_ptr<ConfigurationManager::INIValueBase>>>>&  ConfigurationManager::CustomizationBase::getSections() const {
+const QMap<ConfigurationManager::INISections, QList<QPair<ConfigurationManager::INIKeys, InitializerListScopedPtr<ConfigurationManager::INIValueBase>>>>&  ConfigurationManager::CustomizationBase::getSections() const {
     return m_ini;
 }
 
@@ -90,25 +99,25 @@ ConfigurationManager::WaveformCustomization::WaveformCustomization() :
     m_checkVerticalRange(true),
     m_waveformini({
             { INISections::COLOR, {
-                  qMakePair(INIKeys::operationModeBgColor, std::make_shared<INIQColorValue>(m_operationModeBgColor)),
-                  qMakePair(INIKeys::selectionModeBgColor, std::make_shared<INIQColorValue>(m_selectionModeBgColor)),
-                  qMakePair(INIKeys::measurementModeBgColor, std::make_shared<INIQColorValue>(m_measurementModeBgColor)),
-                  qMakePair(INIKeys::rangeSelectionColor, std::make_shared<INIQColorValue>(m_rangeSelectionColor)),
-                  qMakePair(INIKeys::xAxisColor, std::make_shared<INIQColorValue>(m_xAxisColor)),
-                  qMakePair(INIKeys::yAxisColor, std::make_shared<INIQColorValue>(m_yAxisColor)),
-                  qMakePair(INIKeys::blockStartColor, std::make_shared<INIQColorValue>(m_blockStartColor)),
-                  qMakePair(INIKeys::blockMarkerColor, std::make_shared<INIQColorValue>(m_blockMarkerColor)),
-                  qMakePair(INIKeys::blockEndColor, std::make_shared<INIQColorValue>(m_blockEndColor)),
-                  qMakePair(INIKeys::wavePositiveColor, std::make_shared<INIQColorValue>(m_wavePositiveColor)),
-                  qMakePair(INIKeys::waveNegativeColor, std::make_shared<INIQColorValue>(m_waveNegativeColor)),
-                  qMakePair(INIKeys::textColor, std::make_shared<INIQColorValue>(m_textColor))
+                  qMakePair(INIKeys::operationModeBgColor, make_ptr<INIQColorValue>(m_operationModeBgColor)),
+                  qMakePair(INIKeys::selectionModeBgColor, make_ptr<INIQColorValue>(m_selectionModeBgColor)),
+                  qMakePair(INIKeys::measurementModeBgColor, make_ptr<INIQColorValue>(m_measurementModeBgColor)),
+                  qMakePair(INIKeys::rangeSelectionColor, make_ptr<INIQColorValue>(m_rangeSelectionColor)),
+                  qMakePair(INIKeys::xAxisColor, make_ptr<INIQColorValue>(m_xAxisColor)),
+                  qMakePair(INIKeys::yAxisColor, make_ptr<INIQColorValue>(m_yAxisColor)),
+                  qMakePair(INIKeys::blockStartColor, make_ptr<INIQColorValue>(m_blockStartColor)),
+                  qMakePair(INIKeys::blockMarkerColor, make_ptr<INIQColorValue>(m_blockMarkerColor)),
+                  qMakePair(INIKeys::blockEndColor, make_ptr<INIQColorValue>(m_blockEndColor)),
+                  qMakePair(INIKeys::wavePositiveColor, make_ptr<INIQColorValue>(m_wavePositiveColor)),
+                  qMakePair(INIKeys::waveNegativeColor, make_ptr<INIQColorValue>(m_waveNegativeColor)),
+                  qMakePair(INIKeys::textColor, make_ptr<INIQColorValue>(m_textColor))
             } },
             { INISections::STYLE, {
-                  qMakePair(INIKeys::waveLineThickness, std::make_shared<INIUIntValue>(m_waveLineThickness)),
-                  qMakePair(INIKeys::circleRadius, std::make_shared<INIUIntValue>(m_circleRadius))
+                  qMakePair(INIKeys::waveLineThickness, make_ptr<INIUIntValue>(m_waveLineThickness)),
+                  qMakePair(INIKeys::circleRadius, make_ptr<INIUIntValue>(m_circleRadius))
             } },
             { INISections::BEHAVIOR, {
-                  qMakePair(INIKeys::checkVerticalRange, std::make_shared<INIBoolValue>(m_checkVerticalRange))
+                  qMakePair(INIKeys::checkVerticalRange, make_ptr<INIBoolValue>(m_checkVerticalRange))
             } }
           })
 {
@@ -181,7 +190,7 @@ ConfigurationManager::ApplicationCustomization::ApplicationCustomization() :
     m_translationLanguage(TranslationManager::TranslationLanguages::en_US),
     m_applicationini({
         { INISections::TRANSLATION, {
-              qMakePair(INIKeys::language, std::make_shared<INITranslationLanguageValue>(m_translationLanguage))
+              qMakePair(INIKeys::language, make_ptr<INITranslationLanguageValue>(m_translationLanguage))
         } }
     })
 {
@@ -235,8 +244,7 @@ void ConfigurationManager::writeConfiguration() {
     }
 }
 
-ConfigurationManager::~ConfigurationManager()
-{
+ConfigurationManager::~ConfigurationManager() {
     writeConfiguration();
 }
 
