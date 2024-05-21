@@ -12,11 +12,28 @@
 //*******************************************************************************
 
 #include "parseddata.h"
+#include "sources/translations/translations.h"
+
+namespace {
+const QString id_header { qtTrId(ID_HEADER) };
+const QString id_code { qtTrId(ID_CODE) };
+const QString id_ok { qtTrId(ID_OK) };
+const QString id_error { qtTrId(ID_ERROR) };
+const QString id_unknown { qtTrId(ID_UNKNOWN) };
+}
 
 ParsedData::ParsedData(QObject* parent) :
-    QObject(parent)
+    ParsedDataModel({ id_header, id_code, id_ok, id_error, id_unknown }, parent)
 {
     clear();
+}
+
+void ParsedData::beginParse() {
+    invalidateItems();
+}
+
+void ParsedData::endParse() {
+    removeOutdatedItems();
 }
 
 void ParsedData::clear(size_t size)

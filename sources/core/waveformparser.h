@@ -27,8 +27,8 @@ class WaveformParser : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY(QVariantList parsedChannel0 READ getParsedChannel0 NOTIFY parsedChannel0Changed)
-    Q_PROPERTY(QVariantList parsedChannel1 READ getParsedChannel1 NOTIFY parsedChannel1Changed)
+    Q_PROPERTY(QPointer<ParsedDataModel> parsedChannel0 READ getParsedChannel0 NOTIFY parsedChannel0Changed)
+    Q_PROPERTY(QPointer<ParsedDataModel> parsedChannel1 READ getParsedChannel1 NOTIFY parsedChannel1Changed)
 
 public:
 //    enum SignalValue { ZERO, ONE, PILOT, SYNCHRO };
@@ -73,8 +73,8 @@ private:
     }
 
     //Helper methods intended to use in case of change we can made them only once
-    __attribute__((always_inline)) inline bool isZeroFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
-    __attribute__((always_inline)) inline bool isOneFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
+    Q_ALWAYS_INLINE bool isZeroFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
+    Q_ALWAYS_INLINE bool isOneFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
 
     WavReader& mWavReader;
     QMap<uint, ParsedData*> m_parsedData;
@@ -84,9 +84,9 @@ private:
 
 protected:
     explicit WaveformParser(QObject* parent = nullptr);
-    QVariantList getParsedChannelData(uint chNum) const;
-    __attribute__((always_inline)) inline ParsedData* getOrCreateParsedDataPtr(uint chNum);
-    __attribute__((always_inline)) inline ParsedData* getParsedDataPtr(uint chNum) const;
+    QPointer<ParsedDataModel> getParsedChannelData(uint chNum) const;
+    Q_ALWAYS_INLINE ParsedData* getOrCreateParsedDataPtr(uint chNum);
+    Q_ALWAYS_INLINE ParsedData* getParsedDataPtr(uint chNum) const;
 
 public:
     virtual ~WaveformParser() override = default;
@@ -107,8 +107,8 @@ public:
     Q_INVOKABLE int getBlockDataEnd(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getPositionByAddress(uint chNum, uint blockNum, uint addr) const;
     //getters
-    QVariantList getParsedChannel0() const;
-    QVariantList getParsedChannel1() const;
+    QPointer<ParsedDataModel> getParsedChannel0() const;
+    QPointer<ParsedDataModel> getParsedChannel1() const;
 
 signals:
     void parsedChannel0Changed();

@@ -13,7 +13,7 @@
 
 #include "waveformparser.h"
 #include "sources/models/parsersettingsmodel.h"
-#include "sources/translations/translations.h"
+#include <QPointer>
 #include <QDebug>
 #include <QDateTime>
 #include <QByteArray>
@@ -116,7 +116,7 @@ void WaveformParser::parse(uint chNum)
     QVector<ParsedData::WaveformPart> waveformData;
     QMap<size_t, uint> data_mapping;
     //WaveformSign signalDirection = POSITIVE;
-    uint32_t dataStart = 0;
+    size_t dataStart = 0;
     uint8_t bitIndex = 0;
     uint8_t bit = 0;
     uint8_t parity = 0;
@@ -140,11 +140,13 @@ void WaveformParser::parse(uint chNum)
         return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroSecondHalfFreq, parserSettings.synchroDelta, deltaDivider);
     };
 
+    parsedData.beginParse();
+
     while (currentState != NO_MORE_DATA) {
         auto prevIt = it;
         switch (currentState) {
         case SEARCH_OF_PILOT_TONE:
-            it = std::find_if(it, parsed.end(), [&isPilotHalfFreq, &parsedData, this](const ParsedData::WaveformPart& p) {
+            it = std::find_if(it, parsed.end(), [&isPilotHalfFreq, &parsedData](const ParsedData::WaveformPart& p) {
                 parsedData.fillParsedWaveform(p, 0);
                 return isPilotHalfFreq(p);
             });
@@ -213,9 +215,18 @@ void WaveformParser::parse(uint chNum)
 
         case DATA_SIGNAL:
             it = std::next(it);
-            if (it != parsed.end()) {
+            if (const auto storeParsedData = [&](size_t parsedBegin, size_t parsedEnd) {
+                    if (!data.empty()) {
+                        parity ^= data.last(); //Removing parity byte from overal parity check sum
+                        //Storing parsed data
+                        parsedData.storeData(std::move(data), std::move(data_mapping), parsed.at(parsedBegin).begin, parsed.at(parsedEnd).end, std::move(waveformData), parity);
+                        parity ^= parity; //Zeroing parity byte
+                    }
+                };
+                it != parsed.end())
+            {
                 const auto len = it->length + prevIt->length;
-                const auto storeParsedByte = [&parsedData, &bitIndex, &data, &waveformData, &parity, &bit, it]() {
+                const auto storeParsedByte = [&bitIndex, &data, &waveformData, &parity, &bit, it]() {
                     //Store parsed byte in data buffer
                     bitIndex ^= bitIndex;
                     data.append(bit);
@@ -276,20 +287,24 @@ void WaveformParser::parse(uint chNum)
                 }
                 else {
                     currentState = END_OF_DATA;
-                    if (!data.empty()) {
-                        parity ^= data.last(); //Removing parity byte from overal parity check sum
-                        //Storing parsed data
-                        parsedData.storeData(std::move(data), std::move(data_mapping), parsed.at(dataStart).begin, parsed.at(std::distance(parsed.begin(), it)).end, std::move(waveformData), parity);
-                        parity ^= parity; //Zeroing parity byte
-                    }
+                    storeParsedData(dataStart, std::distance(parsed.begin(), it));
+                    // if (!data.empty()) {
+                    //     parity ^= data.last(); //Removing parity byte from overal parity check sum
+                    //     //Storing parsed data
+                    //     parsedData.storeData(std::move(data), std::move(data_mapping), parsed.at(dataStart).begin, parsed.at(std::distance(parsed.begin(), it)).end, std::move(waveformData), parity);
+                    //     parity ^= parity; //Zeroing parity byte
+                    // }
                 }
                 it = std::next(it);
             }
-            else if (!data.empty()) {
-                parity ^= data.last(); //Remove parity byte from overal parity check sum
-                //Storing parsed data
-                parsedData.storeData(std::move(data), std::move(data_mapping), parsed.at(dataStart).begin, parsed.at(parsed.size() - 1).end, std::move(waveformData), parity);
-                parity ^= parity; //Zeroing parity byte
+            else {
+                storeParsedData(dataStart, parsed.size() - 1);
+                // if (!data.empty()) {
+                //     parity ^= data.last(); //Remove parity byte from overal parity check sum
+                //     //Storing parsed data
+                //     parsedData.storeData(std::move(data), std::move(data_mapping), parsed.at(dataStart).begin, parsed.at(parsed.size() - 1).end, std::move(waveformData), parity);
+                //     parity ^= parity; //Zeroing parity byte
+                // }
             }
             break;
 
@@ -305,6 +320,8 @@ void WaveformParser::parse(uint chNum)
             currentState = NO_MORE_DATA;
         }
     }
+
+    parsedData.endParse();
 
     if (chNum == 0) {
         emit parsedChannel0Changed();
@@ -414,82 +431,85 @@ int WaveformParser::getPositionByAddress(uint chNum, uint blockNum, uint addr) c
     return 0;
 }
 
-QVariantList WaveformParser::getParsedChannelData(uint chNum) const
+QPointer<ParsedDataModel> WaveformParser::getParsedChannelData(uint chNum) const
 {
-    auto parsedDataPtr { getParsedDataPtr(chNum) };
-    if (parsedDataPtr == nullptr) {
-        return {};
-    }
-    auto parsedDataSPtr { parsedDataPtr->getParsedData() };
-    auto& parsedData { *parsedDataSPtr };
+    return { getParsedDataPtr(chNum) };
 
-    static QMap<int, QString> blockTypes {
-        {0x00, "Program"},
-        {0x01, "Number Array"},
-        {0x02, "Character Array"},
-        {0x03, "Bytes"}
-    };
-    const QString id_header { qtTrId(ID_HEADER) };
-    const QString id_code { qtTrId(ID_CODE) };
-    const QString id_ok { qtTrId(ID_OK) };
-    const QString id_error { qtTrId(ID_ERROR) };
-    const QString id_unknown { qtTrId(ID_UNKNOWN) };
+    // auto parsedDataPtr { getParsedDataPtr(chNum) };
+    // if (parsedDataPtr == nullptr) {
+    //     return { };
+    // }
 
-    QVariantList r;
-    uint blockNumber = 0;
+    // auto parsedDataSPtr { parsedDataPtr->getParsedData() };
+    // auto& parsedData { *parsedDataSPtr };
 
-    for (const auto& i: parsedData) {
-        QVariantMap m;
+    // static QMap<int, QString> blockTypes {
+    //     {0x00, "Program"},
+    //     {0x01, "Number Array"},
+    //     {0x02, "Character Array"},
+    //     {0x03, "Bytes"}
+    // };
+    // const QString id_header { qtTrId(ID_HEADER) };
+    // const QString id_code { qtTrId(ID_CODE) };
+    // const QString id_ok { qtTrId(ID_OK) };
+    // const QString id_error { qtTrId(ID_ERROR) };
+    // const QString id_unknown { qtTrId(ID_UNKNOWN) };
 
-        m.insert("block", QVariantMap { {"blockSelected", blockNumber < (unsigned) mSelectedBlocks.size() ? mSelectedBlocks[blockNumber] : (mSelectedBlocks.append(true), true)}, {"blockNumber", blockNumber++} });
-        if (i.data.size() > 0) {
-            auto d = i.data.at(0);
-            int blockType = -1;
-            auto btIt = blockTypes.end();
-            QString blockTypeName;
-            if (d == 0x00 && i.data.size() > 1) {
-                d = i.data.at(1);
-                btIt = blockTypes.find(d);
-                blockType = btIt == blockTypes.end() ? -1 : d;
-                blockTypeName = blockType == -1 ? QString::number(d, 16) : *btIt;
-            }
-            else {
-                blockType = -2;
-                blockTypeName = d == 0x00 ? id_header : id_code;
-            }
-            m.insert("blockType", blockTypeName);
-            QString sizeText = QString::number(i.data.size());
-            if (i.data.size() > 13 && btIt != blockTypes.end()) {
-                sizeText += QString(" (%1)").arg(i.data.at(13) * 256 + i.data.at(12));
-            }
-            m.insert("blockSize", sizeText);
-            QString nameText;
-            if (blockType >= 0) {
-                const auto loopRange { std::min(decltype(i.data.size())(12), i.data.size()) };
-                nameText = QByteArray((const char*) &i.data.data()[2], loopRange > 1 ? loopRange - 2 : 0);
-            }
-            m.insert("blockName", nameText);
-            m.insert("blockStatus", (i.state == ParsedData::OK ? id_ok : id_error) + qtTrId(ID_PARITY_MESSAGE).arg(QString::number(i.parityCalculated, 16).toUpper().rightJustified(2, '0')).arg(QString::number(i.parityAwaited, 16).toUpper().rightJustified(2, '0')));
-            m.insert("state", i.state);
-        }
-        else {
-            m.insert("blockType", id_unknown);
-            m.insert("blockName", QString());
-            m.insert("blockSize", 0);
-            m.insert("blockStatus", id_unknown);
-        }
-        r.append(m);
-    }
+    // QVariantList r;
+    // uint blockNumber = 0;
 
-    return r;
+    // for (const auto& i: parsedData) {
+    //     QVariantMap m;
+
+    //     m.insert("block", QVariantMap { {"blockSelected", blockNumber < (unsigned) mSelectedBlocks.size() ? mSelectedBlocks[blockNumber] : (mSelectedBlocks.append(true), true)}, {"blockNumber", blockNumber++} });
+    //     if (i.data.size() > 0) {
+    //         auto d = i.data.at(0);
+    //         int blockType = -1;
+    //         auto btIt = blockTypes.end();
+    //         QString blockTypeName;
+    //         if (d == 0x00 && i.data.size() > 1) {
+    //             d = i.data.at(1);
+    //             btIt = blockTypes.find(d);
+    //             blockType = btIt == blockTypes.end() ? -1 : d;
+    //             blockTypeName = blockType == -1 ? QString::number(d, 16) : *btIt;
+    //         }
+    //         else {
+    //             blockType = -2;
+    //             blockTypeName = d == 0x00 ? id_header : id_code;
+    //         }
+    //         m.insert("blockType", blockTypeName);
+    //         QString sizeText = QString::number(i.data.size());
+    //         if (i.data.size() > 13 && btIt != blockTypes.end()) {
+    //             sizeText += QString(" (%1)").arg(i.data.at(13) * 256 + i.data.at(12));
+    //         }
+    //         m.insert("blockSize", sizeText);
+    //         QString nameText;
+    //         if (blockType >= 0) {
+    //             const auto loopRange { std::min(decltype(i.data.size())(12), i.data.size()) };
+    //             nameText = QByteArray((const char*) &i.data.data()[2], loopRange > 1 ? loopRange - 2 : 0);
+    //         }
+    //         m.insert("blockName", nameText);
+    //         m.insert("blockStatus", (i.state == ParsedData::OK ? id_ok : id_error) + qtTrId(ID_PARITY_MESSAGE).arg(QString::number(i.parityCalculated, 16).toUpper().rightJustified(2, '0')).arg(QString::number(i.parityAwaited, 16).toUpper().rightJustified(2, '0')));
+    //         m.insert("state", i.state);
+    //     }
+    //     else {
+    //         m.insert("blockType", id_unknown);
+    //         m.insert("blockName", QString());
+    //         m.insert("blockSize", 0);
+    //         m.insert("blockStatus", id_unknown);
+    //     }
+    //     r.append(m);
+    // }
+
+    // return r;
 }
 
-QVariantList WaveformParser::getParsedChannel0() const
+QPointer<ParsedDataModel> WaveformParser::getParsedChannel0() const
 {
     return getParsedChannelData(0);
 }
 
-QVariantList WaveformParser::getParsedChannel1() const
+QPointer<ParsedDataModel> WaveformParser::getParsedChannel1() const
 {
     return getParsedChannelData(1);
 }

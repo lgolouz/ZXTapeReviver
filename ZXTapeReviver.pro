@@ -89,6 +89,7 @@ SOURCES += \
         sources/controls/waveformcontrol.cpp \
         sources/core/waveformparser.cpp \
         sources/core/wavreader.cpp \
+        sources/models/table/parseddatamodel.cpp \
         sources/models/parsersettingsmodel.cpp \
         sources/models/suspiciouspointsmodel.cpp \
         sources/models/waveformmodel.cpp \
@@ -96,7 +97,7 @@ SOURCES += \
         sources/translations/translations.cpp \
         sources/util/enummetainfo.cpp \
         sources/configuration/configurationmanager.cpp \
-        sources/models/controls/zxtablemodel.cpp
+        sources/models/base/zxtablemodel.cpp
 
 HEADERS += \
     sources/actions/actionbase.h \
@@ -110,6 +111,7 @@ HEADERS += \
     sources/controls/waveformcontrol.h \
     sources/core/waveformparser.h \
     sources/core/wavreader.h \
+    sources/models/table/parseddatamodel.h \
     sources/models/parsersettingsmodel.h \
     sources/models/suspiciouspointsmodel.h \
     sources/models/waveformmodel.h \
@@ -117,7 +119,7 @@ HEADERS += \
     sources/translations/translations.h \
     sources/util/enummetainfo.h \
     sources/configuration/configurationmanager.h \
-    sources/models/controls/zxtablemodel.h
+    sources/models/base/zxtablemodel.h
 
 RESOURCES += qml/qml.qrc
 

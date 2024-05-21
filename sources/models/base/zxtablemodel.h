@@ -14,43 +14,35 @@
 #ifndef ZXTABLEMODEL_H
 #define ZXTABLEMODEL_H
 
-#include <QtQml>
-#include <QBitArray>
+#include <QStringList>
 #include <QAbstractTableModel>
 
-class ZxTableModel final : public QAbstractTableModel
+class ZxTableModel : public QAbstractTableModel
 {
     Q_OBJECT
-    Q_PROPERTY(QVariantList verticalHeader READ getVerticalHeader NOTIFY verticalHeaderChanged)
-    Q_PROPERTY(QVariantList horizontalHeader READ getHorizontalHeader NOTIFY horizontalHeaderChanged)
 
 public:
     virtual ~ZxTableModel() = default;
 
-    explicit ZxTableModel(QObject* parent = nullptr);
+    explicit ZxTableModel(const QStringList& horizontalHeader, QObject* parent = nullptr);
 
     ZxTableModel(const ZxTableModel& other) = delete;
     ZxTableModel(ZxTableModel&& other) = delete;
     ZxTableModel& operator= (const ZxTableModel& other) = delete;
     ZxTableModel& operator= (ZxTableModel&& other) = delete;
 
-    int rowCount(const QModelIndex& index = QModelIndex()) const override;
-    int columnCount(const QModelIndex& index = QModelIndex()) const override;
-    QVariant data(const QModelIndex& index, int role) const override;
-    QHash<int, QByteArray> roleNames() const override;
+    //these methods should be implemented in sub-classes [https://doc.qt.io/qt-6/qabstracttablemodel.html]
+    //int rowCount(const QModelIndex& index = QModelIndex()) const override;
+    //QVariant data(const QModelIndex& index, int role) const override;
 
-    QVariantList getVerticalHeader() const;
-    QVariantList getHorizontalHeader() const;
+    //default roleNames method returns pre-defined names, so we have to extend them, if needed [https://doc.qt.io/qt-6/qabstractitemmodel.html#roleNames]
+    //QHash<int, QByteArray> roleNames() const override;
 
-    Q_INVOKABLE void appendRow();
-
-signals:
-    void verticalHeaderChanged();
-    void horizontalHeaderChanged();
+    virtual int columnCount(const QModelIndex& index = QModelIndex()) const override;
+    virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
 private:
-    QBitArray m_verticalHeader;
-    QVariantList m_horizontalHeader;
+    QStringList m_horizontalHeader;
 };
 
 #endif // ZXTABLEMODEL_H
