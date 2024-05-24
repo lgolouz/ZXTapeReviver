@@ -92,11 +92,6 @@ QtObject {
     property string id_right_channel:                        qsTrId("id_right_channel") + TranslationManager.translationChanged
     property string id_to_the_beginning_of_the_block:        qsTrId("id_to_the_beginning_of_the_block") + TranslationManager.translationChanged //Button caption
     property string id_to_the_end_of_the_block:              qsTrId("id_to_the_end_of_the_block") + TranslationManager.translationChanged //Button caption
-    property string id_block_number:                         qsTrId("id_block_number") + TranslationManager.translationChanged
-    property string id_block_type:                           qsTrId("id_block_type") + TranslationManager.translationChanged
-    property string id_block_name:                           qsTrId("id_block_name") + TranslationManager.translationChanged
-    property string id_block_size:                           qsTrId("id_block_size") + TranslationManager.translationChanged
-    property string id_block_status:                         qsTrId("id_block_status") + TranslationManager.translationChanged
     property string id_goto_suspicious_point:                qsTrId("id_goto_suspicious_point") + TranslationManager.translationChanged //Button caption
     property string id_remove_suspicious_point:              qsTrId("id_remove_suspicious_point") + TranslationManager.translationChanged //Button caption
     property string id_suspicious_point_number:              qsTrId("id_suspicious_point_number") + TranslationManager.translationChanged

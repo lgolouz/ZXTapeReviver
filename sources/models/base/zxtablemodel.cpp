@@ -18,7 +18,7 @@ ZxTableModel::ZxTableModel(const QStringList& horizontalHeader, QObject* parent)
     QAbstractTableModel(parent),
     m_horizontalHeader(horizontalHeader)
 {
-
+    emit headerDataChanged(Qt::Horizontal, 0, horizontalHeader.size() - 1);
 }
 
 int ZxTableModel::columnCount(const QModelIndex& index) const {

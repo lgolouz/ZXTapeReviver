@@ -829,7 +829,7 @@ ApplicationWindow {
             }
         }
 
-        ZXTableControl {
+        TableView {
             id: parsedDataView
 
             height: parent.height * 0.4
@@ -841,6 +841,13 @@ ApplicationWindow {
             }
             model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
 
+            delegate: Rectangle {
+                implicitWidth: 100
+                implicitHeight: 50
+                Text {
+                    text: display
+                }
+            }
 //             TableModelColumn {
 //                 title: Translations.id_block_number
 // //                width: rightArea.width * 0.07
@@ -952,18 +959,18 @@ ApplicationWindow {
             }
         }
 
-//         TableView {
-//             id: suspiciousPointsView
+        ZXTableControl {
+            id: suspiciousPointsView
 
-//             anchors {
-//                 top: gotoPointButton.bottom
-//                 //bottom: parent.bottom
-//                 left: parent.left
-//                 right: parent.right
-//                 topMargin: 2
-//             }
-//             height: parent.height * 0.25
-//             implicitHeight: parent.height * 0.25
+            anchors {
+                top: gotoPointButton.bottom
+                //bottom: parent.bottom
+                left: parent.left
+                right: parent.right
+                topMargin: 2
+            }
+            height: parent.height * 0.25
+            implicitHeight: parent.height * 0.25
 
 //             //selectionMode: SelectionMode.SingleSelection
 //             model: suspiciousPoints
@@ -981,7 +988,7 @@ ApplicationWindow {
 //                 width: rightArea.width * 0.9
 //             }
         //     }
-        // }
+        }
 
         Button {
             id: removeActionButton

@@ -781,6 +781,6 @@ WavReader::~WavReader()
 
 WavReader* WavReader::instance()
 {
-    static QScopedPointer<WavReader> w { new WavReader() };
-    return w.get();
+    static WavReader w;
+    return &w;
 }

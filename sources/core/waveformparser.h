@@ -89,16 +89,14 @@ protected:
     Q_ALWAYS_INLINE ParsedData* getParsedDataPtr(uint chNum) const;
 
 public:
-    virtual ~WaveformParser() override = default;
-
     static WaveformParser* instance();
 
     void parse(uint chNum);
     void saveTap(uint chNum, const QString& fileName = QString());
     void saveWaveform(uint chNum);
     QVector<uint8_t> getParsedWaveform(uint chNum) const;
-    QPair<QVector<ParsedData::DataBlock>, QVector<bool>> getParsedData(uint chNum) const;
-    QSharedPointer<QVector<ParsedData::DataBlock>> getParsedDataSharedPtr(uint chNum) const;
+    QPair<QVector<QSharedPointer<ParsedData::DataBlock>>, QVector<bool>> getParsedData(uint chNum) const;
+    QSharedPointer<QVector<QSharedPointer<ParsedData::DataBlock>>> getParsedDataSharedPtr(uint chNum) const;
 
     void repairWaveform2(uint chNum);
 

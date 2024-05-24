@@ -38,12 +38,12 @@ public:
     Q_ALWAYS_INLINE void setParsedWaveform(size_t pos, uint8_t val) { (*mParsedWaveform)[pos] = val; }
     Q_ALWAYS_INLINE void orParsedWaveform(size_t pos, uint8_t val) { (*mParsedWaveform)[pos] |= val; }
 
-    Q_ALWAYS_INLINE QSharedPointer<QVector<DataBlock>> getParsedData() const { return mParsedData; }
+    Q_ALWAYS_INLINE QSharedPointer<QVector<QSharedPointer<DataBlock>>> getParsedData() const { return mParsedData; }
     Q_ALWAYS_INLINE QSharedPointer<QVector<uint8_t>> getParsedWaveform() const { return mParsedWaveform; }
 
 private:
     QSharedPointer<QVector<uint8_t>> mParsedWaveform;
-    QSharedPointer<QVector<DataBlock>> mParsedData;
+    QSharedPointer<QVector<QSharedPointer<DataBlock>>> mParsedData;
 };
 
 #endif // PARSEDDATA_H

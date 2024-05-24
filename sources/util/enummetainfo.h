@@ -27,9 +27,14 @@ protected:
     EnumMetaInfo& operator= (const EnumMetaInfo& other) = delete;
     EnumMetaInfo& operator= (EnumMetaInfo&& other) = delete;
 
-    template <typename T, typename O = QString> static O getEnumName(T state) {
-        auto s = QMetaEnum::fromType<T>().valueToKey(static_cast<int>(state));
+    template <typename T> static QString getEnumName(T state) {
+        const auto* s = QMetaEnum::fromType<T>().valueToKey(static_cast<int>(state));
         return s ? s : "Undefined";
+    }
+
+    template <typename T> static QString getEnumRoleName(T state) {
+        const auto* s = QMetaEnum::fromType<T>().valueToKey(static_cast<int>(state));
+        return s ? enumNameToRoleName(s) : QString { "invalidRoleName" };
     }
 
     template <typename T> T static getEnumValue(const QString& name, T def = T { }) {
@@ -37,6 +42,8 @@ protected:
         auto v = static_cast<T>(QMetaEnum::fromType<T>().keyToValue(name.toStdString().c_str(), &ok));
         return ok ? v : def;
     }
+
+    static QString enumNameToRoleName(const char* n);
 };
 
 #endif // ENUMMETAINFO_H

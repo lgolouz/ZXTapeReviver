@@ -12,8 +12,22 @@
 //*******************************************************************************
 
 #include "parseddatamodel.h"
+#include "sources/translations/translations.h"
 
-ParsedDataModel::DataItem::DataItem(DataBlock* dataBlock, bool updated) :
+namespace {
+static QMap<int, QString> blockTypes {
+    {0x00, "Program"},
+    {0x01, "Number Array"},
+    {0x02, "Character Array"},
+    {0x03, "Bytes"}
+};
+
+static std::vector<ParsedDataModel::ParsedDataModelRoles> columnToRoleMapping {
+    ParsedDataModel::ParsedDataModelRoles::BlockType, ParsedDataModel::ParsedDataModelRoles::BlockName,
+    ParsedDataModel::ParsedDataModelRoles::BlockSize, ParsedDataModel::ParsedDataModelRoles::BlockStatus };
+}
+
+ParsedDataModel::DataItem::DataItem(QSharedPointer<DataBlock> dataBlock, bool updated) :
     m_updated(updated),
     m_checked(false),
     m_dataBlock(dataBlock)
@@ -22,23 +36,27 @@ ParsedDataModel::DataItem::DataItem(DataBlock* dataBlock, bool updated) :
 }
 
 bool ParsedDataModel::DataItem::operator== (const DataItem& b) const {
-    if (m_dataBlock != nullptr && m_dataBlock->waveformData.size() > 0) {
-        if (b.m_dataBlock != nullptr && b.m_dataBlock->waveformData.size() > 0) {
-            return m_dataBlock->waveformData.front().begin == b.m_dataBlock->waveformData.front().begin;
+    auto mdataBlock = m_dataBlock.lock();
+    auto bmdataBlock = b.m_dataBlock.lock();
+    if (mdataBlock != nullptr && mdataBlock->waveformData.size() > 0) {
+        if (bmdataBlock != nullptr && bmdataBlock->waveformData.size() > 0) {
+            return mdataBlock->waveformData.front().begin == bmdataBlock->waveformData.front().begin;
         }
         return false;
     }
-    return m_dataBlock == b.m_dataBlock;
+    return mdataBlock.isNull() == bmdataBlock.isNull();
 }
 
 bool ParsedDataModel::DataItem::operator< (const DataItem& b) const {
-    if (m_dataBlock != nullptr && m_dataBlock->waveformData.size() > 0) {
-        if (b.m_dataBlock != nullptr && b.m_dataBlock->waveformData.size() > 0) {
-            return m_dataBlock->waveformData.front().begin < b.m_dataBlock->waveformData.front().begin;
+    auto mdataBlock = m_dataBlock.lock();
+    auto bmdataBlock = b.m_dataBlock.lock();
+    if (mdataBlock != nullptr && mdataBlock->waveformData.size() > 0) {
+        if (bmdataBlock != nullptr && bmdataBlock->waveformData.size() > 0) {
+            return mdataBlock->waveformData.front().begin < bmdataBlock->waveformData.front().begin;
         }
         return false;
     }
-    return b.m_dataBlock != nullptr;
+    return bmdataBlock != nullptr;
 }
 
 bool ParsedDataModel::DataItem::checked() const {
@@ -57,11 +75,11 @@ void ParsedDataModel::DataItem::setUpdated(bool b) {
     m_updated = b;
 }
 
-ParsedDataModel::DataBlock* ParsedDataModel::DataItem::dataBlock() const {
-    return m_dataBlock;
+QSharedPointer<ParsedDataModel::DataBlock> ParsedDataModel::DataItem::dataBlock() const {
+    return m_dataBlock.lock();
 }
 
-void ParsedDataModel::DataItem::setDataBlock(DataBlock* b) {
+void ParsedDataModel::DataItem::setDataBlock(QSharedPointer<DataBlock> b) {
     m_dataBlock = b;
 }
 
@@ -76,11 +94,105 @@ int ParsedDataModel::rowCount(const QModelIndex& index) const {
     return m_items.size();
 }
 
+ParsedDataModel::DataItem* ParsedDataModel::at(const size_t idx) const {
+    if (idx >= m_items.size()) {
+        return nullptr;
+    }
+
+    std::decay_t<decltype(idx)> c { 0 };
+    auto it { m_items.begin() };
+    for (; c < idx && it != m_items.end(); ++c) {
+        ++it;
+    }
+
+    if (it != m_items.end()) {
+        return it->get();
+    }
+    return nullptr;
+};
+
+QMap<int, QVariant> ParsedDataModel::getBlockData(const size_t idx) const {
+    const auto* itm = at(idx);
+    if (itm == nullptr) {
+        return { };
+    }
+    const auto& i { *itm->dataBlock() };
+    std::decay_t<decltype(getBlockData(idx))> m { };
+
+    //m.insert("block", QVariantMap { {"blockSelected", blockNumber < (unsigned) mSelectedBlocks.size() ? mSelectedBlocks[blockNumber] : (mSelectedBlocks.append(true), true)}, {"blockNumber", blockNumber++} });
+    m.insert(BlockNumber, idx);
+    if (i.data.size() > 0) {
+        auto d = i.data.at(0);
+        int blockType = -1;
+        auto btIt = blockTypes.end();
+        QString blockTypeName;
+        if (d == 0x00 && i.data.size() > 1) {
+            d = i.data.at(1);
+            btIt = blockTypes.find(d);
+            blockType = btIt == blockTypes.end() ? -1 : d;
+            blockTypeName = blockType == -1 ? QString::number(d, 16) : *btIt;
+        }
+        else {
+            blockType = -2;
+            blockTypeName = d == 0x00 ? Translations::instance()->id_header : Translations::instance()->id_code;
+        }
+        m.insert(BlockType, blockTypeName);
+        //QString sizeText = QString::number(i.data.size());
+        int32_t sizeVal { -1 };
+        if (i.data.size() > 13 && btIt != blockTypes.end()) {
+            sizeVal = i.data.at(13) * 256 + i.data.at(12);
+            //sizeText += QString(" (%1)").arg(i.data.at(13) * 256 + i.data.at(12));
+        }
+        m.insert(BlockSize, i.data.size());
+        m.insert(ExpectedBlockSize, sizeVal < 0 ? QVariant() : QVariant(uint16_t(sizeVal)));
+        QString nameText;
+        if (blockType >= 0) {
+            const auto loopRange { std::min(decltype(i.data.size())(12), i.data.size()) };
+            nameText = QByteArray((const char*) &i.data.data()[2], loopRange > 1 ? loopRange - 2 : 0);
+        }
+        m.insert(BlockName, nameText);
+        m.insert(BlockStatus, i.state);// == ParsedDataModel::OK ? id_ok : id_error) + id_parity_message.arg(QString::number(i.parityCalculated, 16).toUpper().rightJustified(2, '0')).arg(QString::number(i.parityAwaited, 16).toUpper().rightJustified(2, '0')));
+        m.insert(BlockCheckSum, i.parityCalculated);
+        m.insert(ExpectedBlockCheckSum, i.parityAwaited);
+    }
+    else {
+        m.insert(BlockType, Translations::instance()->id_unknown);
+        m.insert(BlockName, QString());
+        m.insert(BlockSize, QVariant());
+        m.insert(BlockStatus, Translations::instance()->id_unknown);
+    }
+
+    return m;
+}
+
 QVariant ParsedDataModel::data(const QModelIndex& index, int role) const {
-    return { };
+    if (!index.isValid()) {
+        return { };
+    }
+
+    qDebug() << index.column();
+    const auto blockData { getBlockData(index.row()) };
+    switch (role) {
+        case Qt::DisplayRole:
+            return blockData.find(columnToRoleMapping[index.column()]).value();
+
+        case BlockName:
+            return blockData.find(BlockName).value();
+
+        default:
+            return { };
+    }
+}
+
+QHash<int, QByteArray> ParsedDataModel::roleNames() const {
+    auto names = ZxTableModel::roleNames();
+    names.insert(generateRoleNames<ParsedDataModelRoles>());
+    return names;
 }
 
 void ParsedDataModel::invalidateItems() {
+    beginResetModel();
+
     for (const auto& i: m_items) {
         i->setUpdated(false);
     }
@@ -88,9 +200,13 @@ void ParsedDataModel::invalidateItems() {
 
 void ParsedDataModel::removeOutdatedItems() {
     m_items.remove_if([](const auto& i) { return !i->updated(); });
+
+    endResetModel();
+    emit headerDataChanged(Qt::Horizontal, 0, m_items.size() - 1);
 }
 
-void ParsedDataModel::addData(DataItem* item) {
+void ParsedDataModel::addData(QSharedPointer<DataBlock> block) {
+    auto* item = new DataItem(block);
     for (auto it { m_items.begin() }; it != m_items.end(); ++it) {
         if (*it->get() == *item) {
             it->reset(item);

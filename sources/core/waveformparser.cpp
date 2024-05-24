@@ -18,6 +18,7 @@
 #include <QDateTime>
 #include <QByteArray>
 #include <QVariantMap>
+#include <QQmlEngine>
 #include <algorithm>
 
 #define HARDCODED_DATA_SIGNAL_DELTA 0.75
@@ -80,10 +81,10 @@ inline ParsedData* WaveformParser::getParsedDataPtr(uint chNum) const
     return *parsedDataIt;
 }
 
-QSharedPointer<QVector<ParsedData::DataBlock>> WaveformParser::getParsedDataSharedPtr(uint chNum) const
+QSharedPointer<QVector<QSharedPointer<ParsedData::DataBlock>>> WaveformParser::getParsedDataSharedPtr(uint chNum) const
 {
     auto p = getParsedDataPtr(chNum);
-    return p == nullptr ? QSharedPointer<QVector<ParsedData::DataBlock>> { } : p->getParsedData();
+    return p == nullptr ? QSharedPointer<QVector<QSharedPointer<ParsedData::DataBlock>>> { } : p->getParsedData();
 }
 
 inline bool WaveformParser::isZeroFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const
@@ -350,7 +351,7 @@ void WaveformParser::saveTap(uint chNum, const QString& fileName)
         }
 
         QByteArray b;
-        const auto& data { parsedData.at(i).data };
+        const auto& data { parsedData.at(i)->data };
         const uint16_t size = data.size();
         b.append(reinterpret_cast<const char *>(&size), sizeof(size));
         b.append(reinterpret_cast<const char *>(data.data()), size);
@@ -368,7 +369,7 @@ QVector<uint8_t> WaveformParser::getParsedWaveform(uint chNum) const {
     return *parsedDataPtr->getParsedWaveform();// mParsedWaveform[chNum];
 }
 
-QPair<QVector<ParsedData::DataBlock>, QVector<bool>> WaveformParser::getParsedData(uint chNum) const {
+QPair<QVector<QSharedPointer<ParsedData::DataBlock>>, QVector<bool>> WaveformParser::getParsedData(uint chNum) const {
     auto parsedDataPtr { getParsedDataPtr(chNum) };
     if (parsedDataPtr == nullptr) {
         return {};
@@ -396,7 +397,7 @@ int WaveformParser::getBlockDataStart(uint chNum, uint blockNum) const
     auto& parsedData { *parsedDataSPtr };
 
     if (blockNum < (unsigned) parsedData.size()) {
-        return parsedData[blockNum].dataStart;
+        return parsedData[blockNum]->dataStart;
     }
     return 0;
 }
@@ -411,7 +412,7 @@ int WaveformParser::getBlockDataEnd(uint chNum, uint blockNum) const
     auto& parsedData { *parsedDataSPtr };
 
     if (blockNum < (unsigned) parsedData.size()) {
-        return parsedData[blockNum].dataEnd;
+        return parsedData[blockNum]->dataEnd;
     }
     return 0;
 }
@@ -425,15 +426,22 @@ int WaveformParser::getPositionByAddress(uint chNum, uint blockNum, uint addr) c
     auto parsedDataSPtr { parsedDataPtr->getParsedData() };
     auto& parsedData { *parsedDataSPtr };
 
-    if (blockNum < (unsigned) parsedData.size() && addr < (unsigned) parsedData[blockNum].waveformData.size()) {
-        return parsedData[blockNum].waveformData[addr].begin;
+    if (blockNum < (unsigned) parsedData.size() && addr < (unsigned) parsedData[blockNum]->waveformData.size()) {
+        return parsedData[blockNum]->waveformData[addr].begin;
     }
     return 0;
 }
 
 QPointer<ParsedDataModel> WaveformParser::getParsedChannelData(uint chNum) const
 {
-    return { getParsedDataPtr(chNum) };
+    auto* p = getParsedDataPtr(chNum);
+    if (p == nullptr) {
+        return { };
+    }
+    QQmlEngine::setObjectOwnership(p, QQmlEngine::CppOwnership);
+    return p;
+
+    //return { getParsedDataPtr(chNum) };
 
     // auto parsedDataPtr { getParsedDataPtr(chNum) };
     // if (parsedDataPtr == nullptr) {
@@ -516,6 +524,6 @@ QPointer<ParsedDataModel> WaveformParser::getParsedChannel1() const
 
 WaveformParser* WaveformParser::instance()
 {
-    static QScopedPointer<WaveformParser> p { new WaveformParser() };
-    return p.get();
+    static WaveformParser p;
+    return &p;
 }

@@ -14,11 +14,13 @@
 #ifndef PARSEDDATAMODEL_H
 #define PARSEDDATAMODEL_H
 
+#include <QWeakPointer>
 #include "sources/models/base/zxtablemodel.h"
-#include "sources/models/parsersettingsmodel.h"
 
 class ParsedDataModel : public ZxTableModel
 {
+    Q_OBJECT
+
 public:
     // |------------------------------- 1 - zero '0' data bit
     // | |----------------------------- 1 - one  '1' data bit
@@ -62,14 +64,27 @@ public:
         uint8_t parityAwaited;
     };
 
+    enum ParsedDataModelRoles {
+        BlockNumber = Qt::UserRole + 1,
+        BlockType,
+        BlockName,
+        BlockSize,
+        ExpectedBlockSize,
+        BlockStatus,
+        BlockCheckSum,
+        ExpectedBlockCheckSum,
+    };
+    Q_ENUM(ParsedDataModelRoles)
+
     explicit ParsedDataModel(const QStringList& h_header, QObject* parent = nullptr);
 
     virtual QVariant data(const QModelIndex& index, int role) const override;
     virtual int rowCount(const QModelIndex& index = QModelIndex()) const override;
+    virtual QHash<int, QByteArray> roleNames() const override;
 
 protected:
     struct DataItem {
-        DataItem(DataBlock* dataBlock, bool updated = true);
+        DataItem(QSharedPointer<DataBlock> dataBlock, bool updated = true);
         virtual ~DataItem() = default;
 
         bool checked() const;
@@ -78,8 +93,8 @@ protected:
         bool updated() const;
         void setUpdated(bool b);
 
-        DataBlock* dataBlock() const;
-        void setDataBlock(DataBlock* b);
+        QSharedPointer<DataBlock> dataBlock() const;
+        void setDataBlock(QSharedPointer<DataBlock> b);
 
         bool operator== (const DataItem& b) const;
         bool operator< (const DataItem& b) const;
@@ -87,15 +102,19 @@ protected:
     protected:
         bool m_updated; //flag to know if the item updated (or newly created) or not. All not updated items should be deleted after data parsing pass
         bool m_checked; //flag to know if the item has been checked by user
-        DataBlock* m_dataBlock;
+        QWeakPointer<DataBlock> m_dataBlock;
     };
 
-    void addData(DataItem* item);
+    void addData(QSharedPointer<DataBlock> block);
 
     void invalidateItems();
     void removeOutdatedItems();
 
     std::list<std::unique_ptr<DataItem>> m_items;
+
+private:
+    QMap<int, QVariant> getBlockData(const size_t idx) const;
+    DataItem* at(size_t idx) const;
 };
 
 #endif // PARSEDDATAMODEL_H

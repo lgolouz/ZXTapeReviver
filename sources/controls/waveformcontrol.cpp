@@ -102,9 +102,10 @@ void WaveformControl::paint(QPainter* painter) {
     double posStartSec = (double) pos / sampleRate;
     double posMidSec = (double) (pos + scale / 2) / sampleRate;
     double posEndSec = (double) (pos + scale) / sampleRate;
-    painter->drawText(3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posStartSec, 'f', 3)));
-    painter->drawText((int) bRect.width() / 2 + 3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posMidSec, 'f', 3)));
-    painter->drawText((int) bRect.width() - 100, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignRight, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posEndSec, 'f', 3)));
+    const auto id_timeline_sec { Translations::instance()->id_timeline_sec };
+    painter->drawText(3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, id_timeline_sec.arg(QString::number(posStartSec, 'f', 3)));
+    painter->drawText((int) bRect.width() / 2 + 3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, id_timeline_sec.arg(QString::number(posMidSec, 'f', 3)));
+    painter->drawText((int) bRect.width() - 100, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignRight, id_timeline_sec.arg(QString::number(posEndSec, 'f', 3)));
     p.setColor(m_customData.yAxisColor());
     p.setWidth(1);
     p.setStyle(Qt::DashLine);
@@ -182,8 +183,8 @@ void WaveformControl::paint(QPainter* painter) {
                     painter->setPen(p);
                     painter->drawLine(x, bRect.height() - 10, x, bRect.height() - 3);
 
-                    auto parsedIt = std::find_if(parsedData->begin(), parsedData->end(), [t](const ParsedData::DataBlock& db) {
-                        return t >= db.dataStart && t <= db.dataEnd;
+                    auto parsedIt = std::find_if(parsedData->begin(), parsedData->end(), [t](const QSharedPointer<ParsedData::DataBlock> db) {
+                        return size_t(t) >= db->dataStart && size_t(t) <= db->dataEnd;
                     });
 
                     if (parsedIt != parsedData->end()) {
@@ -197,12 +198,12 @@ void WaveformControl::paint(QPainter* painter) {
                             return QString("0x%1").arg(QString("%1").arg(val, count, 16, QLatin1Char('0')).toUpper());
                         };
 
-                        const auto addrIt = (*parsedIt).dataMapping.find(t);
-                        if (addrIt != (*parsedIt).dataMapping.end()) {
+                        const auto addrIt = (*parsedIt)->dataMapping.find(t);
+                        if (addrIt != (*parsedIt)->dataMapping.end()) {
                             if (seqBegin) {
                                 painter->drawText(x + 5, bRect.height() - 6, toHexVal(*addrIt, *addrIt <= 65535 ? 4 : 6));
                             } else {
-                                painter->drawText(x - 5 - 19, bRect.height() - 6, toHexVal((*parsedIt).data[*addrIt], 2));
+                                painter->drawText(x - 5 - 19, bRect.height() - 6, toHexVal((*parsedIt)->data[*addrIt], 2));
                             }
                         }
 

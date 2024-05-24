@@ -14,16 +14,10 @@
 #include "parseddata.h"
 #include "sources/translations/translations.h"
 
-namespace {
-const QString id_header { qtTrId(ID_HEADER) };
-const QString id_code { qtTrId(ID_CODE) };
-const QString id_ok { qtTrId(ID_OK) };
-const QString id_error { qtTrId(ID_ERROR) };
-const QString id_unknown { qtTrId(ID_UNKNOWN) };
-}
-
 ParsedData::ParsedData(QObject* parent) :
-    ParsedDataModel({ id_header, id_code, id_ok, id_error, id_unknown }, parent)
+    ParsedDataModel({
+        Translations::instance()->id_block_type, Translations::instance()->id_block_name,
+        Translations::instance()->id_block_size, Translations::instance()->id_block_status }, parent)
 {
     clear();
 }
@@ -39,7 +33,7 @@ void ParsedData::endParse() {
 void ParsedData::clear(size_t size)
 {
     mParsedWaveform.reset(new QVector<uint8_t>(size));
-    mParsedData.reset(new QVector<DataBlock>());
+    mParsedData.reset(new QVector<QSharedPointer<DataBlock>>());
 }
 
 void ParsedData::fillParsedWaveform(const ParsedData::WaveformPart& p, uint8_t val)
@@ -78,5 +72,6 @@ void ParsedData::storeData(QVector<uint8_t>&& data, QMap<size_t, uint>&& dataMap
     //Storing parsed data block
     db.data = std::move(data);
 
-    mParsedData->append(db);
+    mParsedData->emplace_back(QSharedPointer<DataBlock>::create(db));
+    addData(mParsedData->last());
 }

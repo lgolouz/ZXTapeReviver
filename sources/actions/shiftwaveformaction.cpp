@@ -16,7 +16,7 @@
 #include "sources/translations/translations.h"
 
 ShiftWaveFormAction::ShiftWaveFormAction(int channel, const ShiftWaveFormActionParams& params) :
-    ActionBase(channel, qtTrId(ID_SHIFT_WAVEFORM_ACTION)),
+    ActionBase(channel, Translations::instance()->id_shift_waveform_action),
     m_params(params)
 {
 

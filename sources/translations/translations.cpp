@@ -25,3 +25,13 @@ const char* ID_CODE                  = QT_TRID_NOOP("id_code");
 const char* ID_EDIT_ACTION           = QT_TRID_NOOP("id_edit_action");
 const char* ID_SHIFT_WAVEFORM_ACTION = QT_TRID_NOOP("id_shift_waveform_action");
 const char* ID_PARITY_MESSAGE        = QT_TRID_NOOP("id_parity_message");
+const char* ID_BLOCK_NUMBER          = QT_TRID_NOOP("id_block_number");
+const char* ID_BLOCK_TYPE            = QT_TRID_NOOP("id_block_type");
+const char* ID_BLOCK_NAME            = QT_TRID_NOOP("id_block_name");
+const char* ID_BLOCK_SIZE            = QT_TRID_NOOP("id_block_size");
+const char* ID_BLOCK_STATUS          = QT_TRID_NOOP("id_block_status");
+
+Translations* Translations::instance() {
+    static Translations t;
+    return &t;
+}

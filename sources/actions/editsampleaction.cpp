@@ -16,7 +16,7 @@
 #include "sources/translations/translations.h"
 
 EditSampleAction::EditSampleAction(int channel, const EditSampleActionParams& params) :
-    ActionBase(channel, qtTrId(ID_EDIT_ACTION)),
+    ActionBase(channel, Translations::instance()->id_edit_action),
     m_params(params)
 {
 

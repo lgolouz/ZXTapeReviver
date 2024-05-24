@@ -14,16 +14,18 @@
 #ifndef ZXTABLEMODEL_H
 #define ZXTABLEMODEL_H
 
+#include <QDebug>
+
 #include <QStringList>
 #include <QAbstractTableModel>
+#include <type_traits>
+#include "sources/util/enummetainfo.h"
 
-class ZxTableModel : public QAbstractTableModel
+class ZxTableModel : public QAbstractTableModel, protected EnumMetaInfo
 {
     Q_OBJECT
 
 public:
-    virtual ~ZxTableModel() = default;
-
     explicit ZxTableModel(const QStringList& horizontalHeader, QObject* parent = nullptr);
 
     ZxTableModel(const ZxTableModel& other) = delete;
@@ -40,6 +42,19 @@ public:
 
     virtual int columnCount(const QModelIndex& index = QModelIndex()) const override;
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+
+protected:
+    template<typename T>
+    const QHash<int, QByteArray> generateRoleNames() const {
+        const auto qMetaEnum { QMetaEnum::fromType<T>() };
+        std::decay_t<decltype(generateRoleNames<T>())> res;
+        const auto keyCount = qMetaEnum.keyCount();
+        for (decltype(qMetaEnum.keyCount()) counter { 0 }; counter < keyCount; ++counter) {
+            auto val = qMetaEnum.value(counter);
+            res.emplace(val, enumNameToRoleName(qMetaEnum.key(counter)).toUtf8());
+        }
+        return res;
+    }
 
 private:
     QStringList m_horizontalHeader;
