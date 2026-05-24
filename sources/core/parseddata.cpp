@@ -16,6 +16,7 @@
 
 ParsedData::ParsedData(QObject* parent) :
     ParsedDataModel({
+        Translations::instance()->id_block_number,
         Translations::instance()->id_block_type, Translations::instance()->id_block_name,
         Translations::instance()->id_block_size, Translations::instance()->id_block_status }, parent)
 {

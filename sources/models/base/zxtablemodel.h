@@ -26,6 +26,7 @@ class ZxTableModel : public QAbstractTableModel, protected EnumMetaInfo
     Q_OBJECT
 
 public:
+    explicit ZxTableModel(const QStringList& horizontalHeader, const QVector<qsizetype>& columnsWidth = { }, QObject* parent = nullptr);
     explicit ZxTableModel(const QStringList& horizontalHeader, QObject* parent = nullptr);
 
     ZxTableModel(const ZxTableModel& other) = delete;
@@ -42,6 +43,9 @@ public:
 
     virtual int columnCount(const QModelIndex& index = QModelIndex()) const override;
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+    Qt::ItemFlags flags(const QModelIndex &index) const override;
+
+    Q_INVOKABLE virtual int columnWidthProvider(int column) const;
 
 protected:
     template<typename T>
@@ -57,7 +61,10 @@ protected:
     }
 
 private:
+    QVector<qsizetype> calculateColumnsWidth(const QVector<qsizetype>& other = { }, qsizetype implicitWidth = -1) const;
+
     QStringList m_horizontalHeader;
+    QVector<qsizetype> m_columnsWidth;
 };
 
 #endif // ZXTABLEMODEL_H

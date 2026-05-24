@@ -27,8 +27,8 @@ class WaveformParser : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY(QPointer<ParsedDataModel> parsedChannel0 READ getParsedChannel0 NOTIFY parsedChannel0Changed)
-    Q_PROPERTY(QPointer<ParsedDataModel> parsedChannel1 READ getParsedChannel1 NOTIFY parsedChannel1Changed)
+    Q_PROPERTY(ZxTableModel* parsedChannel0 READ getParsedChannel0 NOTIFY parsedChannel0Changed)
+    Q_PROPERTY(ZxTableModel* parsedChannel1 READ getParsedChannel1 NOTIFY parsedChannel1Changed)
 
 public:
 //    enum SignalValue { ZERO, ONE, PILOT, SYNCHRO };
@@ -98,15 +98,15 @@ public:
     QPair<QVector<QSharedPointer<ParsedData::DataBlock>>, QVector<bool>> getParsedData(uint chNum) const;
     QSharedPointer<QVector<QSharedPointer<ParsedData::DataBlock>>> getParsedDataSharedPtr(uint chNum) const;
 
-    void repairWaveform2(uint chNum);
+    void repairWaveform3(uint chNum);
 
     Q_INVOKABLE void toggleBlockSelection(int blockNum);
     Q_INVOKABLE int getBlockDataStart(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getBlockDataEnd(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getPositionByAddress(uint chNum, uint blockNum, uint addr) const;
     //getters
-    QPointer<ParsedDataModel> getParsedChannel0() const;
-    QPointer<ParsedDataModel> getParsedChannel1() const;
+    ParsedDataModel* getParsedChannel0() const;
+    ParsedDataModel* getParsedChannel1() const;
 
 signals:
     void parsedChannel0Changed();

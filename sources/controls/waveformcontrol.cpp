@@ -531,7 +531,7 @@ void WaveformControl::saveWaveform()
 void WaveformControl::repairWaveform()
 {
     if (!m_isWaveformRepaired) {
-        mWavParser.repairWaveform2(m_channelNumber);
+        mWavParser.repairWaveform3(m_channelNumber);
         //mWavReader.repairWaveform(m_channelNumber);
         //mWavReader.normalizeWaveform2(m_channelNumber);
         update();

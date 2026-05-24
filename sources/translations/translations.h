@@ -34,27 +34,28 @@ extern const char* ID_BLOCK_SIZE;
 extern const char* ID_BLOCK_STATUS;
 
 struct Translations final {
-    const QString id_header { qtTrId(ID_HEADER) };
-    const QString id_code { qtTrId(ID_CODE) };
-    const QString id_ok { qtTrId(ID_OK) };
-    const QString id_error { qtTrId(ID_ERROR) };
-    const QString id_unknown { qtTrId(ID_UNKNOWN) };
-    const QString id_timeline_sec { qtTrId(ID_TIMELINE_SEC) };
-    const QString id_edit_action { qtTrId(ID_EDIT_ACTION) };
-    const QString id_shift_waveform_action { qtTrId(ID_SHIFT_WAVEFORM_ACTION) };
-    const QString id_parity_message { qtTrId (ID_PARITY_MESSAGE) };
-    const QString id_block_number { qtTrId (ID_BLOCK_NUMBER) };
-    const QString id_block_type { qtTrId (ID_BLOCK_TYPE) };
-    const QString id_block_name { qtTrId (ID_BLOCK_NAME) };
-    const QString id_block_size { qtTrId (ID_BLOCK_SIZE) };
-    const QString id_block_status { qtTrId (ID_BLOCK_STATUS) };
+    QString id_header;
+    QString id_code;
+    QString id_ok;
+    QString id_error;
+    QString id_unknown;
+    QString id_timeline_sec;
+    QString id_edit_action;
+    QString id_shift_waveform_action;
+    QString id_parity_message;
+    QString id_block_number;
+    QString id_block_type;
+    QString id_block_name;
+    QString id_block_size;
+    QString id_block_status;
 
     static Translations* instance();
+    void retranslate();
 
     ~Translations() = default;
 
 protected:
-    Translations() = default;
+    Translations();
 
     Translations(const Translations& t) = delete;
     Translations(Translations&& t) = delete;

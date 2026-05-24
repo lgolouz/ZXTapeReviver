@@ -79,6 +79,7 @@ public:
     explicit ParsedDataModel(const QStringList& h_header, QObject* parent = nullptr);
 
     virtual QVariant data(const QModelIndex& index, int role) const override;
+    virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
     virtual int rowCount(const QModelIndex& index = QModelIndex()) const override;
     virtual QHash<int, QByteArray> roleNames() const override;
 

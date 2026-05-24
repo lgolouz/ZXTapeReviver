@@ -104,4 +104,9 @@ QtObject {
     property string id_play_parsed_data:                     qsTrId("id_play_parsed_data") + TranslationManager.translationChanged
     property string id_stop_playing_parsed_data:             qsTrId("id_stop_playing_parsed_data") + TranslationManager.translationChanged
     property string id_playing_parsed_data_window_header:    qsTrId("id_playing_parsed_data_window_header") + TranslationManager.translationChanged
+    property string id_block_number:                         qsTrId("id_block_number") + TranslationManager.translationChanged
+    property string id_block_type:                           qsTrId("id_block_type") + TranslationManager.translationChanged
+    property string id_block_name:                           qsTrId("id_block_name") + TranslationManager.translationChanged
+    property string id_block_size:                           qsTrId("id_block_size") + TranslationManager.translationChanged
+    property string id_block_status:                         qsTrId("id_block_status") + TranslationManager.translationChanged
 }

@@ -29,7 +29,7 @@ ApplicationWindow {
     id: mainWindow
 
     readonly property int mainAreaWidth: width * 0.75
-    property var suspiciousPoints: SuspiciousPointsModel.suspiciousPoints
+    property var suspiciousPoints: SuspiciousPointsModel
 
     visible: true
     width: 1600
@@ -281,8 +281,8 @@ ApplicationWindow {
                 console.log("Tap saved: " + saveFileDialog.currentFile)
             }
             else {
-                FileWorkerModel.saveWaveformFileByUrl(saveFileDialog.fileUrl);
-                console.log("Waveform saved: " + saveFileDialog.fileUrl);
+                FileWorkerModel.saveWaveformFileByUrl(saveFileDialog.currentFile);
+                console.log("Waveform saved: " + saveFileDialog.currentFile);
             }
         }
     }
@@ -465,7 +465,7 @@ ApplicationWindow {
             onClicked: {
                 if (DataPlayerModel.stopped) {
                     DataPlayerModel.playParsedData(channelsComboBox.currentIndex, parsedDataView.currentRow === -1 ? 0 : parsedDataView.currentRow);
-                    dataPlayerDialog.open();
+                    dataPlayerDialog.show();
                 } else {
                     DataPlayerModel.stop();
                 }
@@ -829,7 +829,7 @@ ApplicationWindow {
             }
         }
 
-        TableView {
+        ZXTableControl {
             id: parsedDataView
 
             height: parent.height * 0.4
@@ -840,74 +840,14 @@ ApplicationWindow {
                 topMargin: 2
             }
             model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
-
-            delegate: Rectangle {
-                implicitWidth: 100
-                implicitHeight: 50
-                Text {
-                    text: display
-                }
-            }
-//             TableModelColumn {
-//                 title: Translations.id_block_number
-// //                width: rightArea.width * 0.07
-//                 role: "block"
-//                 delegate: Item {
-//                     property bool blkSelected: styleData.value.blockSelected
-//                     property int blkNumber: styleData.value.blockNumber
-//                    property int blkNumber: styleData.value.blockNumber
-
-//                     Rectangle {
-//                         anchors.fill: parent
-//                         border.width: 0
-//                         color: parent.blkSelected ? "#A00000FF" : "transparent"
-//                         Text {
-//                             anchors.centerIn: parent
-//                             color: parent.parent.blkSelected ? "white" : "black"
-//                             text: blkNumber + 1
-//                         }
-//                     }
-
-//                     MouseArea {
-//                         anchors.fill: parent
-//                         onClicked: {
-//                             WaveformParser.toggleBlockSelection(blkNumber);
-//                         }
-//                     }
-//                 }
-//             }
-
-//             TableViewColumn {
-//                 title: Translations.id_block_type
-//                 width: rightArea.width * 0.23
-//                 role: "blockType"
-//             }
-
-//             TableViewColumn {
-//                 title: Translations.id_block_name
-//                 width: rightArea.width * 0.3
-//                 role: "blockName"
-//             }
-
-//             TableModelColumn {
-//                 title: Translations.id_block_size
-// //                width: rightArea.width * 0.25
-// //                role: "blockSize"
-//             }
-
-//             TableModelColumn {
-//                 title: Translations.id_block_status
-//                 width: rightArea.width * 0.45
-// //                role: "blockStatus"
-//             }
-
-// //            selectionMode: SelectionMode.SingleSelection
-//             model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
-// //            itemDelegate: Text {
-// //                text: styleData.value
-// //                color: modelData.state === 0 ? "black" : "red"
-// //            }
-//         }
+            fallbackHeaders: [
+                Translations.id_block_number,
+                Translations.id_block_type,
+                Translations.id_block_name,
+                Translations.id_block_size,
+                Translations.id_block_status
+            ]
+            fallbackColumnWidths: [40, 80, 120, 60, 60]
         }
 
 
@@ -973,7 +913,12 @@ ApplicationWindow {
             implicitHeight: parent.height * 0.25
 
 //             //selectionMode: SelectionMode.SingleSelection
-//             model: suspiciousPoints
+             model: suspiciousPoints
+             fallbackHeaders: [
+                 Translations.id_suspicious_point_number,
+                 Translations.id_suspicious_point_position
+             ]
+             fallbackColumnWidths: [70, 180]
 // //            itemDelegate: Text {
 // //                text: styleData.column === 0 ? styleData.row + 1 : styleData.value
 // //            }
@@ -1057,17 +1002,17 @@ ApplicationWindow {
 
     About {
         id: aboutDialog
-        transientParent: parent
+        transientParent: mainWindow
     }
 
     ParserSettings {
         id: parserSettingsDialog
-        transientParent: parent
+        //transientParent: parent
     }
 
     Frequency {
         id: frequencyDialog
-        parent: parent
+        //parent: parent
 
         Component.onCompleted: {
             var func = function(fr) { frequency = fr; frequencyDialog.show(); };
@@ -1078,7 +1023,7 @@ ApplicationWindow {
 
     DataPlayer {
         id: dataPlayerDialog
-        parent: parent
+        //parent: parent
 
         selectedChannel: channelsComboBox.currentIndex
         parsedChannel: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1

@@ -43,11 +43,10 @@ Window {
         }
     }
 
-    TableView {
+    ZXTableControl {
         id: parsedDataView
 
         width: parent.width
-        //height: parent.height * 0.9
         anchors {
             top: parent.top
             left: parent.left
@@ -56,67 +55,15 @@ Window {
             bottomMargin: 5
         }
 
-        model: TableModel {
-        TableModelColumn {
-//            title: Translations.id_block_number
-//            width: rightArea.width * 0.07
-//            role: "block"
-//            delegate: Item {
-//                property bool blkSelected: styleData.value.blockSelected
-//                property int blkNumber: styleData.value.blockNumber
-
-//                 Rectangle {
-//                     anchors.fill: parent
-//                     border.width: 0
-//                     color: parent.blkSelected ? "#A00000FF" : "transparent"
-//                     Text {
-//                         anchors.centerIn: parent
-//                         color: parent.parent.blkSelected ? "white" : "black"
-//                         text: blkNumber + 1
-//                     }
-//                 }
-//            }
-        }
-
-        TableModelColumn {
-            //title: Translations.id_block_type
-            //width: rightArea.width * 0.23
-            //role: "blockType"
-        }
-
-        TableModelColumn {
-            //title: Translations.id_block_name
-            //width: rightArea.width * 0.3
-            //role: "blockName"
-        }
-
-        TableModelColumn {
-            //title: Translations.id_block_size
-            //width: rightArea.width * 0.25
-            //role: "blockSize"
-        }
-
-        TableModelColumn {
-            //title: Translations.id_block_status
-            //width: rightArea.width * 0.45
-            //role: "blockStatus"
-        }
-        //     title: Translations.id_block_status
-        //     width: rightArea.width * 0.45
-        //     role: "blockStatus"
-        // }
-
-//        selectionMode: SelectionMode.SingleSelection
-        // }
-
-        //selectionMode: SelectionMode.SingleSelection
-        //model: parsedChannel
-//        itemDelegate: Text {
-//            text: styleData.value
-//            color: modelData.state === 0 ? "black" : "red"
-//        }
-        }
-
+        model: dataPlayerDialog.parsedChannel
+        fallbackHeaders: [
+            Translations.id_block_number,
+            Translations.id_block_type,
+            Translations.id_block_name,
+            Translations.id_block_size,
+            Translations.id_block_status
+        ]
+        fallbackColumnWidths: [40, 80, 120, 60, 60]
     }
 
     Button {

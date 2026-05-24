@@ -96,7 +96,7 @@
 <trans-unit id="id_right_channel"><source>Right Channel</source><target>Правый канал</target></trans-unit>
 <trans-unit id="id_to_the_beginning_of_the_block"><source>&lt;&lt; To the beginning of the block</source><target>&lt;&lt; В начало блока</target></trans-unit>
 <trans-unit id="id_to_the_end_of_the_block"><source>To the end of the block &gt;&gt;</source><target>В конец блока &gt;&gt;</target></trans-unit>
-<trans-unit id="id_block_number"><source>#</source><target>#</target></trans-unit>
+<trans-unit id="id_block_number"><source>#</source><target>№</target></trans-unit>
 <trans-unit id="id_block_type"><source>Type</source><target>Тип</target></trans-unit>
 <trans-unit id="id_block_name"><source>Name</source><target>Имя</target></trans-unit>
 <trans-unit id="id_block_size"><source>Size (to be read)</source><target>Размер (должно быть считано)</target></trans-unit>

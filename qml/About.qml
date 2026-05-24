@@ -13,6 +13,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Window
 
 import com.models.zxtapereviver 1.0
 import "."
@@ -22,62 +23,84 @@ Window {
 
     visible: false
     title: Translations.id_about_window_header
-    //flags: Qt.Dialog
+    flags: Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
     modality: Qt.WindowModal
 
-    width: textContainer.childrenRect.width + 2 * margin_size
-    height: textContainer.childrenRect.height + 2 * margin_size
+    width: 560
+    height: 230
+    minimumWidth: width
+    maximumWidth: width
+    minimumHeight: height
+    maximumHeight: height
 
-    readonly property int margin_size: 10
+    function show() {
+        visible = true;
+        raise();
+        requestActivate();
+    }
 
-    Item {
-        id: textContainer
-        anchors {
-            fill: parent
-            topMargin: aboutDialog.margin_size
-            leftMargin: aboutDialog.margin_size
-        }
+    Rectangle {
+        anchors.fill: parent
+        color: "#f7f7f7"
 
-        Text {
-            id: zxTapeReviverText
-            text: '<b>ZX Tape Reviver</b> <i>%1</i> (c) 2020-2024 <a href="mailto:lgolouz@list.ru">Leonid Golouz</a>'.arg(ConfigurationManager.zxTapeReviverVersion)
-            onLinkActivated: Qt.openUrlExternally(link)
-        }
-        Text {
-            id: emailText
-            anchors.top: zxTapeReviverText.bottom
-            anchors.topMargin: height / 2
-            text: Translations.id_email_link
-            onLinkActivated: Qt.openUrlExternally(link)
-        }
-        Text {
-            id: youtubeText
-            anchors.top: emailText.bottom
-            text: Translations.id_youtube_channel_link
-            onLinkActivated: Qt.openUrlExternally(link)
-        }
-        Text {
-            id: donationText
-            anchors.top: youtubeText.bottom
-            text: Translations.id_donations_link
-            onLinkActivated: Qt.openUrlExternally(link)
-        }
+        Column {
+            spacing: 8
+            anchors {
+                fill: parent
+                margins: 14
+            }
 
-        Text {
-            id: pleaseClickText
-            anchors.top: donationText.bottom
-            anchors.topMargin: height / 2
-            text: Translations.id_please_click_to_open_link
-        }
+            Text {
+                width: parent.width
+                text: '<b>ZX Tape Reviver</b> <i>%1</i> (c) 2020-2024 Leonid Golouz'.arg(ConfigurationManager.zxTapeReviverVersion)
+                textFormat: Text.RichText
+                color: "black"
+                wrapMode: Text.Wrap
+            }
 
-        Button {
-            anchors.top: pleaseClickText.bottom
-            anchors.horizontalCenter: textContainer.horizontalCenter
-            anchors.topMargin: 2 * aboutDialog.margin_size
-            text: Translations.id_close_button_text
+            Text {
+                width: parent.width
+                text: Translations.id_email_link
+                textFormat: Text.RichText
+                color: "black"
+                wrapMode: Text.Wrap
+                onLinkActivated: (link) => Qt.openUrlExternally(link)
+            }
 
-            onClicked: {
-                close();
+            Text {
+                width: parent.width
+                text: Translations.id_youtube_channel_link
+                textFormat: Text.RichText
+                color: "black"
+                wrapMode: Text.Wrap
+                onLinkActivated: (link) => Qt.openUrlExternally(link)
+            }
+
+            Text {
+                width: parent.width
+                text: Translations.id_donations_link
+                textFormat: Text.RichText
+                color: "black"
+                wrapMode: Text.Wrap
+                onLinkActivated: (link) => Qt.openUrlExternally(link)
+            }
+
+            Text {
+                width: parent.width
+                text: Translations.id_please_click_to_open_link
+                color: "black"
+                wrapMode: Text.Wrap
+            }
+
+            Item {
+                width: 1
+                height: 4
+            }
+
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: Translations.id_close_button_text
+                onClicked: aboutDialog.close()
             }
         }
     }

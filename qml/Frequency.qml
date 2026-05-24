@@ -34,8 +34,8 @@ Window {
 
         anchors {
             fill: parent
-            topMargin: aboutDialog.margin_size
-            leftMargin: aboutDialog.margin_size
+            topMargin: frequencyDialog.margin_size
+            leftMargin: frequencyDialog.margin_size
         }
 
         Text {

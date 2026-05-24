@@ -13,6 +13,7 @@
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQuickStyle>
 #include "sources/controls/waveformcontrol.h"
 #include "sources/core/waveformparser.h"
 #include "sources/models/fileworkermodel.h"
@@ -53,6 +54,7 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     app.setOrganizationName("ComputerEnthusiastsTips");
     app.setOrganizationDomain("ComputerEnthusiastsTips");
+    QQuickStyle::setStyle("Fusion");
 
     registerTypes();
 

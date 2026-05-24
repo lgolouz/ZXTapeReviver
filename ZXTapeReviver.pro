@@ -135,3 +135,10 @@ QML_DESIGNER_IMPORT_PATH =
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+INCLUDEPATH += $$PWD/fftw/dll
+LIBS += -L$$PWD/fftw/dll -lfftw3-3
+DEFINES += DLL_IMPORT
+
+include(wavelib/wavelib.pri)
+
