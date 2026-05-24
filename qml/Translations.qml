@@ -104,6 +104,8 @@ QtObject {
     property string id_sine_check_tolerance:                 qsTrId("id_sine_check_tolerance") + TranslationManager.translationChanged
     property string id_play_parsed_data:                     qsTrId("id_play_parsed_data") + TranslationManager.translationChanged
     property string id_stop_playing_parsed_data:             qsTrId("id_stop_playing_parsed_data") + TranslationManager.translationChanged
+    property string id_pause_playing_parsed_data:            qsTrId("id_pause_playing_parsed_data") + TranslationManager.translationChanged
+    property string id_resume_playing_parsed_data:           qsTrId("id_resume_playing_parsed_data") + TranslationManager.translationChanged
     property string id_playing_parsed_data_window_header:    qsTrId("id_playing_parsed_data_window_header") + TranslationManager.translationChanged
     property string id_block_number:                         qsTrId("id_block_number") + TranslationManager.translationChanged
     property string id_block_type:                           qsTrId("id_block_type") + TranslationManager.translationChanged
