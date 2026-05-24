@@ -16,7 +16,6 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import QtQuick.Layouts
 import Qt.labs.qmlmodels
-//import QtGraphicalEffects
 
 import com.models.zxtapereviver 1.0
 import "."
@@ -82,6 +81,24 @@ Window {
         }
     }
 
+    Button {
+        id: pauseParsedData
+
+        text: DataPlayerModel.paused ? Translations.id_resume_playing_parsed_data : Translations.id_pause_playing_parsed_data
+        enabled: !DataPlayerModel.stopped
+        anchors.bottom: parent.bottom
+        anchors.left: playParsedData.right
+        anchors.leftMargin: 5
+
+        onClicked: {
+            if (DataPlayerModel.paused) {
+                DataPlayerModel.resume();
+            } else {
+                DataPlayerModel.pause();
+            }
+        }
+    }
+
     Item {
         id: progressBarItem
         anchors {
@@ -114,16 +131,15 @@ Window {
                     bottomMargin: parent.border.width
                     leftMargin: parent.border.width
                 }
-                width: (parent.width - 2 * parent.border.width) * (DataPlayerModel.processedTime / DataPlayerModel.blockTime)
-//                LinearGradient {
-//                    anchors.fill: parent
-//                    gradient: Gradient {
-//                            GradientStop { position: 0.0; color: "#1B94EF" }
-//                            GradientStop { position: 1.0; color: "#92C1E4" }
-//                        }
-//                    start: Qt.point(0, 0)
-//                    end: Qt.point(parent.width, 0)
-//                }
+                width: DataPlayerModel.blockTime > 0
+                       ? Math.min(parent.width - 2 * parent.border.width,
+                                  (parent.width - 2 * parent.border.width) * (DataPlayerModel.processedTime / DataPlayerModel.blockTime))
+                       : 0
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: "#1B94EF" }
+                    GradientStop { position: 1.0; color: "#92C1E4" }
+                }
             }
 
             Text {

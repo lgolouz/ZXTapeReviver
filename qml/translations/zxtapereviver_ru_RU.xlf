@@ -121,6 +121,8 @@
 <trans-unit id="id_sine_check_tolerance"><source>Sine Check Tolerance:</source><target>Допуск при проверке синусоиды:</target></trans-unit>
 <trans-unit id="id_play_parsed_data"><source>Play parsed data</source><target>Играть разобранное</target></trans-unit>
 <trans-unit id="id_stop_playing_parsed_data"><source>Stop playing</source><target>Стоп воспроизведения</target></trans-unit>
+<trans-unit id="id_pause_playing_parsed_data"><source>Pause</source><target>Пауза</target></trans-unit>
+<trans-unit id="id_resume_playing_parsed_data"><source>Resume</source><target>Продолжить</target></trans-unit>
 <trans-unit id="id_parity_message"><source> (Parity: %1 ; Should be: %2)</source><target> (Сумма: %1 ; Ожидается: %2)</target></trans-unit>
 <trans-unit id="id_playing_parsed_data_window_header"><source>Playing parsed data</source><target>Воспроизведение разобранных данных</target></trans-unit>
 <trans-unit id="id_cannot_save_tap_file"><source>Cannot save TAP file:&#10;%1&#10;&#10;%2</source><target>Не удалось сохранить TAP-файл:&#10;%1&#10;&#10;%2</target></trans-unit>
