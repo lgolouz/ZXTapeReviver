@@ -21,17 +21,25 @@ import "."
 Window {
     id: aboutDialog
 
+    readonly property int contentMargin: 14
+    readonly property string versionText: '<b>ZX Tape Reviver</b> <i>%1</i> (c) 2020-2024 Leonid Golouz'.arg(ConfigurationManager.zxTapeReviverVersion)
+    readonly property int textWidth: Math.min(720, Math.max(420, Math.ceil(Math.max(versionTextMetrics.implicitWidth,
+                                                                                      emailTextMetrics.implicitWidth,
+                                                                                      youtubeTextMetrics.implicitWidth,
+                                                                                      donationTextMetrics.implicitWidth,
+                                                                                      hintTextMetrics.implicitWidth))))
+
     visible: false
     title: Translations.id_about_window_header
     flags: Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint
     modality: Qt.WindowModal
 
-    width: 560
-    height: 230
-    minimumWidth: width
-    maximumWidth: width
-    minimumHeight: height
-    maximumHeight: height
+    width: textWidth + contentMargin * 2
+    height: aboutContent.implicitHeight + contentMargin * 2
+    minimumWidth: 420
+    minimumHeight: aboutContent.implicitHeight + contentMargin * 2
+    maximumWidth: 760
+    maximumHeight: aboutContent.implicitHeight + contentMargin * 2
 
     function show() {
         visible = true;
@@ -39,27 +47,63 @@ Window {
         requestActivate();
     }
 
+    Text {
+        id: versionTextMetrics
+        visible: false
+        text: aboutDialog.versionText
+        textFormat: Text.RichText
+    }
+
+    Text {
+        id: emailTextMetrics
+        visible: false
+        text: Translations.id_email_link
+        textFormat: Text.RichText
+    }
+
+    Text {
+        id: youtubeTextMetrics
+        visible: false
+        text: Translations.id_youtube_channel_link
+        textFormat: Text.RichText
+    }
+
+    Text {
+        id: donationTextMetrics
+        visible: false
+        text: Translations.id_donations_link
+        textFormat: Text.RichText
+    }
+
+    Text {
+        id: hintTextMetrics
+        visible: false
+        text: Translations.id_please_click_to_open_link
+    }
+
     Rectangle {
         anchors.fill: parent
         color: "#f7f7f7"
 
         Column {
+            id: aboutContent
+
             spacing: 8
             anchors {
                 fill: parent
-                margins: 14
+                margins: aboutDialog.contentMargin
             }
 
             Text {
-                width: parent.width
-                text: '<b>ZX Tape Reviver</b> <i>%1</i> (c) 2020-2024 Leonid Golouz'.arg(ConfigurationManager.zxTapeReviverVersion)
+                width: aboutDialog.textWidth
+                text: aboutDialog.versionText
                 textFormat: Text.RichText
                 color: "black"
                 wrapMode: Text.Wrap
             }
 
             Text {
-                width: parent.width
+                width: aboutDialog.textWidth
                 text: Translations.id_email_link
                 textFormat: Text.RichText
                 color: "black"
@@ -68,7 +112,7 @@ Window {
             }
 
             Text {
-                width: parent.width
+                width: aboutDialog.textWidth
                 text: Translations.id_youtube_channel_link
                 textFormat: Text.RichText
                 color: "black"
@@ -77,7 +121,7 @@ Window {
             }
 
             Text {
-                width: parent.width
+                width: aboutDialog.textWidth
                 text: Translations.id_donations_link
                 textFormat: Text.RichText
                 color: "black"
@@ -86,7 +130,7 @@ Window {
             }
 
             Text {
-                width: parent.width
+                width: aboutDialog.textWidth
                 text: Translations.id_please_click_to_open_link
                 color: "black"
                 wrapMode: Text.Wrap
