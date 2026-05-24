@@ -90,6 +90,7 @@ signals:
     void doubleClick(int idx);
     void cannotSetMeasurementPoint();
     void frequency(int freq);
+    void saveTapFailed(const QString& fileName, WaveformParser::SaveTapResultCode error, const QString& details);
 
 private:
     enum ClickStates {

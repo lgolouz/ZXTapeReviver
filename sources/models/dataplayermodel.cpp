@@ -12,6 +12,9 @@
 //*******************************************************************************
 
 #include "dataplayermodel.h"
+#include <QAudioFormat>
+#include <QAudioDevice>
+#include <QMediaDevices>
 #include <QDebug>
 
 DataPlayerModel::DataPlayerModel(QObject* parent) :
@@ -20,45 +23,49 @@ DataPlayerModel::DataPlayerModel(QObject* parent) :
     m_blockTime(0),
     m_processedTime(0)
 {
+    m_notifyTimer.setInterval(30);
     connect(&m_delayTimer, &QTimer::timeout, this, &DataPlayerModel::handleNextDataRecord);
+    connect(&m_notifyTimer, &QTimer::timeout, this, &DataPlayerModel::handleAudioOutputNotify);
 }
 
-void DataPlayerModel::playParsedData(uint chNum, uint currentBlock) {
+void DataPlayerModel::playParsedData([[maybe_unused]] uint chNum, [[maybe_unused]] uint currentBlock) {
     if (m_playingState != DP_Stopped) {
         return;
     }
 
+#if (0)
 #if (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-    const auto endianness { QAudioFormat::BigEndian };
+    //const auto endianness { QAudioFormat::BigEndian };
 #else
-    const auto endianness { QAudioFormat::LittleEndian };
+    //const auto endianness { QAudioFormat::LittleEndian };
 #endif
 
     QAudioFormat format;
     // Set up the format
     format.setSampleRate(c_sampleRate);
     format.setChannelCount(1);
-    format.setSampleSize(16);
-    format.setCodec("audio/pcm");
-    format.setByteOrder(endianness);
-    format.setSampleType(QAudioFormat::SignedInt);
+    format.setSampleFormat(QAudioFormat::Int16);
+    //format.setSampleSize(16);
+    //format.setCodec("audio/pcm");
+    //format.setByteOrder(endianness);
+    //format.setSampleType(QAudioFormat::SignedInt);
 
-    const QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
+    const QAudioDevice info(QMediaDevices::defaultAudioOutput());
     if (!info.isFormatSupported(format)) {
         qDebug() << "Audio format not supported, cannot play audio.";
         return;
     }
 
-    m_audio.reset(new QAudioOutput(info, format));
-    m_audio->setNotifyInterval(30);
-    connect(m_audio.data(), &QAudioOutput::stateChanged, this, &DataPlayerModel::handleAudioOutputStateChanged);
-    connect(m_audio.data(), &QAudioOutput::notify, this, &DataPlayerModel::handleAudioOutputNotify);
+    m_audio.reset(new QAudioSink(info, format));
+    //m_audio->setNotifyInterval(30);
+    connect(m_audio.data(), &QAudioSink::stateChanged, this, &DataPlayerModel::handleAudioOutputStateChanged);
 
     m_buffer.close();
     m_currentBlock = currentBlock;
     m_data = WaveformParser::instance()->getParsedData(chNum);
     m_parserData = chNum == 0 ? WaveformParser::instance()->getParsedChannel0() : WaveformParser::instance()->getParsedChannel1();
     handleNextDataRecord();
+#endif
 }
 
 void DataPlayerModel::handleNextDataRecord() {
@@ -104,7 +111,7 @@ void DataPlayerModel::handleNextDataRecord() {
         }
     }
     //Data
-    for (const uint8_t byte: qAsConst(m_data.first[m_currentBlock].data)) {
+    for (const uint8_t byte: std::as_const(m_data.first[m_currentBlock].data)) {
         for (int i { 7 }; i >= 0; --i) {
             const uint8_t bit8 = 1 << i;
             const auto bit { byte & bit8 };
@@ -133,7 +140,9 @@ void DataPlayerModel::handleNextDataRecord() {
 
     m_buffer.setData(array);
     m_buffer.open(QIODevice::ReadOnly);
+#if (0)
     m_audio->start(&m_buffer);
+#endif
 }
 
 void DataPlayerModel::prepareNextDataRecord() {
@@ -156,7 +165,10 @@ void DataPlayerModel::prepareNextDataRecord() {
             }
         });
     } else {
+        m_notifyTimer.stop();
+#if (0)
         m_audio->stop();
+#endif
         m_audio.reset();
         m_playingState = DP_Stopped;
         emit currentBlockChanged();
@@ -171,9 +183,11 @@ void DataPlayerModel::handleAudioOutputStateChanged(QAudio::State state) {
             break;
 
         case QAudio::StoppedState:
+#if (0)
             if (m_audio->error() != QAudio::NoError) {
                 qDebug() << "Error playing: " << m_audio->error();
             }
+#endif
             break;
 
         case QAudio::ActiveState:
@@ -194,7 +208,9 @@ void DataPlayerModel::stop() {
 }
 
 void DataPlayerModel::handleAudioOutputNotify() {
+#if (0)
     m_processedTime = m_audio->processedUSecs() / 1000;
+#endif
     emit processedTimeChanged();
 }
 

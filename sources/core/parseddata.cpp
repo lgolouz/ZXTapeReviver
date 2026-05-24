@@ -12,17 +12,29 @@
 //*******************************************************************************
 
 #include "parseddata.h"
+#include "sources/translations/translations.h"
 
 ParsedData::ParsedData(QObject* parent) :
-    QObject(parent)
+    ParsedDataModel({
+        Translations::instance()->id_block_number,
+        Translations::instance()->id_block_type, Translations::instance()->id_block_name,
+        Translations::instance()->id_block_size, Translations::instance()->id_block_status }, parent)
 {
     clear();
+}
+
+void ParsedData::beginParse() {
+    invalidateItems();
+}
+
+void ParsedData::endParse() {
+    removeOutdatedItems();
 }
 
 void ParsedData::clear(size_t size)
 {
     mParsedWaveform.reset(new QVector<uint8_t>(size));
-    mParsedData.reset(new QVector<DataBlock>());
+    mParsedData.reset(new QVector<QSharedPointer<DataBlock>>());
 }
 
 void ParsedData::fillParsedWaveform(const ParsedData::WaveformPart& p, uint8_t val)
@@ -61,5 +73,6 @@ void ParsedData::storeData(QVector<uint8_t>&& data, QMap<size_t, uint>&& dataMap
     //Storing parsed data block
     db.data = std::move(data);
 
-    mParsedData->append(db);
+    mParsedData->emplace_back(QSharedPointer<DataBlock>::create(db));
+    addData(mParsedData->last());
 }

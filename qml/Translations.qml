@@ -11,12 +11,17 @@ QtObject {
     readonly property string tap_file_suffix: "tap"
     readonly property string filename_wildcard: "*."
 
+    property string id_close_button_text:                    qsTrId("id_close_button_text") + TranslationManager.translationChanged
+    property string id_ok_button_text:                       qsTrId("id_ok_button_text") + TranslationManager.translationChanged
+    property string id_restore_defaults_button_text:         qsTrId("id_restore_defaults_button_text") + TranslationManager.translationChanged
+    property string id_goto_button_text:                     qsTrId("id_goto_button_text") + TranslationManager.translationChanged
+    property string id_cancel_button_text:                   qsTrId("id_cancel_button_text") + TranslationManager.translationChanged
     property string id_about_window_header:                  qsTrId("id_about_window_header") + TranslationManager.translationChanged
     property string id_please_click_to_open_link:            qsTrId("id_please_click_to_open_link") + TranslationManager.translationChanged
     property string id_email_link:                           qsTrId("id_email_link").arg('<a href="mailto:computerenthusiasttips@mail.ru">computerenthusiasttips@mail.ru</a>') + TranslationManager.translationChanged
     property string id_youtube_channel_name:                 qsTrId("id_youtube_channel_name") + TranslationManager.translationChanged
-    property string id_youtube_channel_link:                 qsTrId("id_youtube_channel_link").arg('<a href="https://www.youtube.com/channel/UCz_ktTqWVekT0P4zVW8Xgcg">%1</a>'.arg(id_youtube_channel_name))
-    property string id_donations_link:                       qsTrId("id_donations_link").arg('<a href="https://destream.net/live/lgolouz/donate">https://destream.net/live/lgolouz/donate</a>')
+    property string id_youtube_channel_link:                 qsTrId("id_youtube_channel_link").arg('<a href="https://www.youtube.com/channel/UCz_ktTqWVekT0P4zVW8Xgcg">%1</a>'.arg(id_youtube_channel_name)) + TranslationManager.translationChanged
+    property string id_donations_link:                       qsTrId("id_donations_link").arg('<a href="https://destream.net/live/lgolouz/donate">https://destream.net/live/lgolouz/donate</a>') + TranslationManager.translationChanged
     property string id_measured_frequency_window_header:     qsTrId("id_measured_frequency_window_header") + TranslationManager.translationChanged
     property string id_measured_frequency:                   qsTrId("id_measured_frequency") + TranslationManager.translationChanged
     property string id_goto_address_window_header:           qsTrId("id_goto_address_window_header") + TranslationManager.translationChanged
@@ -87,15 +92,11 @@ QtObject {
     property string id_right_channel:                        qsTrId("id_right_channel") + TranslationManager.translationChanged
     property string id_to_the_beginning_of_the_block:        qsTrId("id_to_the_beginning_of_the_block") + TranslationManager.translationChanged //Button caption
     property string id_to_the_end_of_the_block:              qsTrId("id_to_the_end_of_the_block") + TranslationManager.translationChanged //Button caption
-    property string id_block_number:                         qsTrId("id_block_number") + TranslationManager.translationChanged
-    property string id_block_type:                           qsTrId("id_block_type") + TranslationManager.translationChanged
-    property string id_block_name:                           qsTrId("id_block_name") + TranslationManager.translationChanged
-    property string id_block_size:                           qsTrId("id_block_size") + TranslationManager.translationChanged
-    property string id_block_status:                         qsTrId("id_block_status") + TranslationManager.translationChanged
     property string id_goto_suspicious_point:                qsTrId("id_goto_suspicious_point") + TranslationManager.translationChanged //Button caption
     property string id_remove_suspicious_point:              qsTrId("id_remove_suspicious_point") + TranslationManager.translationChanged //Button caption
     property string id_suspicious_point_number:              qsTrId("id_suspicious_point_number") + TranslationManager.translationChanged
     property string id_suspicious_point_position:            qsTrId("id_suspicious_point_position") + TranslationManager.translationChanged
+    property string id_error:                                qsTrId("id_error") + TranslationManager.translationChanged
     property string id_language_menu_item:                   qsTrId("id_language_menu_item") + TranslationManager.translationChanged
     property string id_hotkey_tooltip:                       qsTrId("id_hotkey_tooltip") + TranslationManager.translationChanged
     property string id_remove_action:                        qsTrId("id_remove_action") + TranslationManager.translationChanged //Button caption
@@ -104,4 +105,13 @@ QtObject {
     property string id_play_parsed_data:                     qsTrId("id_play_parsed_data") + TranslationManager.translationChanged
     property string id_stop_playing_parsed_data:             qsTrId("id_stop_playing_parsed_data") + TranslationManager.translationChanged
     property string id_playing_parsed_data_window_header:    qsTrId("id_playing_parsed_data_window_header") + TranslationManager.translationChanged
+    property string id_block_number:                         qsTrId("id_block_number") + TranslationManager.translationChanged
+    property string id_block_type:                           qsTrId("id_block_type") + TranslationManager.translationChanged
+    property string id_block_name:                           qsTrId("id_block_name") + TranslationManager.translationChanged
+    property string id_block_size:                           qsTrId("id_block_size") + TranslationManager.translationChanged
+    property string id_block_status:                         qsTrId("id_block_status") + TranslationManager.translationChanged
+    property string id_cannot_save_tap_file:                 qsTrId("id_cannot_save_tap_file") + TranslationManager.translationChanged
+    property string id_no_parsed_data_for_selected_channel:  qsTrId("id_no_parsed_data_for_selected_channel") + TranslationManager.translationChanged
+    property string id_cannot_replace_tap_file:              qsTrId("id_cannot_replace_tap_file") + TranslationManager.translationChanged
+    property string id_cannot_open_tap_file_for_writing:     qsTrId("id_cannot_open_tap_file_for_writing") + TranslationManager.translationChanged
 }

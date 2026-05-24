@@ -271,6 +271,6 @@ void ParserSettingsModel::setSineCheckTolerance(double value) {
 
 ParserSettingsModel* ParserSettingsModel::instance()
 {
-    static QScopedPointer<ParserSettingsModel> m { new ParserSettingsModel() };
-    return m.get();
+    static ParserSettingsModel m;
+    return &m;
 }

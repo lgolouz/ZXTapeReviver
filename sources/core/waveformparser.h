@@ -16,9 +16,10 @@
 
 #include <iterator>
 #include <QMap>
+#include <QSet>
+#include <QVariantList>
 #include <QVector>
 #include <QVariantMap>
-#include <QVariantList>
 #include "sources/core/parseddata.h"
 #include "sources/core/wavreader.h"
 #include "sources/defines.h"
@@ -27,8 +28,8 @@ class WaveformParser : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY(QVariantList parsedChannel0 READ getParsedChannel0 NOTIFY parsedChannel0Changed)
-    Q_PROPERTY(QVariantList parsedChannel1 READ getParsedChannel1 NOTIFY parsedChannel1Changed)
+    Q_PROPERTY(ZxTableModel* parsedChannel0 READ getParsedChannel0 NOTIFY parsedChannel0Changed)
+    Q_PROPERTY(ZxTableModel* parsedChannel1 READ getParsedChannel1 NOTIFY parsedChannel1Changed)
 
 public:
 //    enum SignalValue { ZERO, ONE, PILOT, SYNCHRO };
@@ -73,46 +74,65 @@ private:
     }
 
     //Helper methods intended to use in case of change we can made them only once
-    __attribute__((always_inline)) inline bool isZeroFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
-    __attribute__((always_inline)) inline bool isOneFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
+    Q_ALWAYS_INLINE bool isZeroFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
+    Q_ALWAYS_INLINE bool isOneFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
 
     WavReader& mWavReader;
     QMap<uint, ParsedData*> m_parsedData;
     // QMap<uint, QVector<uint8_t>> mParsedWaveform;
     // QMap<uint, QVector<DataBlock>> mParsedData;
-    mutable QVector<bool> mSelectedBlocks;
+    QMap<uint, QSet<int>> mSelectedBlocks;
 
 protected:
     explicit WaveformParser(QObject* parent = nullptr);
-    QVariantList getParsedChannelData(uint chNum) const;
-    __attribute__((always_inline)) inline ParsedData* getOrCreateParsedDataPtr(uint chNum);
-    __attribute__((always_inline)) inline ParsedData* getParsedDataPtr(uint chNum) const;
+    QPointer<ParsedDataModel> getParsedChannelData(uint chNum) const;
+    Q_ALWAYS_INLINE ParsedData* getOrCreateParsedDataPtr(uint chNum);
+    Q_ALWAYS_INLINE ParsedData* getParsedDataPtr(uint chNum) const;
 
 public:
-    virtual ~WaveformParser() override = default;
+    enum class SaveTapResultCode {
+        Success,
+        NoParsedData,
+        CannotRemoveExistingFile,
+        CannotOpenFile
+    };
+    Q_ENUM(SaveTapResultCode)
+
+    struct SaveTapResult {
+        SaveTapResultCode code { SaveTapResultCode::Success };
+        QString details;
+
+        bool succeeded() const { return code == SaveTapResultCode::Success; }
+    };
 
     static WaveformParser* instance();
 
     void parse(uint chNum);
-    void saveTap(uint chNum, const QString& fileName = QString());
+    SaveTapResult saveTap(uint chNum, const QString& fileName = QString());
     void saveWaveform(uint chNum);
     QVector<uint8_t> getParsedWaveform(uint chNum) const;
-    QPair<QVector<ParsedData::DataBlock>, QVector<bool>> getParsedData(uint chNum) const;
-    QSharedPointer<QVector<ParsedData::DataBlock>> getParsedDataSharedPtr(uint chNum) const;
+    QPair<QVector<QSharedPointer<ParsedData::DataBlock>>, QVector<bool>> getParsedData(uint chNum) const;
+    QSharedPointer<QVector<QSharedPointer<ParsedData::DataBlock>>> getParsedDataSharedPtr(uint chNum) const;
 
-    void repairWaveform2(uint chNum);
+    void repairWaveform3(uint chNum);
 
-    Q_INVOKABLE void toggleBlockSelection(int blockNum);
+    Q_INVOKABLE bool isBlockSelected(uint chNum, int blockNum) const;
+    Q_INVOKABLE bool isBlockParseError(uint chNum, int blockNum) const;
+    Q_INVOKABLE void setBlockSelected(uint chNum, int blockNum, bool selected);
+    Q_INVOKABLE void toggleBlockSelection(uint chNum, int blockNum);
+    Q_INVOKABLE void clearBlockSelection(uint chNum);
+    Q_INVOKABLE QVariantList selectedBlocks(uint chNum) const;
     Q_INVOKABLE int getBlockDataStart(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getBlockDataEnd(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getPositionByAddress(uint chNum, uint blockNum, uint addr) const;
     //getters
-    QVariantList getParsedChannel0() const;
-    QVariantList getParsedChannel1() const;
+    ParsedDataModel* getParsedChannel0() const;
+    ParsedDataModel* getParsedChannel1() const;
 
 signals:
     void parsedChannel0Changed();
     void parsedChannel1Changed();
+    void blockSelectionChanged(uint chNum);
 };
 
 #endif // WAVEFORMPARSER_H

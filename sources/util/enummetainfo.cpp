@@ -12,3 +12,13 @@
 //*******************************************************************************
 
 #include "enummetainfo.h"
+
+QString EnumMetaInfo::enumNameToRoleName(const char* n) {
+    if (n == nullptr) {
+        return { };
+    }
+
+    QString o(n);
+    o.front() = o.front().toLower();
+    return o;
+}

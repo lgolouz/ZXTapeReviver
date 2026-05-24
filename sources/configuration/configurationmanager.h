@@ -18,9 +18,29 @@
 #include <QObject>
 #include <QList>
 #include <QPair>
-#include <memory>
 #include "sources/util/enummetainfo.h"
 #include "sources/translations/translationmanager.h"
+
+//As we want to use initializer-list we have to have scoped pointer with copy constructor (elements of an initializer list are always passed via const-reference).
+//So, we can use std::shared_ptr, or do the lightweight handmade one.
+//https://stackoverflow.com/questions/8193102/initializer-list-and-move-semantics
+//https://stackoverflow.com/questions/8468774/can-i-list-initialize-a-vector-of-move-only-type
+template <typename T>
+class InitializerListScopedPtr final {
+public:
+    InitializerListScopedPtr(T* ptr) : m_ptr(ptr) { }
+    InitializerListScopedPtr(const InitializerListScopedPtr& other) : m_ptr(other.m_ptr) { other.m_ptr = nullptr; }
+    InitializerListScopedPtr(InitializerListScopedPtr&& other) : m_ptr(other.m_ptr) { other.m_ptr = nullptr; }
+    virtual ~InitializerListScopedPtr() { if (m_ptr != nullptr) { delete m_ptr; m_ptr = nullptr; } }
+
+    T* operator->() const { return m_ptr; }
+
+    InitializerListScopedPtr& operator= (const InitializerListScopedPtr& other) = delete;
+    InitializerListScopedPtr& operator= (InitializerListScopedPtr&& other) = delete;
+
+private:
+    mutable T* m_ptr;
+};
 
 class ConfigurationManager final : public QObject, protected EnumMetaInfo {
     Q_OBJECT
@@ -115,7 +135,7 @@ private:
     QString getSettingKey(INISections section, INIKeys key) const;
 
     class CustomizationBase {
-        const QMap<INISections, QList<QPair<INIKeys, std::shared_ptr<INIValueBase>>>>& m_ini;
+        const QMap<INISections, QList<QPair<INIKeys, InitializerListScopedPtr<INIValueBase>>>>& m_ini;
 
         CustomizationBase(const CustomizationBase& other) = delete;
         CustomizationBase(CustomizationBase&& other) = delete;
@@ -123,10 +143,10 @@ private:
         CustomizationBase& operator= (CustomizationBase&& other) = delete;
 
     public:
-        CustomizationBase(const QMap<INISections, QList<QPair<INIKeys, std::shared_ptr<INIValueBase>>>>& sections);
+        CustomizationBase(const QMap<INISections, QList<QPair<INIKeys, InitializerListScopedPtr<INIValueBase>>>>& sections);
         virtual ~CustomizationBase() = default;
 
-        virtual const QMap<INISections, QList<QPair<INIKeys, std::shared_ptr<INIValueBase>>>>& getSections() const;
+        virtual const QMap<INISections, QList<QPair<INIKeys, InitializerListScopedPtr<INIValueBase>>>>& getSections() const;
     };
 
 public:
@@ -147,7 +167,7 @@ public:
         unsigned m_circleRadius;
         bool m_checkVerticalRange;
 
-        const QMap<INISections, QList<QPair<INIKeys, std::shared_ptr<INIValueBase>>>> m_waveformini;
+        const QMap<INISections, QList<QPair<INIKeys, InitializerListScopedPtr<INIValueBase>>>> m_waveformini;
 
     public:
         WaveformCustomization();
@@ -174,7 +194,7 @@ public:
     class ApplicationCustomization : public CustomizationBase {
         TranslationManager::TranslationLanguages m_translationLanguage;
 
-        const QMap<INISections, QList<QPair<INIKeys, std::shared_ptr<INIValueBase>>>> m_applicationini;
+        const QMap<INISections, QList<QPair<INIKeys, InitializerListScopedPtr<INIValueBase>>>> m_applicationini;
 
     public:
         ApplicationCustomization();

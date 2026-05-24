@@ -1,0 +1,27 @@
+Структура папок тома Новый том
+Серийный номер тома: CA2E-C7BA
+D:.
++---dll
+¦       bench.exe
+¦       benchf.exe
+¦       benchl.exe
+¦       COPYING
+¦       COPYRIGHT
+¦       fftw-wisdom.exe
+¦       fftw3.f
+¦       fftw3.f03
+¦       fftw3.h
+¦       fftw3l.f03
+¦       fftw3q.f03
+¦       fftwf-wisdom.exe
+¦       fftwl-wisdom.exe
+¦       libfftw3-3.def
+¦       libfftw3-3.dll
+¦       libfftw3f-3.def
+¦       libfftw3f-3.dll
+¦       libfftw3l-3.def
+¦       libfftw3l-3.dll
+¦       NEWS
+¦       README
+¦       README-bench
+¦       README-WINDOWS

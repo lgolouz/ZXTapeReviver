@@ -25,6 +25,14 @@
 #include "sources/models/actionsmodel.h"
 #include "sources/actions/editsampleaction.h"
 
+namespace {
+QPoint roundedMousePosition(const QMouseEvent& event)
+{
+    const auto position = event.position();
+    return { qRound(position.x()), qRound(position.y()) };
+}
+}
+
 WaveformControl::WaveformControl(QQuickItem* parent) :
     QQuickPaintedItem(parent),
     mWavReader(*WavReader::instance()),
@@ -102,9 +110,10 @@ void WaveformControl::paint(QPainter* painter) {
     double posStartSec = (double) pos / sampleRate;
     double posMidSec = (double) (pos + scale / 2) / sampleRate;
     double posEndSec = (double) (pos + scale) / sampleRate;
-    painter->drawText(3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posStartSec, 'f', 3)));
-    painter->drawText((int) bRect.width() / 2 + 3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posMidSec, 'f', 3)));
-    painter->drawText((int) bRect.width() - 100, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignRight, qtTrId(ID_TIMELINE_SEC).arg(QString::number(posEndSec, 'f', 3)));
+    const auto id_timeline_sec { Translations::instance()->id_timeline_sec };
+    painter->drawText(3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, id_timeline_sec.arg(QString::number(posStartSec, 'f', 3)));
+    painter->drawText((int) bRect.width() / 2 + 3, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignLeft, id_timeline_sec.arg(QString::number(posMidSec, 'f', 3)));
+    painter->drawText((int) bRect.width() - 100, 3, 100 - 3, 20, Qt::AlignTop | Qt::AlignRight, id_timeline_sec.arg(QString::number(posEndSec, 'f', 3)));
     p.setColor(m_customData.yAxisColor());
     p.setWidth(1);
     p.setStyle(Qt::DashLine);
@@ -182,8 +191,8 @@ void WaveformControl::paint(QPainter* painter) {
                     painter->setPen(p);
                     painter->drawLine(x, bRect.height() - 10, x, bRect.height() - 3);
 
-                    auto parsedIt = std::find_if(parsedData->begin(), parsedData->end(), [t](const ParsedData::DataBlock& db) {
-                        return t >= db.dataStart && t <= db.dataEnd;
+                    auto parsedIt = std::find_if(parsedData->begin(), parsedData->end(), [t](const QSharedPointer<ParsedData::DataBlock> db) {
+                        return size_t(t) >= db->dataStart && size_t(t) <= db->dataEnd;
                     });
 
                     if (parsedIt != parsedData->end()) {
@@ -197,12 +206,12 @@ void WaveformControl::paint(QPainter* painter) {
                             return QString("0x%1").arg(QString("%1").arg(val, count, 16, QLatin1Char('0')).toUpper());
                         };
 
-                        const auto addrIt = (*parsedIt).dataMapping.find(t);
-                        if (addrIt != (*parsedIt).dataMapping.end()) {
+                        const auto addrIt = (*parsedIt)->dataMapping.find(t);
+                        if (addrIt != (*parsedIt)->dataMapping.end()) {
                             if (seqBegin) {
                                 painter->drawText(x + 5, bRect.height() - 6, toHexVal(*addrIt, *addrIt <= 65535 ? 4 : 6));
                             } else {
-                                painter->drawText(x - 5 - 19, bRect.height() - 6, toHexVal((*parsedIt).data[*addrIt], 2));
+                                painter->drawText(x - 5 - 19, bRect.height() - 6, toHexVal((*parsedIt)->data[*addrIt], 2));
                             }
                         }
 
@@ -304,6 +313,7 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
     if (!event) {
         return;
     }
+    const auto mousePosition = roundedMousePosition(*event);
 
     //Checking for double-click
     if (event->button() == Qt::LeftButton) {
@@ -324,12 +334,12 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
     if (event->button() == Qt::LeftButton || event->button() == Qt::RightButton || event->button() == Qt::MiddleButton) {
         double dx;
         int point;
-        m_clickPosition = getWavPositionByMouseX(event->x(), &point, &dx);
+        m_clickPosition = getWavPositionByMouseX(mousePosition.x(), &point, &dx);
         event->accept();
 
         if (m_operationMode == WaveformSelectionMode) {
             m_rangeSelected = true;
-            m_selectionRange = { event->x(), event->x() };
+            m_selectionRange = { mousePosition.x(), mousePosition.x() };
             update();
         }
 
@@ -348,15 +358,15 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
                 //const auto p = point + getWavePos();
                 const auto d = getChannel()->operator[](m_clickPosition);
                 qDebug() << "Inserting point: " << m_clickPosition;
-                getChannel()->insert(m_clickPosition + (dpoint > event->x() ? 1 : -1), d);
+                getChannel()->insert(m_clickPosition + (dpoint > mousePosition.x() ? 1 : -1), d);
                 update();
             }
             else {
-                if (dpoint >= (event->x() - dx/2) && dpoint <= (event->x() + dx/2)) {
+                if (dpoint >= (mousePosition.x() - dx/2) && dpoint <= (mousePosition.x() + dx/2)) {
                     const double maxy = getYScaleFactor();
                     auto initialVal { getChannel()->operator[](m_clickPosition) };
                     double y = halfHeight - ((double) (initialVal) / maxy) * waveHeight;
-                    if (!m_customData.checkVerticalRange() || (y >= event->y() - 2 && y <= event->y() + 2)) {
+                    if (!m_customData.checkVerticalRange() || (y >= mousePosition.y() - 2 && y <= mousePosition.y() + 2)) {
                         if (event->button() == Qt::LeftButton) {
                             m_pointIndex = point;
                             m_initialValue = initialVal;
@@ -383,6 +393,7 @@ void WaveformControl::mouseReleaseEvent(QMouseEvent* event)
     if (!event) {
         return;
     }
+    const auto mousePosition = roundedMousePosition(*event);
 
     switch (event->button()) {
     case Qt::LeftButton:
@@ -412,7 +423,7 @@ void WaveformControl::mouseReleaseEvent(QMouseEvent* event)
                 }
             } else if (m_operationMode == WaveformMeasurementMode) {
                 auto& clickPoint = m_clickCount == 0 ? m_selectionRange.first : m_selectionRange.second;
-                clickPoint = getWavPositionByMouseX(event->x());
+                clickPoint = getWavPositionByMouseX(mousePosition.x());
                 if (m_clickCount == 1) {
                     auto len = std::abs(m_selectionRange.first - m_selectionRange.second);
                     int freq = mWavReader.getSampleRate() / (len == 0 ? 1 : len);
@@ -438,15 +449,16 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
     if (!event) {
         return;
     }
+    const auto mousePosition = roundedMousePosition(*event);
 
     switch (event->buttons()) {
         case Qt::LeftButton: {
             if (m_operationMode == WaveformSelectionMode && m_rangeSelected) {
-                if (event->x() <= m_selectionRange.first) {
-                    m_selectionRange.first = event->x();
+                if (mousePosition.x() <= m_selectionRange.first) {
+                    m_selectionRange.first = mousePosition.x();
                 }
                 else {
-                    m_selectionRange.second = event->x();
+                    m_selectionRange.second = mousePosition.x();
                 }
             }
             else if (m_operationMode == WaveformRepairMode) {
@@ -457,7 +469,7 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
 
                 const double waveHeight = boundingRect().height() - 100;
                 const double halfHeight = waveHeight / 2;
-                const auto pointerPos = halfHeight - event->y();
+                const auto pointerPos = halfHeight - mousePosition.y();
                 double val = halfHeight + (m_yScaleFactor / waveHeight * pointerPos);
                 if (m_pointIndex + getWavePos() >= 0 && m_pointIndex + getWavePos() < ch->size()) {
                     m_newValue = val;
@@ -479,10 +491,10 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
                 }
                 double dx;
                 int point;
-                m_clickPosition = getWavPositionByMouseX(event->x(), &point, &dx);
+                m_clickPosition = getWavPositionByMouseX(mousePosition.x(), &point, &dx);
                 const double waveHeight = boundingRect().height() - 100;
                 const double halfHeight = waveHeight / 2;
-                const auto pointerPosY = halfHeight - event->y();
+                const auto pointerPosY = halfHeight - mousePosition.y();
                 double val = halfHeight + (m_yScaleFactor / waveHeight * pointerPosY);
                 getChannel()->operator[](m_clickPosition) = val;
             }
@@ -519,7 +531,10 @@ void WaveformControl::reparse()
 void WaveformControl::saveTap(const QString& fileUrl)
 {
     QString fileName = fileUrl.isEmpty() ? fileUrl : QUrl(fileUrl).toLocalFile();
-    mWavParser.saveTap(m_channelNumber, fileName);
+    const auto result { mWavParser.saveTap(m_channelNumber, fileName) };
+    if (!result.succeeded()) {
+        emit saveTapFailed(fileName, result.code, result.details);
+    }
 }
 
 void WaveformControl::saveWaveform()
@@ -530,7 +545,7 @@ void WaveformControl::saveWaveform()
 void WaveformControl::repairWaveform()
 {
     if (!m_isWaveformRepaired) {
-        mWavParser.repairWaveform2(m_channelNumber);
+        mWavParser.repairWaveform3(m_channelNumber);
         //mWavReader.repairWaveform(m_channelNumber);
         //mWavReader.normalizeWaveform2(m_channelNumber);
         update();

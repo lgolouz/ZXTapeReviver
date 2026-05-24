@@ -23,7 +23,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
-CONFIG += c++17
+CONFIG += c++20
 
 #Dynamically generate translation names and country codes based on AVAILABLE_TRANSLATIONS variable
 AVAILABLE_TRANSLATIONS = English:en_US Russian:ru_RU
@@ -53,7 +53,7 @@ for (T, AVAILABLE_TRANSLATIONS) {
     TRANSLATION_IDS_HEADER = $${TRANSLATION_IDS_HEADER} $${TRANSLATION_ID_HEADER}
     TRANSLATION_IDS_CODE = $${TRANSLATION_IDS_CODE} $${TRANSLATION_ID_CODE}
 
-    system($$[QT_INSTALL_BINS]/lrelease -idbased $${TRANSLATIONS_PATH}/$${TRANSLATION_FILENAME}$${COUNTRY_CODE}.xlf -qm $${TRANSLATIONS_PATH}/$${TRANSLATION_FILENAME}$${COUNTRY_CODE}.qm)
+    system($$[QT_INSTALL_BINS]/lrelease $${TRANSLATIONS_PATH}/$${TRANSLATION_FILENAME}$${COUNTRY_CODE}.xlf -qm $${TRANSLATIONS_PATH}/$${TRANSLATION_FILENAME}$${COUNTRY_CODE}.qm)
 }
 DEFINES += AVAILABLE_TRANSLATIONS=\"\\\"$${DEFINED_TRANSLATIONS}\\\"\" \
            COUNTRY_CODES=$${COUNTRY_CODES}
@@ -89,13 +89,15 @@ SOURCES += \
         sources/controls/waveformcontrol.cpp \
         sources/core/waveformparser.cpp \
         sources/core/wavreader.cpp \
+        sources/models/table/parseddatamodel.cpp \
         sources/models/parsersettingsmodel.cpp \
         sources/models/suspiciouspointsmodel.cpp \
         sources/models/waveformmodel.cpp \
         sources/translations/translationmanager.cpp \
         sources/translations/translations.cpp \
         sources/util/enummetainfo.cpp \
-        sources/configuration/configurationmanager.cpp
+        sources/configuration/configurationmanager.cpp \
+        sources/models/base/zxtablemodel.cpp
 
 HEADERS += \
     sources/actions/actionbase.h \
@@ -109,13 +111,15 @@ HEADERS += \
     sources/controls/waveformcontrol.h \
     sources/core/waveformparser.h \
     sources/core/wavreader.h \
+    sources/models/table/parseddatamodel.h \
     sources/models/parsersettingsmodel.h \
     sources/models/suspiciouspointsmodel.h \
     sources/models/waveformmodel.h \
     sources/translations/translationmanager.h \
     sources/translations/translations.h \
     sources/util/enummetainfo.h \
-    sources/configuration/configurationmanager.h
+    sources/configuration/configurationmanager.h \
+    sources/models/base/zxtablemodel.h
 
 RESOURCES += qml/qml.qrc
 
@@ -131,3 +135,10 @@ QML_DESIGNER_IMPORT_PATH =
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+INCLUDEPATH += $$PWD/fftw/dll
+LIBS += -L$$PWD/fftw/dll -lfftw3-3
+DEFINES += DLL_IMPORT
+
+include(wavelib/wavelib.pri)
+

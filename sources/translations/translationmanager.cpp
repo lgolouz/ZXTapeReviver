@@ -16,6 +16,7 @@
 #include <QUrl>
 #include <QDebug>
 #include "sources/configuration/configurationmanager.h"
+#include "sources/translations/translations.h"
 
 TranslationManager::TranslationManager(QObject* parent) :
     QObject(parent),
@@ -77,6 +78,7 @@ void TranslationManager::setTranslation(TranslationLanguages lng) {
         cm.writeConfiguration();
 
         installTranslator();
+        Translations::instance()->retranslate();
         emit translationChanged();
     }
 }

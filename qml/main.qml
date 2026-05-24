@@ -11,11 +11,12 @@
 // permission of the Author.
 //*******************************************************************************
 
-import QtQuick 2.15
-import QtQuick.Window 2.15
-import QtQuick.Controls 2.5
-import QtQuick.Controls 1.4
-import QtQuick.Dialogs 1.3
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Dialogs
+import Qt.labs.qmlmodels
+import Qt.labs.platform
 
 import WaveformControl 1.0
 import com.enums.zxtapereviver 1.0
@@ -28,7 +29,7 @@ ApplicationWindow {
     id: mainWindow
 
     readonly property int mainAreaWidth: width * 0.75
-    property var suspiciousPoints: SuspiciousPointsModel.suspiciousPoints
+    property var suspiciousPoints: SuspiciousPointsModel
 
     visible: true
     width: 1600
@@ -53,7 +54,7 @@ ApplicationWindow {
         waveformControlCh1.wavePos = 0;
     }
 
-    menuBar: MenuBar {
+    MenuBar {
         Menu {
             title: Translations.id_file_menu_item
 
@@ -152,7 +153,7 @@ ApplicationWindow {
             MenuItem {
                 text: Translations.id_parser_settings_menu_item
                 onTriggered: {
-                    parserSettingsDialog.open();
+                    parserSettingsDialog.show();
                 }
             }
         }
@@ -175,12 +176,12 @@ ApplicationWindow {
                         TranslationManager.setTranslation(countryCode);
                         mainWindow.show();
                         //Re-assign the menu items binding
-                        menuInstantiator.model = Qt.binding(function() { return TranslationManager.languages; });
+                        //menuInstantiator.model = Qt.binding(function() { return TranslationManager.languages; });
                     }
                 }
 
-                onObjectAdded: languageMenu.insertItem(index, object)
-                onObjectRemoved: languageMenu.removeItem(object)
+                onObjectAdded: (index, object) => { languageMenu.insertItem(index, object) }
+                onObjectRemoved: (object) => { languageMenu.removeItem(object) }
             }
         }
 
@@ -190,7 +191,7 @@ ApplicationWindow {
             MenuItem {
                 text: Translations.id_about_menu_item
                 onTriggered: {
-                    aboutDialog.open();
+                    aboutDialog.show();
                 }
             }
         }
@@ -211,8 +212,9 @@ ApplicationWindow {
                    ? Translations.id_please_choose_tap_file
                    : Translations.id_please_choose_wav_file
 
-        selectMultiple: false
-        sidebarVisible: true
+        //selectMultiple: false
+        //sidebarVisible: true
+        fileMode: FileDialog.OpenFile
 
         defaultSuffix: openDialogType === openFileDialog.openWfm
                        ? Translations.wfm_file_suffix
@@ -233,12 +235,12 @@ ApplicationWindow {
                                ? "TAP"
                                : "WAV";
 
-            console.log("Selected %1 file: ".arg(filetype) + openFileDialog.fileUrl);
+            console.log("Selected %1 file: ".arg(filetype) + openFileDialog.currentFile);
             var res = (openDialogType === openFileDialog.openWfm
-                        ? FileWorkerModel.openWaveformFileByUrl(openFileDialog.fileUrl)
+                        ? FileWorkerModel.openWaveformFileByUrl(openFileDialog.currentFile)
                         : openDialogType === openFileDialog.openTap
-                           ? FileWorkerModel.openTapFileByUrl(openFileDialog.fileUrl)
-                           : FileWorkerModel.openWavFileByUrl(openFileDialog.fileUrl));
+                           ? FileWorkerModel.openTapFileByUrl(openFileDialog.currentFile)
+                           : FileWorkerModel.openWavFileByUrl(openFileDialog.currentFile));
 
             console.log("Open %1 file result: ".arg(filetype) + res);
             if (res === 0) {
@@ -261,27 +263,54 @@ ApplicationWindow {
         property int channelNumber: 0
 
         title: saveParsed ? Translations.id_save_tap_file : Translations.id_save_wfm_file
-        selectExisting: false
-        selectMultiple: false
-        sidebarVisible: true
+        //selectExisting: false
+        //selectMultiple: false
+        //sidebarVisible: true
         defaultSuffix: saveParsed ? Translations.tap_file_suffix : Translations.wfm_file_suffix
         nameFilters: saveParsed ? [ Translations.id_tap_files ] : [ Translations.id_wfm_files ]
+        fileMode: FileDialog.SaveFile
 
         onAccepted: {
             if (saveParsed) {
                 if (channelNumber == 0) {
-                    waveformControlCh0.saveTap(saveFileDialog.fileUrl);
+                    waveformControlCh0.saveTap(saveFileDialog.currentFile);
                 }
                 else {
-                    waveformControlCh1.saveTap(saveFileDialog.fileUrl);
+                    waveformControlCh1.saveTap(saveFileDialog.currentFile);
                 }
-                console.log("Tap saved: " + saveFileDialog.fileUrl)
+                console.log("Tap saved: " + saveFileDialog.currentFile)
             }
             else {
-                FileWorkerModel.saveWaveformFileByUrl(saveFileDialog.fileUrl);
-                console.log("Waveform saved: " + saveFileDialog.fileUrl);
+                FileWorkerModel.saveWaveformFileByUrl(saveFileDialog.currentFile);
+                console.log("Waveform saved: " + saveFileDialog.currentFile);
             }
         }
+    }
+
+    MessageDialog {
+        id: saveTapErrorDialog
+
+        title: Translations.id_error
+        text: ""
+        buttons: MessageDialog.Ok
+    }
+
+    function saveTapErrorText(errorCode, details) {
+        switch (errorCode) {
+        case WaveformParser.NoParsedData:
+            return Translations.id_no_parsed_data_for_selected_channel;
+        case WaveformParser.CannotRemoveExistingFile:
+            return Translations.id_cannot_replace_tap_file.arg(details);
+        case WaveformParser.CannotOpenFile:
+            return Translations.id_cannot_open_tap_file_for_writing.arg(details);
+        default:
+            return details;
+        }
+    }
+
+    function showSaveTapError(fileName, errorCode, details) {
+        saveTapErrorDialog.text = Translations.id_cannot_save_tap_file.arg(fileName).arg(saveTapErrorText(errorCode, details));
+        saveTapErrorDialog.open();
     }
 
     Connections {
@@ -318,8 +347,12 @@ ApplicationWindow {
             width: parent.width - (parent.width * 0.11)
             height: parent.height - parent.height / 2 - parent.spacerHeight / 2
 
-            onDoubleClick: {
+            onDoubleClick: (idx) => {
                 SuspiciousPointsModel.addSuspiciousPoint(idx);
+            }
+
+            onSaveTapFailed: (fileName, error, details) => {
+                mainWindow.showSaveTapError(fileName, error, details);
             }
         }
 
@@ -335,8 +368,12 @@ ApplicationWindow {
             width: parent.width - (parent.width * 0.11)
             height: waveformControlCh0.height
 
-            onDoubleClick: {
+            onDoubleClick: (idx) => {
                 SuspiciousPointsModel.addSuspiciousPoint(idx);
+            }
+
+            onSaveTapFailed: (fileName, error, details) => {
+                mainWindow.showSaveTapError(fileName, error, details);
             }
         }
 
@@ -462,7 +499,7 @@ ApplicationWindow {
             onClicked: {
                 if (DataPlayerModel.stopped) {
                     DataPlayerModel.playParsedData(channelsComboBox.currentIndex, parsedDataView.currentRow === -1 ? 0 : parsedDataView.currentRow);
-                    dataPlayerDialog.open();
+                    dataPlayerDialog.show();
                 } else {
                     DataPlayerModel.stop();
                 }
@@ -639,7 +676,7 @@ ApplicationWindow {
             width: hZoomOutButton.width
 
             onClicked: {
-                gotoAddressDialog.open();
+                gotoAddressDialog.show();
             }
         }
 
@@ -744,6 +781,8 @@ ApplicationWindow {
                 left: parent.left
                 right: parent.right
             }
+
+            onCurrentIndexChanged: parsedDataView.invalidate()
         }
 
         Button {
@@ -826,7 +865,7 @@ ApplicationWindow {
             }
         }
 
-        TableView {
+        ZXTableControl {
             id: parsedDataView
 
             height: parent.height * 0.4
@@ -836,66 +875,21 @@ ApplicationWindow {
                 right: parent.right
                 topMargin: 2
             }
-
-            TableViewColumn {
-                title: Translations.id_block_number
-                width: rightArea.width * 0.07
-                role: "block"
-                delegate: Item {
-                    property bool blkSelected: styleData.value.blockSelected
-                    property int blkNumber: styleData.value.blockNumber
-
-                    Rectangle {
-                        anchors.fill: parent
-                        border.width: 0
-                        color: parent.blkSelected ? "#A00000FF" : "transparent"
-                        Text {
-                            anchors.centerIn: parent
-                            color: parent.parent.blkSelected ? "white" : "black"
-                            text: blkNumber + 1
-                        }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {
-                            WaveformParser.toggleBlockSelection(blkNumber);
-                        }
-                    }
-                }
-            }
-
-            TableViewColumn {
-                title: Translations.id_block_type
-                width: rightArea.width * 0.23
-                role: "blockType"
-            }
-
-            TableViewColumn {
-                title: Translations.id_block_name
-                width: rightArea.width * 0.3
-                role: "blockName"
-            }
-
-            TableViewColumn {
-                title: Translations.id_block_size
-                width: rightArea.width * 0.25
-                role: "blockSize"
-            }
-
-            TableViewColumn {
-                title: Translations.id_block_status
-                width: rightArea.width * 0.45
-                role: "blockStatus"
-            }
-
-            selectionMode: SelectionMode.SingleSelection
             model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
-            itemDelegate: Text {
-                text: styleData.value
-                color: modelData.state === 0 ? "black" : "red"
-            }
+            checkableRows: true
+            checkedRowProvider: function(row) { return WaveformParser.isBlockSelected(channelsComboBox.currentIndex, row); }
+            checkedRowSetter: function(row, checked) { WaveformParser.setBlockSelected(channelsComboBox.currentIndex, row, checked); }
+            rowErrorProvider: function(row) { return WaveformParser.isBlockParseError(channelsComboBox.currentIndex, row); }
+            fallbackHeaders: [
+                Translations.id_block_number,
+                Translations.id_block_type,
+                Translations.id_block_name,
+                Translations.id_block_size,
+                Translations.id_block_status
+            ]
+            fallbackColumnWidths: [40, 80, 120, 60, 60]
         }
+
 
         Button {
             id: gotoPointButton
@@ -945,7 +939,7 @@ ApplicationWindow {
             }
         }
 
-        TableView {
+        ZXTableControl {
             id: suspiciousPointsView
 
             anchors {
@@ -958,21 +952,27 @@ ApplicationWindow {
             height: parent.height * 0.25
             implicitHeight: parent.height * 0.25
 
-            selectionMode: SelectionMode.SingleSelection
-            model: suspiciousPoints
-            itemDelegate: Text {
-                text: styleData.column === 0 ? styleData.row + 1 : styleData.value
-            }
+//             //selectionMode: SelectionMode.SingleSelection
+             model: suspiciousPoints
+             fallbackHeaders: [
+                 Translations.id_suspicious_point_number,
+                 Translations.id_suspicious_point_position
+             ]
+             fallbackColumnWidths: [70, 180]
+// //            itemDelegate: Text {
+// //                text: styleData.column === 0 ? styleData.row + 1 : styleData.value
+// //            }
 
-            TableViewColumn {
-                title: Translations.id_suspicious_point_number
-                width: rightArea.width * 0.1
-            }
+// //            TableModelColumn {
+//                 title: Translations.id_suspicious_point_number
+// ////                width: rightArea.width * 0.1
+// //            }
 
-            TableViewColumn {
-                title: Translations.id_suspicious_point_position
-                width: rightArea.width * 0.9
-            }
+// //            TableModelColumn {
+//                 title: Translations.id_suspicious_point_position
+//                 width: rightArea.width * 0.9
+//             }
+        //     }
         }
 
         Button {
@@ -995,33 +995,33 @@ ApplicationWindow {
             }
         }
 
-        TableView {
-            id: actionsView
+        // TableView {
+        //     id: actionsView
 
-            anchors {
-                top: removeActionButton.bottom
-                bottom: parent.bottom
-                left: parent.left
-                right: parent.right
-                topMargin: 2
-            }
+        //     anchors {
+        //         top: removeActionButton.bottom
+        //         bottom: parent.bottom
+        //         left: parent.left
+        //         right: parent.right
+        //         topMargin: 2
+        //     }
 
-            selectionMode: SelectionMode.SingleSelection
-            model: ActionsModel.actions
-            itemDelegate: Text {
-                text: styleData.column === 0 ? styleData.row + 1 : modelData.name
-            }
+        //     selectionMode: SelectionMode.SingleSelection
+        //     model: ActionsModel.actions
+        //     itemDelegate: Text {
+        //         text: styleData.column === 0 ? styleData.row + 1 : modelData.name
+        //     }
 
-            TableViewColumn {
-                title: Translations.id_suspicious_point_number
-                width: rightArea.width * 0.1
-            }
+            // model: TableModel {
+            // TableModelColumn {
+//                title: Translations.id_suspicious_point_number
+//                width: rightArea.width * 0.1
 
-            TableViewColumn {
-                title: Translations.id_action_name
-                width: rightArea.width * 0.9
-            }
-        }
+        //     TableViewColumn {
+        //         title: Translations.id_action_name
+        //         width: rightArea.width * 0.9
+        //     }
+        // }
     }
 
     GoToAddress {
@@ -1042,16 +1042,20 @@ ApplicationWindow {
 
     About {
         id: aboutDialog
+        transientParent: mainWindow
     }
 
     ParserSettings {
         id: parserSettingsDialog
+        //transientParent: parent
     }
 
     Frequency {
         id: frequencyDialog
+        //parent: parent
+
         Component.onCompleted: {
-            var func = function(fr) { frequency = fr; frequencyDialog.open(); };
+            var func = function(fr) { frequency = fr; frequencyDialog.show(); };
             waveformControlCh0.frequency.connect(func);
             waveformControlCh1.frequency.connect(func);
         }
@@ -1059,6 +1063,7 @@ ApplicationWindow {
 
     DataPlayer {
         id: dataPlayerDialog
+        //parent: parent
 
         selectedChannel: channelsComboBox.currentIndex
         parsedChannel: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1

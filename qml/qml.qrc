@@ -8,6 +8,7 @@
         <file>About.qml</file>
         <file>Translations.qml</file>
         <file>DataPlayer.qml</file>
+        <file>controls/ZXTableControl.qml</file>
     </qresource>
     <qresource prefix="/translations">
         <file>translations/zxtapereviver_en_US.qm</file>

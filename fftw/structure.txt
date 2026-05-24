@@ -1,0 +1,3612 @@
+Ñòðóêòóðà ïàïîê òîìà Íîâûé òîì
+Ñåðèéíûé íîìåð òîìà: CA2E-C7BA
+D:.
+¦   fftw3f.pri
+¦   structure.txt
+¦   
+L---fftw-3.3.10
+    ¦   aclocal.m4
+    ¦   AUTHORS
+    ¦   bootstrap.sh
+    ¦   ChangeLog
+    ¦   cmake.config.h.in
+    ¦   CMakeLists.txt
+    ¦   compile
+    ¦   config.guess
+    ¦   config.h.in
+    ¦   config.sub
+    ¦   configure
+    ¦   configure.ac
+    ¦   CONVENTIONS
+    ¦   COPYING
+    ¦   COPYRIGHT
+    ¦   depcomp
+    ¦   fftw.pc.in
+    ¦   FFTW3Config.cmake.in
+    ¦   FFTW3ConfigVersion.cmake.in
+    ¦   INSTALL
+    ¦   install-sh
+    ¦   ltmain.sh
+    ¦   Makefile.am
+    ¦   Makefile.in
+    ¦   missing
+    ¦   NEWS
+    ¦   README
+    ¦   README-perfcnt.md
+    ¦   TODO
+    ¦   
+    +---api
+    ¦       api.h
+    ¦       apiplan.c
+    ¦       configure.c
+    ¦       execute-dft-c2r.c
+    ¦       execute-dft-r2c.c
+    ¦       execute-dft.c
+    ¦       execute-r2r.c
+    ¦       execute-split-dft-c2r.c
+    ¦       execute-split-dft-r2c.c
+    ¦       execute-split-dft.c
+    ¦       execute.c
+    ¦       export-wisdom-to-file.c
+    ¦       export-wisdom-to-string.c
+    ¦       export-wisdom.c
+    ¦       f03api.sh
+    ¦       f77api.c
+    ¦       f77funcs.h
+    ¦       fftw3.f
+    ¦       fftw3.f03.in
+    ¦       fftw3.h
+    ¦       fftw3l.f03
+    ¦       fftw3q.f03
+    ¦       flops.c
+    ¦       forget-wisdom.c
+    ¦       genf03.pl
+    ¦       guru.h
+    ¦       guru64.h
+    ¦       import-system-wisdom.c
+    ¦       import-wisdom-from-file.c
+    ¦       import-wisdom-from-string.c
+    ¦       import-wisdom.c
+    ¦       Makefile.am
+    ¦       Makefile.in
+    ¦       malloc.c
+    ¦       map-r2r-kind.c
+    ¦       mapflags.c
+    ¦       mkprinter-file.c
+    ¦       mkprinter-str.c
+    ¦       mktensor-iodims.c
+    ¦       mktensor-iodims.h
+    ¦       mktensor-iodims64.c
+    ¦       mktensor-rowmajor.c
+    ¦       plan-dft-1d.c
+    ¦       plan-dft-2d.c
+    ¦       plan-dft-3d.c
+    ¦       plan-dft-c2r-1d.c
+    ¦       plan-dft-c2r-2d.c
+    ¦       plan-dft-c2r-3d.c
+    ¦       plan-dft-c2r.c
+    ¦       plan-dft-r2c-1d.c
+    ¦       plan-dft-r2c-2d.c
+    ¦       plan-dft-r2c-3d.c
+    ¦       plan-dft-r2c.c
+    ¦       plan-dft.c
+    ¦       plan-guru-dft-c2r.c
+    ¦       plan-guru-dft-c2r.h
+    ¦       plan-guru-dft-r2c.c
+    ¦       plan-guru-dft-r2c.h
+    ¦       plan-guru-dft.c
+    ¦       plan-guru-dft.h
+    ¦       plan-guru-r2r.c
+    ¦       plan-guru-r2r.h
+    ¦       plan-guru-split-dft-c2r.c
+    ¦       plan-guru-split-dft-c2r.h
+    ¦       plan-guru-split-dft-r2c.c
+    ¦       plan-guru-split-dft-r2c.h
+    ¦       plan-guru-split-dft.c
+    ¦       plan-guru-split-dft.h
+    ¦       plan-guru64-dft-c2r.c
+    ¦       plan-guru64-dft-r2c.c
+    ¦       plan-guru64-dft.c
+    ¦       plan-guru64-r2r.c
+    ¦       plan-guru64-split-dft-c2r.c
+    ¦       plan-guru64-split-dft-r2c.c
+    ¦       plan-guru64-split-dft.c
+    ¦       plan-many-dft-c2r.c
+    ¦       plan-many-dft-r2c.c
+    ¦       plan-many-dft.c
+    ¦       plan-many-r2r.c
+    ¦       plan-r2r-1d.c
+    ¦       plan-r2r-2d.c
+    ¦       plan-r2r-3d.c
+    ¦       plan-r2r.c
+    ¦       print-plan.c
+    ¦       rdft2-pad.c
+    ¦       the-planner.c
+    ¦       version.c
+    ¦       x77.h
+    ¦       
+    +---dft
+    ¦   ¦   bluestein.c
+    ¦   ¦   buffered.c
+    ¦   ¦   codelet-dft.h
+    ¦   ¦   conf.c
+    ¦   ¦   ct.c
+    ¦   ¦   ct.h
+    ¦   ¦   dft.h
+    ¦   ¦   dftw-direct.c
+    ¦   ¦   dftw-directsq.c
+    ¦   ¦   dftw-generic.c
+    ¦   ¦   dftw-genericbuf.c
+    ¦   ¦   direct.c
+    ¦   ¦   generic.c
+    ¦   ¦   indirect-transpose.c
+    ¦   ¦   indirect.c
+    ¦   ¦   kdft-dif.c
+    ¦   ¦   kdft-difsq.c
+    ¦   ¦   kdft-dit.c
+    ¦   ¦   kdft.c
+    ¦   ¦   Makefile.am
+    ¦   ¦   Makefile.in
+    ¦   ¦   nop.c
+    ¦   ¦   plan.c
+    ¦   ¦   problem.c
+    ¦   ¦   rader.c
+    ¦   ¦   rank-geq2.c
+    ¦   ¦   solve.c
+    ¦   ¦   vrank-geq1.c
+    ¦   ¦   zero.c
+    ¦   ¦   
+    ¦   +---scalar
+    ¦   ¦   ¦   f.h
+    ¦   ¦   ¦   Makefile.am
+    ¦   ¦   ¦   Makefile.in
+    ¦   ¦   ¦   n.c
+    ¦   ¦   ¦   n.h
+    ¦   ¦   ¦   q.h
+    ¦   ¦   ¦   t.c
+    ¦   ¦   ¦   t.h
+    ¦   ¦   ¦   
+    ¦   ¦   L---codelets
+    ¦   ¦           codlist.c
+    ¦   ¦           Makefile.am
+    ¦   ¦           Makefile.in
+    ¦   ¦           n1_10.c
+    ¦   ¦           n1_11.c
+    ¦   ¦           n1_12.c
+    ¦   ¦           n1_13.c
+    ¦   ¦           n1_14.c
+    ¦   ¦           n1_15.c
+    ¦   ¦           n1_16.c
+    ¦   ¦           n1_2.c
+    ¦   ¦           n1_20.c
+    ¦   ¦           n1_25.c
+    ¦   ¦           n1_3.c
+    ¦   ¦           n1_32.c
+    ¦   ¦           n1_4.c
+    ¦   ¦           n1_5.c
+    ¦   ¦           n1_6.c
+    ¦   ¦           n1_64.c
+    ¦   ¦           n1_7.c
+    ¦   ¦           n1_8.c
+    ¦   ¦           n1_9.c
+    ¦   ¦           q1_2.c
+    ¦   ¦           q1_3.c
+    ¦   ¦           q1_4.c
+    ¦   ¦           q1_5.c
+    ¦   ¦           q1_6.c
+    ¦   ¦           q1_8.c
+    ¦   ¦           t1_10.c
+    ¦   ¦           t1_12.c
+    ¦   ¦           t1_15.c
+    ¦   ¦           t1_16.c
+    ¦   ¦           t1_2.c
+    ¦   ¦           t1_20.c
+    ¦   ¦           t1_25.c
+    ¦   ¦           t1_3.c
+    ¦   ¦           t1_32.c
+    ¦   ¦           t1_4.c
+    ¦   ¦           t1_5.c
+    ¦   ¦           t1_6.c
+    ¦   ¦           t1_64.c
+    ¦   ¦           t1_7.c
+    ¦   ¦           t1_8.c
+    ¦   ¦           t1_9.c
+    ¦   ¦           t2_10.c
+    ¦   ¦           t2_16.c
+    ¦   ¦           t2_20.c
+    ¦   ¦           t2_25.c
+    ¦   ¦           t2_32.c
+    ¦   ¦           t2_4.c
+    ¦   ¦           t2_5.c
+    ¦   ¦           t2_64.c
+    ¦   ¦           t2_8.c
+    ¦   ¦           
+    ¦   L---simd
+    ¦       ¦   codlist.mk
+    ¦       ¦   Makefile.am
+    ¦       ¦   Makefile.in
+    ¦       ¦   n1b.h
+    ¦       ¦   n1f.h
+    ¦       ¦   n2b.h
+    ¦       ¦   n2f.h
+    ¦       ¦   n2s.h
+    ¦       ¦   q1b.h
+    ¦       ¦   q1f.h
+    ¦       ¦   simd.mk
+    ¦       ¦   t1b.h
+    ¦       ¦   t1bu.h
+    ¦       ¦   t1f.h
+    ¦       ¦   t1fu.h
+    ¦       ¦   t2b.h
+    ¦       ¦   t2f.h
+    ¦       ¦   t3b.h
+    ¦       ¦   t3f.h
+    ¦       ¦   ts.h
+    ¦       ¦   
+    ¦       +---altivec
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       +---avx
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       +---avx-128-fma
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       +---avx2
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       +---avx2-128
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       +---avx512
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       +---common
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       +---generic-simd128
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       +---generic-simd256
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       +---kcvi
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       +---neon
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       +---sse2
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       n1bv_10.c
+    ¦       ¦       n1bv_11.c
+    ¦       ¦       n1bv_12.c
+    ¦       ¦       n1bv_128.c
+    ¦       ¦       n1bv_13.c
+    ¦       ¦       n1bv_14.c
+    ¦       ¦       n1bv_15.c
+    ¦       ¦       n1bv_16.c
+    ¦       ¦       n1bv_2.c
+    ¦       ¦       n1bv_20.c
+    ¦       ¦       n1bv_25.c
+    ¦       ¦       n1bv_3.c
+    ¦       ¦       n1bv_32.c
+    ¦       ¦       n1bv_4.c
+    ¦       ¦       n1bv_5.c
+    ¦       ¦       n1bv_6.c
+    ¦       ¦       n1bv_64.c
+    ¦       ¦       n1bv_7.c
+    ¦       ¦       n1bv_8.c
+    ¦       ¦       n1bv_9.c
+    ¦       ¦       n1fv_10.c
+    ¦       ¦       n1fv_11.c
+    ¦       ¦       n1fv_12.c
+    ¦       ¦       n1fv_128.c
+    ¦       ¦       n1fv_13.c
+    ¦       ¦       n1fv_14.c
+    ¦       ¦       n1fv_15.c
+    ¦       ¦       n1fv_16.c
+    ¦       ¦       n1fv_2.c
+    ¦       ¦       n1fv_20.c
+    ¦       ¦       n1fv_25.c
+    ¦       ¦       n1fv_3.c
+    ¦       ¦       n1fv_32.c
+    ¦       ¦       n1fv_4.c
+    ¦       ¦       n1fv_5.c
+    ¦       ¦       n1fv_6.c
+    ¦       ¦       n1fv_64.c
+    ¦       ¦       n1fv_7.c
+    ¦       ¦       n1fv_8.c
+    ¦       ¦       n1fv_9.c
+    ¦       ¦       n2bv_10.c
+    ¦       ¦       n2bv_12.c
+    ¦       ¦       n2bv_14.c
+    ¦       ¦       n2bv_16.c
+    ¦       ¦       n2bv_2.c
+    ¦       ¦       n2bv_20.c
+    ¦       ¦       n2bv_32.c
+    ¦       ¦       n2bv_4.c
+    ¦       ¦       n2bv_6.c
+    ¦       ¦       n2bv_64.c
+    ¦       ¦       n2bv_8.c
+    ¦       ¦       n2fv_10.c
+    ¦       ¦       n2fv_12.c
+    ¦       ¦       n2fv_14.c
+    ¦       ¦       n2fv_16.c
+    ¦       ¦       n2fv_2.c
+    ¦       ¦       n2fv_20.c
+    ¦       ¦       n2fv_32.c
+    ¦       ¦       n2fv_4.c
+    ¦       ¦       n2fv_6.c
+    ¦       ¦       n2fv_64.c
+    ¦       ¦       n2fv_8.c
+    ¦       ¦       n2sv_16.c
+    ¦       ¦       n2sv_32.c
+    ¦       ¦       n2sv_4.c
+    ¦       ¦       n2sv_64.c
+    ¦       ¦       n2sv_8.c
+    ¦       ¦       q1bv_2.c
+    ¦       ¦       q1bv_4.c
+    ¦       ¦       q1bv_5.c
+    ¦       ¦       q1bv_8.c
+    ¦       ¦       q1fv_2.c
+    ¦       ¦       q1fv_4.c
+    ¦       ¦       q1fv_5.c
+    ¦       ¦       q1fv_8.c
+    ¦       ¦       t1buv_10.c
+    ¦       ¦       t1buv_2.c
+    ¦       ¦       t1buv_3.c
+    ¦       ¦       t1buv_4.c
+    ¦       ¦       t1buv_5.c
+    ¦       ¦       t1buv_6.c
+    ¦       ¦       t1buv_7.c
+    ¦       ¦       t1buv_8.c
+    ¦       ¦       t1buv_9.c
+    ¦       ¦       t1bv_10.c
+    ¦       ¦       t1bv_12.c
+    ¦       ¦       t1bv_15.c
+    ¦       ¦       t1bv_16.c
+    ¦       ¦       t1bv_2.c
+    ¦       ¦       t1bv_20.c
+    ¦       ¦       t1bv_25.c
+    ¦       ¦       t1bv_3.c
+    ¦       ¦       t1bv_32.c
+    ¦       ¦       t1bv_4.c
+    ¦       ¦       t1bv_5.c
+    ¦       ¦       t1bv_6.c
+    ¦       ¦       t1bv_64.c
+    ¦       ¦       t1bv_7.c
+    ¦       ¦       t1bv_8.c
+    ¦       ¦       t1bv_9.c
+    ¦       ¦       t1fuv_10.c
+    ¦       ¦       t1fuv_2.c
+    ¦       ¦       t1fuv_3.c
+    ¦       ¦       t1fuv_4.c
+    ¦       ¦       t1fuv_5.c
+    ¦       ¦       t1fuv_6.c
+    ¦       ¦       t1fuv_7.c
+    ¦       ¦       t1fuv_8.c
+    ¦       ¦       t1fuv_9.c
+    ¦       ¦       t1fv_10.c
+    ¦       ¦       t1fv_12.c
+    ¦       ¦       t1fv_15.c
+    ¦       ¦       t1fv_16.c
+    ¦       ¦       t1fv_2.c
+    ¦       ¦       t1fv_20.c
+    ¦       ¦       t1fv_25.c
+    ¦       ¦       t1fv_3.c
+    ¦       ¦       t1fv_32.c
+    ¦       ¦       t1fv_4.c
+    ¦       ¦       t1fv_5.c
+    ¦       ¦       t1fv_6.c
+    ¦       ¦       t1fv_64.c
+    ¦       ¦       t1fv_7.c
+    ¦       ¦       t1fv_8.c
+    ¦       ¦       t1fv_9.c
+    ¦       ¦       t1sv_16.c
+    ¦       ¦       t1sv_2.c
+    ¦       ¦       t1sv_32.c
+    ¦       ¦       t1sv_4.c
+    ¦       ¦       t1sv_8.c
+    ¦       ¦       t2bv_10.c
+    ¦       ¦       t2bv_16.c
+    ¦       ¦       t2bv_2.c
+    ¦       ¦       t2bv_20.c
+    ¦       ¦       t2bv_25.c
+    ¦       ¦       t2bv_32.c
+    ¦       ¦       t2bv_4.c
+    ¦       ¦       t2bv_5.c
+    ¦       ¦       t2bv_64.c
+    ¦       ¦       t2bv_8.c
+    ¦       ¦       t2fv_10.c
+    ¦       ¦       t2fv_16.c
+    ¦       ¦       t2fv_2.c
+    ¦       ¦       t2fv_20.c
+    ¦       ¦       t2fv_25.c
+    ¦       ¦       t2fv_32.c
+    ¦       ¦       t2fv_4.c
+    ¦       ¦       t2fv_5.c
+    ¦       ¦       t2fv_64.c
+    ¦       ¦       t2fv_8.c
+    ¦       ¦       t2sv_16.c
+    ¦       ¦       t2sv_32.c
+    ¦       ¦       t2sv_4.c
+    ¦       ¦       t2sv_8.c
+    ¦       ¦       t3bv_10.c
+    ¦       ¦       t3bv_16.c
+    ¦       ¦       t3bv_20.c
+    ¦       ¦       t3bv_25.c
+    ¦       ¦       t3bv_32.c
+    ¦       ¦       t3bv_4.c
+    ¦       ¦       t3bv_5.c
+    ¦       ¦       t3bv_8.c
+    ¦       ¦       t3fv_10.c
+    ¦       ¦       t3fv_16.c
+    ¦       ¦       t3fv_20.c
+    ¦       ¦       t3fv_25.c
+    ¦       ¦       t3fv_32.c
+    ¦       ¦       t3fv_4.c
+    ¦       ¦       t3fv_5.c
+    ¦       ¦       t3fv_8.c
+    ¦       ¦       
+    ¦       L---vsx
+    ¦               codlist.c
+    ¦               genus.c
+    ¦               Makefile.am
+    ¦               Makefile.in
+    ¦               n1bv_10.c
+    ¦               n1bv_11.c
+    ¦               n1bv_12.c
+    ¦               n1bv_128.c
+    ¦               n1bv_13.c
+    ¦               n1bv_14.c
+    ¦               n1bv_15.c
+    ¦               n1bv_16.c
+    ¦               n1bv_2.c
+    ¦               n1bv_20.c
+    ¦               n1bv_25.c
+    ¦               n1bv_3.c
+    ¦               n1bv_32.c
+    ¦               n1bv_4.c
+    ¦               n1bv_5.c
+    ¦               n1bv_6.c
+    ¦               n1bv_64.c
+    ¦               n1bv_7.c
+    ¦               n1bv_8.c
+    ¦               n1bv_9.c
+    ¦               n1fv_10.c
+    ¦               n1fv_11.c
+    ¦               n1fv_12.c
+    ¦               n1fv_128.c
+    ¦               n1fv_13.c
+    ¦               n1fv_14.c
+    ¦               n1fv_15.c
+    ¦               n1fv_16.c
+    ¦               n1fv_2.c
+    ¦               n1fv_20.c
+    ¦               n1fv_25.c
+    ¦               n1fv_3.c
+    ¦               n1fv_32.c
+    ¦               n1fv_4.c
+    ¦               n1fv_5.c
+    ¦               n1fv_6.c
+    ¦               n1fv_64.c
+    ¦               n1fv_7.c
+    ¦               n1fv_8.c
+    ¦               n1fv_9.c
+    ¦               n2bv_10.c
+    ¦               n2bv_12.c
+    ¦               n2bv_14.c
+    ¦               n2bv_16.c
+    ¦               n2bv_2.c
+    ¦               n2bv_20.c
+    ¦               n2bv_32.c
+    ¦               n2bv_4.c
+    ¦               n2bv_6.c
+    ¦               n2bv_64.c
+    ¦               n2bv_8.c
+    ¦               n2fv_10.c
+    ¦               n2fv_12.c
+    ¦               n2fv_14.c
+    ¦               n2fv_16.c
+    ¦               n2fv_2.c
+    ¦               n2fv_20.c
+    ¦               n2fv_32.c
+    ¦               n2fv_4.c
+    ¦               n2fv_6.c
+    ¦               n2fv_64.c
+    ¦               n2fv_8.c
+    ¦               n2sv_16.c
+    ¦               n2sv_32.c
+    ¦               n2sv_4.c
+    ¦               n2sv_64.c
+    ¦               n2sv_8.c
+    ¦               q1bv_2.c
+    ¦               q1bv_4.c
+    ¦               q1bv_5.c
+    ¦               q1bv_8.c
+    ¦               q1fv_2.c
+    ¦               q1fv_4.c
+    ¦               q1fv_5.c
+    ¦               q1fv_8.c
+    ¦               t1buv_10.c
+    ¦               t1buv_2.c
+    ¦               t1buv_3.c
+    ¦               t1buv_4.c
+    ¦               t1buv_5.c
+    ¦               t1buv_6.c
+    ¦               t1buv_7.c
+    ¦               t1buv_8.c
+    ¦               t1buv_9.c
+    ¦               t1bv_10.c
+    ¦               t1bv_12.c
+    ¦               t1bv_15.c
+    ¦               t1bv_16.c
+    ¦               t1bv_2.c
+    ¦               t1bv_20.c
+    ¦               t1bv_25.c
+    ¦               t1bv_3.c
+    ¦               t1bv_32.c
+    ¦               t1bv_4.c
+    ¦               t1bv_5.c
+    ¦               t1bv_6.c
+    ¦               t1bv_64.c
+    ¦               t1bv_7.c
+    ¦               t1bv_8.c
+    ¦               t1bv_9.c
+    ¦               t1fuv_10.c
+    ¦               t1fuv_2.c
+    ¦               t1fuv_3.c
+    ¦               t1fuv_4.c
+    ¦               t1fuv_5.c
+    ¦               t1fuv_6.c
+    ¦               t1fuv_7.c
+    ¦               t1fuv_8.c
+    ¦               t1fuv_9.c
+    ¦               t1fv_10.c
+    ¦               t1fv_12.c
+    ¦               t1fv_15.c
+    ¦               t1fv_16.c
+    ¦               t1fv_2.c
+    ¦               t1fv_20.c
+    ¦               t1fv_25.c
+    ¦               t1fv_3.c
+    ¦               t1fv_32.c
+    ¦               t1fv_4.c
+    ¦               t1fv_5.c
+    ¦               t1fv_6.c
+    ¦               t1fv_64.c
+    ¦               t1fv_7.c
+    ¦               t1fv_8.c
+    ¦               t1fv_9.c
+    ¦               t1sv_16.c
+    ¦               t1sv_2.c
+    ¦               t1sv_32.c
+    ¦               t1sv_4.c
+    ¦               t1sv_8.c
+    ¦               t2bv_10.c
+    ¦               t2bv_16.c
+    ¦               t2bv_2.c
+    ¦               t2bv_20.c
+    ¦               t2bv_25.c
+    ¦               t2bv_32.c
+    ¦               t2bv_4.c
+    ¦               t2bv_5.c
+    ¦               t2bv_64.c
+    ¦               t2bv_8.c
+    ¦               t2fv_10.c
+    ¦               t2fv_16.c
+    ¦               t2fv_2.c
+    ¦               t2fv_20.c
+    ¦               t2fv_25.c
+    ¦               t2fv_32.c
+    ¦               t2fv_4.c
+    ¦               t2fv_5.c
+    ¦               t2fv_64.c
+    ¦               t2fv_8.c
+    ¦               t2sv_16.c
+    ¦               t2sv_32.c
+    ¦               t2sv_4.c
+    ¦               t2sv_8.c
+    ¦               t3bv_10.c
+    ¦               t3bv_16.c
+    ¦               t3bv_20.c
+    ¦               t3bv_25.c
+    ¦               t3bv_32.c
+    ¦               t3bv_4.c
+    ¦               t3bv_5.c
+    ¦               t3bv_8.c
+    ¦               t3fv_10.c
+    ¦               t3fv_16.c
+    ¦               t3fv_20.c
+    ¦               t3fv_25.c
+    ¦               t3fv_32.c
+    ¦               t3fv_4.c
+    ¦               t3fv_5.c
+    ¦               t3fv_8.c
+    ¦               
+    +---doc
+    ¦   ¦   acknowledgements.texi
+    ¦   ¦   cindex.texi
+    ¦   ¦   equation-dft.png
+    ¦   ¦   equation-dht.png
+    ¦   ¦   equation-idft.png
+    ¦   ¦   equation-redft00.png
+    ¦   ¦   equation-redft01.png
+    ¦   ¦   equation-redft10.png
+    ¦   ¦   equation-redft11.png
+    ¦   ¦   equation-rodft00.png
+    ¦   ¦   equation-rodft01.png
+    ¦   ¦   equation-rodft10.png
+    ¦   ¦   equation-rodft11.png
+    ¦   ¦   f77_wisdom.f
+    ¦   ¦   fftw3.info
+    ¦   ¦   fftw3.info-1
+    ¦   ¦   fftw3.info-2
+    ¦   ¦   fftw3.pdf
+    ¦   ¦   fftw3.texi
+    ¦   ¦   findex.texi
+    ¦   ¦   install.texi
+    ¦   ¦   intro.texi
+    ¦   ¦   legacy-fortran.texi
+    ¦   ¦   license.texi
+    ¦   ¦   Makefile.am
+    ¦   ¦   Makefile.in
+    ¦   ¦   mdate-sh
+    ¦   ¦   modern-fortran.texi
+    ¦   ¦   mpi.texi
+    ¦   ¦   other.texi
+    ¦   ¦   reference.texi
+    ¦   ¦   rfftwnd-for-html.png
+    ¦   ¦   rfftwnd.eps
+    ¦   ¦   rfftwnd.fig
+    ¦   ¦   rfftwnd.pdf
+    ¦   ¦   stamp-vti
+    ¦   ¦   texinfo.tex
+    ¦   ¦   threads.texi
+    ¦   ¦   tutorial.texi
+    ¦   ¦   upgrading.texi
+    ¦   ¦   version.texi
+    ¦   ¦   
+    ¦   +---FAQ
+    ¦   ¦   ¦   bfnnconv.pl
+    ¦   ¦   ¦   fftw-faq.ascii
+    ¦   ¦   ¦   fftw-faq.bfnn
+    ¦   ¦   ¦   html.refs
+    ¦   ¦   ¦   m-ascii.pl
+    ¦   ¦   ¦   m-html.pl
+    ¦   ¦   ¦   m-info.pl
+    ¦   ¦   ¦   m-lout.pl
+    ¦   ¦   ¦   m-post.pl
+    ¦   ¦   ¦   Makefile.am
+    ¦   ¦   ¦   Makefile.in
+    ¦   ¦   ¦   
+    ¦   ¦   L---fftw-faq.html
+    ¦   ¦           index.html
+    ¦   ¦           section1.html
+    ¦   ¦           section2.html
+    ¦   ¦           section3.html
+    ¦   ¦           section4.html
+    ¦   ¦           section5.html
+    ¦   ¦           
+    ¦   L---html
+    ¦           1d-Discrete-Hartley-Transforms-_0028DHTs_0029.html
+    ¦           1d-Real_002deven-DFTs-_0028DCTs_0029.html
+    ¦           1d-Real_002dodd-DFTs-_0028DSTs_0029.html
+    ¦           2d-MPI-example.html
+    ¦           64_002dbit-Guru-Interface.html
+    ¦           Accessing-the-wisdom-API-from-Fortran.html
+    ¦           Acknowledgments.html
+    ¦           Advanced-Complex-DFTs.html
+    ¦           Advanced-distributed_002dtranspose-interface.html
+    ¦           Advanced-Interface.html
+    ¦           Advanced-Real_002ddata-DFTs.html
+    ¦           Advanced-Real_002dto_002dreal-Transforms.html
+    ¦           Allocating-aligned-memory-in-Fortran.html
+    ¦           An-improved-replacement-for-MPI_005fAlltoall.html
+    ¦           Avoiding-MPI-Deadlocks.html
+    ¦           Basic-and-advanced-distribution-interfaces.html
+    ¦           Basic-distributed_002dtranspose-interface.html
+    ¦           Basic-Interface.html
+    ¦           Calling-FFTW-from-Legacy-Fortran.html
+    ¦           Calling-FFTW-from-Modern-Fortran.html
+    ¦           Caveats-in-Using-Wisdom.html
+    ¦           Column_002dmajor-Format.html
+    ¦           Combining-MPI-and-Threads.html
+    ¦           Complex-DFTs.html
+    ¦           Complex-Multi_002dDimensional-DFTs.html
+    ¦           Complex-numbers.html
+    ¦           Complex-One_002dDimensional-DFTs.html
+    ¦           Concept-Index.html
+    ¦           Cycle-Counters.html
+    ¦           Data-Types-and-Files.html
+    ¦           Defining-an-FFTW-module.html
+    ¦           Distributed_002dmemory-FFTW-with-MPI.html
+    ¦           Dynamic-Arrays-in-C.html
+    ¦           Dynamic-Arrays-in-C_002dThe-Wrong-Way.html
+    ¦           equation-dft.png
+    ¦           equation-dht.png
+    ¦           equation-idft.png
+    ¦           equation-redft00.png
+    ¦           equation-redft01.png
+    ¦           equation-redft10.png
+    ¦           equation-redft11.png
+    ¦           equation-rodft00.png
+    ¦           equation-rodft01.png
+    ¦           equation-rodft10.png
+    ¦           equation-rodft11.png
+    ¦           Extended-and-quadruple-precision-in-Fortran.html
+    ¦           FFTW-Constants-in-Fortran.html
+    ¦           FFTW-Execution-in-Fortran.html
+    ¦           FFTW-Fortran-type-reference.html
+    ¦           FFTW-MPI-Fortran-Interface.html
+    ¦           FFTW-MPI-Installation.html
+    ¦           FFTW-MPI-Performance-Tips.html
+    ¦           FFTW-MPI-Reference.html
+    ¦           FFTW-MPI-Transposes.html
+    ¦           FFTW-MPI-Wisdom.html
+    ¦           FFTW-Reference.html
+    ¦           Fixed_002dsize-Arrays-in-C.html
+    ¦           Forgetting-Wisdom.html
+    ¦           Fortran-Examples.html
+    ¦           Fortran_002dinterface-routines.html
+    ¦           Generating-your-own-code.html
+    ¦           Guru-Complex-DFTs.html
+    ¦           Guru-Interface.html
+    ¦           Guru-Real_002ddata-DFTs.html
+    ¦           Guru-Real_002dto_002dreal-Transforms.html
+    ¦           Guru-vector-and-transform-sizes.html
+    ¦           How-Many-Threads-to-Use_003f.html
+    ¦           index.html
+    ¦           Installation-and-Customization.html
+    ¦           Installation-and-Supported-Hardware_002fSoftware.html
+    ¦           Installation-on-non_002dUnix-systems.html
+    ¦           Installation-on-Unix.html
+    ¦           Interleaved-and-split-arrays.html
+    ¦           Introduction.html
+    ¦           Library-Index.html
+    ¦           License-and-Copyright.html
+    ¦           Linking-and-Initializing-MPI-FFTW.html
+    ¦           Load-balancing.html
+    ¦           Memory-Allocation.html
+    ¦           More-DFTs-of-Real-Data.html
+    ¦           MPI-Data-Distribution-Functions.html
+    ¦           MPI-Data-Distribution.html
+    ¦           MPI-Files-and-Data-Types.html
+    ¦           MPI-Initialization.html
+    ¦           MPI-Plan-Creation.html
+    ¦           MPI-Wisdom-Communication.html
+    ¦           Multi_002ddimensional-Array-Format.html
+    ¦           Multi_002dDimensional-DFTs-of-Real-Data.html
+    ¦           Multi_002ddimensional-MPI-DFTs-of-Real-Data.html
+    ¦           Multi_002ddimensional-Transforms.html
+    ¦           Multi_002dthreaded-FFTW.html
+    ¦           New_002darray-Execute-Functions.html
+    ¦           One_002dDimensional-DFTs-of-Real-Data.html
+    ¦           One_002ddimensional-distributions.html
+    ¦           Other-Important-Topics.html
+    ¦           Other-Multi_002ddimensional-Real_002ddata-MPI-Transforms.html
+    ¦           Overview-of-Fortran-interface.html
+    ¦           Plan-execution-in-Fortran.html
+    ¦           Planner-Flags.html
+    ¦           Precision.html
+    ¦           Real-even_002fodd-DFTs-_0028cosine_002fsine-transforms_0029.html
+    ¦           Real_002ddata-DFT-Array-Format.html
+    ¦           Real_002ddata-DFTs.html
+    ¦           Real_002dto_002dReal-Transform-Kinds.html
+    ¦           Real_002dto_002dReal-Transforms.html
+    ¦           Reversing-array-dimensions.html
+    ¦           rfftwnd-for-html.png
+    ¦           Row_002dmajor-Format.html
+    ¦           SIMD-alignment-and-fftw_005fmalloc.html
+    ¦           The-1d-Discrete-Fourier-Transform-_0028DFT_0029.html
+    ¦           The-1d-Real_002ddata-DFT.html
+    ¦           The-Discrete-Hartley-Transform.html
+    ¦           The-Halfcomplex_002dformat-DFT.html
+    ¦           Thread-safety.html
+    ¦           Transposed-distributions.html
+    ¦           Tutorial.html
+    ¦           Upgrading-from-FFTW-version-2.html
+    ¦           Usage-of-Multi_002dthreaded-FFTW.html
+    ¦           Using-MPI-Plans.html
+    ¦           Using-Plans.html
+    ¦           What-FFTW-Really-Computes.html
+    ¦           Wisdom-Export.html
+    ¦           Wisdom-File-Export_002fImport-from-Fortran.html
+    ¦           Wisdom-Generic-Export_002fImport-from-Fortran.html
+    ¦           Wisdom-Import.html
+    ¦           Wisdom-of-Fortran_003f.html
+    ¦           Wisdom-String-Export_002fImport-from-Fortran.html
+    ¦           Wisdom-Utilities.html
+    ¦           Wisdom.html
+    ¦           Words-of-Wisdom_002dSaving-Plans.html
+    ¦           
+    +---genfft
+    ¦       algsimp.ml
+    ¦       algsimp.mli
+    ¦       annotate.ml
+    ¦       annotate.mli
+    ¦       assoctable.ml
+    ¦       assoctable.mli
+    ¦       c.ml
+    ¦       c.mli
+    ¦       complex.ml
+    ¦       complex.mli
+    ¦       conv.ml
+    ¦       conv.mli
+    ¦       dag.ml
+    ¦       dag.mli
+    ¦       expr.ml
+    ¦       expr.mli
+    ¦       fft.ml
+    ¦       fft.mli
+    ¦       genutil.ml
+    ¦       gen_hc2c.ml
+    ¦       gen_hc2cdft.ml
+    ¦       gen_hc2cdft_c.ml
+    ¦       gen_hc2hc.ml
+    ¦       gen_mdct.ml
+    ¦       gen_notw.ml
+    ¦       gen_notw_c.ml
+    ¦       gen_r2cb.ml
+    ¦       gen_r2cf.ml
+    ¦       gen_r2r.ml
+    ¦       gen_twiddle.ml
+    ¦       gen_twiddle_c.ml
+    ¦       gen_twidsq.ml
+    ¦       gen_twidsq_c.ml
+    ¦       littlesimp.ml
+    ¦       littlesimp.mli
+    ¦       magic.ml
+    ¦       Makefile.am
+    ¦       Makefile.in
+    ¦       monads.ml
+    ¦       number.ml
+    ¦       number.mli
+    ¦       oracle.ml
+    ¦       oracle.mli
+    ¦       schedule.ml
+    ¦       schedule.mli
+    ¦       simd.ml
+    ¦       simd.mli
+    ¦       simdmagic.ml
+    ¦       to_alist.ml
+    ¦       to_alist.mli
+    ¦       trig.ml
+    ¦       trig.mli
+    ¦       twiddle.ml
+    ¦       twiddle.mli
+    ¦       unique.ml
+    ¦       unique.mli
+    ¦       util.ml
+    ¦       util.mli
+    ¦       variable.ml
+    ¦       variable.mli
+    ¦       
+    +---kernel
+    ¦       align.c
+    ¦       alloc.c
+    ¦       assert.c
+    ¦       awake.c
+    ¦       buffered.c
+    ¦       cpy1d.c
+    ¦       cpy2d-pair.c
+    ¦       cpy2d.c
+    ¦       ct.c
+    ¦       cycle.h
+    ¦       debug.c
+    ¦       extract-reim.c
+    ¦       hash.c
+    ¦       iabs.c
+    ¦       ifftw.h
+    ¦       kalloc.c
+    ¦       Makefile.am
+    ¦       Makefile.in
+    ¦       md5-1.c
+    ¦       md5.c
+    ¦       minmax.c
+    ¦       ops.c
+    ¦       pickdim.c
+    ¦       plan.c
+    ¦       planner.c
+    ¦       primes.c
+    ¦       print.c
+    ¦       problem.c
+    ¦       rader.c
+    ¦       scan.c
+    ¦       solver.c
+    ¦       solvtab.c
+    ¦       stride.c
+    ¦       tensor.c
+    ¦       tensor1.c
+    ¦       tensor2.c
+    ¦       tensor3.c
+    ¦       tensor4.c
+    ¦       tensor5.c
+    ¦       tensor7.c
+    ¦       tensor8.c
+    ¦       tensor9.c
+    ¦       tile2d.c
+    ¦       timer.c
+    ¦       transpose.c
+    ¦       trig.c
+    ¦       twiddle.c
+    ¦       
+    +---libbench2
+    ¦       after-ccopy-from.c
+    ¦       after-ccopy-to.c
+    ¦       after-hccopy-from.c
+    ¦       after-hccopy-to.c
+    ¦       after-rcopy-from.c
+    ¦       after-rcopy-to.c
+    ¦       allocate.c
+    ¦       aset.c
+    ¦       bench-cost-postprocess.c
+    ¦       bench-exit.c
+    ¦       bench-main.c
+    ¦       bench-user.h
+    ¦       bench.h
+    ¦       can-do.c
+    ¦       caset.c
+    ¦       dotens2.c
+    ¦       info.c
+    ¦       main.c
+    ¦       Makefile.am
+    ¦       Makefile.in
+    ¦       mflops.c
+    ¦       mp.c
+    ¦       my-getopt.c
+    ¦       my-getopt.h
+    ¦       ovtpvt.c
+    ¦       pow2.c
+    ¦       problem.c
+    ¦       report.c
+    ¦       speed.c
+    ¦       tensor.c
+    ¦       timer.c
+    ¦       useropt.c
+    ¦       util.c
+    ¦       verify-dft.c
+    ¦       verify-lib.c
+    ¦       verify-r2r.c
+    ¦       verify-rdft2.c
+    ¦       verify.c
+    ¦       verify.h
+    ¦       zero.c
+    ¦       
+    +---m4
+    ¦       acx_mpi.m4
+    ¦       acx_pthread.m4
+    ¦       ax_cc_maxopt.m4
+    ¦       ax_check_compiler_flags.m4
+    ¦       ax_compiler_vendor.m4
+    ¦       ax_gcc_aligns_stack.m4
+    ¦       ax_gcc_version.m4
+    ¦       ax_openmp.m4
+    ¦       libtool.m4
+    ¦       ltoptions.m4
+    ¦       ltsugar.m4
+    ¦       ltversion.m4
+    ¦       lt~obsolete.m4
+    ¦       Makefile.am
+    ¦       Makefile.in
+    ¦       
+    +---mpi
+    ¦       any-true.c
+    ¦       api.c
+    ¦       block.c
+    ¦       choose-radix.c
+    ¦       conf.c
+    ¦       dft-problem.c
+    ¦       dft-rank-geq2-transposed.c
+    ¦       dft-rank-geq2.c
+    ¦       dft-rank1-bigvec.c
+    ¦       dft-rank1.c
+    ¦       dft-serial.c
+    ¦       dft-solve.c
+    ¦       dtensor.c
+    ¦       f03-wrap.c
+    ¦       f03-wrap.sh
+    ¦       f03api.sh
+    ¦       fftw3-mpi.f03.in
+    ¦       fftw3-mpi.h
+    ¦       fftw3l-mpi.f03.in
+    ¦       genf03-wrap.pl
+    ¦       ifftw-mpi.h
+    ¦       Makefile.am
+    ¦       Makefile.in
+    ¦       mpi-bench.c
+    ¦       mpi-dft.h
+    ¦       mpi-rdft.h
+    ¦       mpi-rdft2.h
+    ¦       mpi-transpose.h
+    ¦       rdft-problem.c
+    ¦       rdft-rank-geq2-transposed.c
+    ¦       rdft-rank-geq2.c
+    ¦       rdft-rank1-bigvec.c
+    ¦       rdft-serial.c
+    ¦       rdft-solve.c
+    ¦       rdft2-problem.c
+    ¦       rdft2-rank-geq2-transposed.c
+    ¦       rdft2-rank-geq2.c
+    ¦       rdft2-serial.c
+    ¦       rdft2-solve.c
+    ¦       rearrange.c
+    ¦       testsched.c
+    ¦       transpose-alltoall.c
+    ¦       transpose-pairwise.c
+    ¦       transpose-problem.c
+    ¦       transpose-recurse.c
+    ¦       transpose-solve.c
+    ¦       wisdom-api.c
+    ¦       
+    +---rdft
+    ¦   ¦   buffered.c
+    ¦   ¦   buffered2.c
+    ¦   ¦   codelet-rdft.h
+    ¦   ¦   conf.c
+    ¦   ¦   ct-hc2c-direct.c
+    ¦   ¦   ct-hc2c.c
+    ¦   ¦   ct-hc2c.h
+    ¦   ¦   dft-r2hc.c
+    ¦   ¦   dht-r2hc.c
+    ¦   ¦   dht-rader.c
+    ¦   ¦   direct-r2c.c
+    ¦   ¦   direct-r2r.c
+    ¦   ¦   direct2.c
+    ¦   ¦   generic.c
+    ¦   ¦   hc2hc-direct.c
+    ¦   ¦   hc2hc-generic.c
+    ¦   ¦   hc2hc.c
+    ¦   ¦   hc2hc.h
+    ¦   ¦   indirect.c
+    ¦   ¦   khc2c.c
+    ¦   ¦   khc2hc.c
+    ¦   ¦   kr2c.c
+    ¦   ¦   kr2r.c
+    ¦   ¦   Makefile.am
+    ¦   ¦   Makefile.in
+    ¦   ¦   nop.c
+    ¦   ¦   nop2.c
+    ¦   ¦   plan.c
+    ¦   ¦   plan2.c
+    ¦   ¦   problem.c
+    ¦   ¦   problem2.c
+    ¦   ¦   rank-geq2-rdft2.c
+    ¦   ¦   rank-geq2.c
+    ¦   ¦   rank0-rdft2.c
+    ¦   ¦   rank0.c
+    ¦   ¦   rdft-dht.c
+    ¦   ¦   rdft.h
+    ¦   ¦   rdft2-inplace-strides.c
+    ¦   ¦   rdft2-rdft.c
+    ¦   ¦   rdft2-strides.c
+    ¦   ¦   rdft2-tensor-max-index.c
+    ¦   ¦   solve.c
+    ¦   ¦   solve2.c
+    ¦   ¦   vrank-geq1-rdft2.c
+    ¦   ¦   vrank-geq1.c
+    ¦   ¦   vrank3-transpose.c
+    ¦   ¦   
+    ¦   +---scalar
+    ¦   ¦   ¦   hb.h
+    ¦   ¦   ¦   hc2c.c
+    ¦   ¦   ¦   hc2cb.h
+    ¦   ¦   ¦   hc2cf.h
+    ¦   ¦   ¦   hf.h
+    ¦   ¦   ¦   hfb.c
+    ¦   ¦   ¦   Makefile.am
+    ¦   ¦   ¦   Makefile.in
+    ¦   ¦   ¦   r2c.c
+    ¦   ¦   ¦   r2cb.h
+    ¦   ¦   ¦   r2cbIII.h
+    ¦   ¦   ¦   r2cf.h
+    ¦   ¦   ¦   r2cfII.h
+    ¦   ¦   ¦   r2r.c
+    ¦   ¦   ¦   r2r.h
+    ¦   ¦   ¦   
+    ¦   ¦   +---r2cb
+    ¦   ¦   ¦       codlist.c
+    ¦   ¦   ¦       hb2_16.c
+    ¦   ¦   ¦       hb2_20.c
+    ¦   ¦   ¦       hb2_25.c
+    ¦   ¦   ¦       hb2_32.c
+    ¦   ¦   ¦       hb2_4.c
+    ¦   ¦   ¦       hb2_5.c
+    ¦   ¦   ¦       hb2_8.c
+    ¦   ¦   ¦       hb_10.c
+    ¦   ¦   ¦       hb_12.c
+    ¦   ¦   ¦       hb_15.c
+    ¦   ¦   ¦       hb_16.c
+    ¦   ¦   ¦       hb_2.c
+    ¦   ¦   ¦       hb_20.c
+    ¦   ¦   ¦       hb_25.c
+    ¦   ¦   ¦       hb_3.c
+    ¦   ¦   ¦       hb_32.c
+    ¦   ¦   ¦       hb_4.c
+    ¦   ¦   ¦       hb_5.c
+    ¦   ¦   ¦       hb_6.c
+    ¦   ¦   ¦       hb_64.c
+    ¦   ¦   ¦       hb_7.c
+    ¦   ¦   ¦       hb_8.c
+    ¦   ¦   ¦       hb_9.c
+    ¦   ¦   ¦       hc2cb2_16.c
+    ¦   ¦   ¦       hc2cb2_20.c
+    ¦   ¦   ¦       hc2cb2_32.c
+    ¦   ¦   ¦       hc2cb2_4.c
+    ¦   ¦   ¦       hc2cb2_8.c
+    ¦   ¦   ¦       hc2cbdft2_16.c
+    ¦   ¦   ¦       hc2cbdft2_20.c
+    ¦   ¦   ¦       hc2cbdft2_32.c
+    ¦   ¦   ¦       hc2cbdft2_4.c
+    ¦   ¦   ¦       hc2cbdft2_8.c
+    ¦   ¦   ¦       hc2cbdft_10.c
+    ¦   ¦   ¦       hc2cbdft_12.c
+    ¦   ¦   ¦       hc2cbdft_16.c
+    ¦   ¦   ¦       hc2cbdft_2.c
+    ¦   ¦   ¦       hc2cbdft_20.c
+    ¦   ¦   ¦       hc2cbdft_32.c
+    ¦   ¦   ¦       hc2cbdft_4.c
+    ¦   ¦   ¦       hc2cbdft_6.c
+    ¦   ¦   ¦       hc2cbdft_8.c
+    ¦   ¦   ¦       hc2cb_10.c
+    ¦   ¦   ¦       hc2cb_12.c
+    ¦   ¦   ¦       hc2cb_16.c
+    ¦   ¦   ¦       hc2cb_2.c
+    ¦   ¦   ¦       hc2cb_20.c
+    ¦   ¦   ¦       hc2cb_32.c
+    ¦   ¦   ¦       hc2cb_4.c
+    ¦   ¦   ¦       hc2cb_6.c
+    ¦   ¦   ¦       hc2cb_8.c
+    ¦   ¦   ¦       Makefile.am
+    ¦   ¦   ¦       Makefile.in
+    ¦   ¦   ¦       r2cbIII_10.c
+    ¦   ¦   ¦       r2cbIII_12.c
+    ¦   ¦   ¦       r2cbIII_15.c
+    ¦   ¦   ¦       r2cbIII_16.c
+    ¦   ¦   ¦       r2cbIII_2.c
+    ¦   ¦   ¦       r2cbIII_20.c
+    ¦   ¦   ¦       r2cbIII_25.c
+    ¦   ¦   ¦       r2cbIII_3.c
+    ¦   ¦   ¦       r2cbIII_32.c
+    ¦   ¦   ¦       r2cbIII_4.c
+    ¦   ¦   ¦       r2cbIII_5.c
+    ¦   ¦   ¦       r2cbIII_6.c
+    ¦   ¦   ¦       r2cbIII_64.c
+    ¦   ¦   ¦       r2cbIII_7.c
+    ¦   ¦   ¦       r2cbIII_8.c
+    ¦   ¦   ¦       r2cbIII_9.c
+    ¦   ¦   ¦       r2cb_10.c
+    ¦   ¦   ¦       r2cb_11.c
+    ¦   ¦   ¦       r2cb_12.c
+    ¦   ¦   ¦       r2cb_128.c
+    ¦   ¦   ¦       r2cb_13.c
+    ¦   ¦   ¦       r2cb_14.c
+    ¦   ¦   ¦       r2cb_15.c
+    ¦   ¦   ¦       r2cb_16.c
+    ¦   ¦   ¦       r2cb_2.c
+    ¦   ¦   ¦       r2cb_20.c
+    ¦   ¦   ¦       r2cb_25.c
+    ¦   ¦   ¦       r2cb_3.c
+    ¦   ¦   ¦       r2cb_32.c
+    ¦   ¦   ¦       r2cb_4.c
+    ¦   ¦   ¦       r2cb_5.c
+    ¦   ¦   ¦       r2cb_6.c
+    ¦   ¦   ¦       r2cb_64.c
+    ¦   ¦   ¦       r2cb_7.c
+    ¦   ¦   ¦       r2cb_8.c
+    ¦   ¦   ¦       r2cb_9.c
+    ¦   ¦   ¦       
+    ¦   ¦   +---r2cf
+    ¦   ¦   ¦       codlist.c
+    ¦   ¦   ¦       hc2cf2_16.c
+    ¦   ¦   ¦       hc2cf2_20.c
+    ¦   ¦   ¦       hc2cf2_32.c
+    ¦   ¦   ¦       hc2cf2_4.c
+    ¦   ¦   ¦       hc2cf2_8.c
+    ¦   ¦   ¦       hc2cfdft2_16.c
+    ¦   ¦   ¦       hc2cfdft2_20.c
+    ¦   ¦   ¦       hc2cfdft2_32.c
+    ¦   ¦   ¦       hc2cfdft2_4.c
+    ¦   ¦   ¦       hc2cfdft2_8.c
+    ¦   ¦   ¦       hc2cfdft_10.c
+    ¦   ¦   ¦       hc2cfdft_12.c
+    ¦   ¦   ¦       hc2cfdft_16.c
+    ¦   ¦   ¦       hc2cfdft_2.c
+    ¦   ¦   ¦       hc2cfdft_20.c
+    ¦   ¦   ¦       hc2cfdft_32.c
+    ¦   ¦   ¦       hc2cfdft_4.c
+    ¦   ¦   ¦       hc2cfdft_6.c
+    ¦   ¦   ¦       hc2cfdft_8.c
+    ¦   ¦   ¦       hc2cf_10.c
+    ¦   ¦   ¦       hc2cf_12.c
+    ¦   ¦   ¦       hc2cf_16.c
+    ¦   ¦   ¦       hc2cf_2.c
+    ¦   ¦   ¦       hc2cf_20.c
+    ¦   ¦   ¦       hc2cf_32.c
+    ¦   ¦   ¦       hc2cf_4.c
+    ¦   ¦   ¦       hc2cf_6.c
+    ¦   ¦   ¦       hc2cf_8.c
+    ¦   ¦   ¦       hf2_16.c
+    ¦   ¦   ¦       hf2_20.c
+    ¦   ¦   ¦       hf2_25.c
+    ¦   ¦   ¦       hf2_32.c
+    ¦   ¦   ¦       hf2_4.c
+    ¦   ¦   ¦       hf2_5.c
+    ¦   ¦   ¦       hf2_8.c
+    ¦   ¦   ¦       hf_10.c
+    ¦   ¦   ¦       hf_12.c
+    ¦   ¦   ¦       hf_15.c
+    ¦   ¦   ¦       hf_16.c
+    ¦   ¦   ¦       hf_2.c
+    ¦   ¦   ¦       hf_20.c
+    ¦   ¦   ¦       hf_25.c
+    ¦   ¦   ¦       hf_3.c
+    ¦   ¦   ¦       hf_32.c
+    ¦   ¦   ¦       hf_4.c
+    ¦   ¦   ¦       hf_5.c
+    ¦   ¦   ¦       hf_6.c
+    ¦   ¦   ¦       hf_64.c
+    ¦   ¦   ¦       hf_7.c
+    ¦   ¦   ¦       hf_8.c
+    ¦   ¦   ¦       hf_9.c
+    ¦   ¦   ¦       Makefile.am
+    ¦   ¦   ¦       Makefile.in
+    ¦   ¦   ¦       r2cfII_10.c
+    ¦   ¦   ¦       r2cfII_12.c
+    ¦   ¦   ¦       r2cfII_15.c
+    ¦   ¦   ¦       r2cfII_16.c
+    ¦   ¦   ¦       r2cfII_2.c
+    ¦   ¦   ¦       r2cfII_20.c
+    ¦   ¦   ¦       r2cfII_25.c
+    ¦   ¦   ¦       r2cfII_3.c
+    ¦   ¦   ¦       r2cfII_32.c
+    ¦   ¦   ¦       r2cfII_4.c
+    ¦   ¦   ¦       r2cfII_5.c
+    ¦   ¦   ¦       r2cfII_6.c
+    ¦   ¦   ¦       r2cfII_64.c
+    ¦   ¦   ¦       r2cfII_7.c
+    ¦   ¦   ¦       r2cfII_8.c
+    ¦   ¦   ¦       r2cfII_9.c
+    ¦   ¦   ¦       r2cf_10.c
+    ¦   ¦   ¦       r2cf_11.c
+    ¦   ¦   ¦       r2cf_12.c
+    ¦   ¦   ¦       r2cf_128.c
+    ¦   ¦   ¦       r2cf_13.c
+    ¦   ¦   ¦       r2cf_14.c
+    ¦   ¦   ¦       r2cf_15.c
+    ¦   ¦   ¦       r2cf_16.c
+    ¦   ¦   ¦       r2cf_2.c
+    ¦   ¦   ¦       r2cf_20.c
+    ¦   ¦   ¦       r2cf_25.c
+    ¦   ¦   ¦       r2cf_3.c
+    ¦   ¦   ¦       r2cf_32.c
+    ¦   ¦   ¦       r2cf_4.c
+    ¦   ¦   ¦       r2cf_5.c
+    ¦   ¦   ¦       r2cf_6.c
+    ¦   ¦   ¦       r2cf_64.c
+    ¦   ¦   ¦       r2cf_7.c
+    ¦   ¦   ¦       r2cf_8.c
+    ¦   ¦   ¦       r2cf_9.c
+    ¦   ¦   ¦       
+    ¦   ¦   L---r2r
+    ¦   ¦           codlist.c
+    ¦   ¦           e01_8.c
+    ¦   ¦           e10_8.c
+    ¦   ¦           Makefile.am
+    ¦   ¦           Makefile.in
+    ¦   ¦           
+    ¦   L---simd
+    ¦       ¦   codlist.mk
+    ¦       ¦   hc2cbv.h
+    ¦       ¦   hc2cfv.h
+    ¦       ¦   Makefile.am
+    ¦       ¦   Makefile.in
+    ¦       ¦   simd.mk
+    ¦       ¦   
+    ¦       +---altivec
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       +---avx
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       +---avx-128-fma
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       +---avx2
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       +---avx2-128
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       +---avx512
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       +---common
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       +---generic-simd128
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       +---generic-simd256
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       +---kcvi
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       +---neon
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       +---sse2
+    ¦       ¦       codlist.c
+    ¦       ¦       genus.c
+    ¦       ¦       hc2cbdftv_10.c
+    ¦       ¦       hc2cbdftv_12.c
+    ¦       ¦       hc2cbdftv_16.c
+    ¦       ¦       hc2cbdftv_2.c
+    ¦       ¦       hc2cbdftv_20.c
+    ¦       ¦       hc2cbdftv_32.c
+    ¦       ¦       hc2cbdftv_4.c
+    ¦       ¦       hc2cbdftv_6.c
+    ¦       ¦       hc2cbdftv_8.c
+    ¦       ¦       hc2cfdftv_10.c
+    ¦       ¦       hc2cfdftv_12.c
+    ¦       ¦       hc2cfdftv_16.c
+    ¦       ¦       hc2cfdftv_2.c
+    ¦       ¦       hc2cfdftv_20.c
+    ¦       ¦       hc2cfdftv_32.c
+    ¦       ¦       hc2cfdftv_4.c
+    ¦       ¦       hc2cfdftv_6.c
+    ¦       ¦       hc2cfdftv_8.c
+    ¦       ¦       Makefile.am
+    ¦       ¦       Makefile.in
+    ¦       ¦       
+    ¦       L---vsx
+    ¦               codlist.c
+    ¦               genus.c
+    ¦               hc2cbdftv_10.c
+    ¦               hc2cbdftv_12.c
+    ¦               hc2cbdftv_16.c
+    ¦               hc2cbdftv_2.c
+    ¦               hc2cbdftv_20.c
+    ¦               hc2cbdftv_32.c
+    ¦               hc2cbdftv_4.c
+    ¦               hc2cbdftv_6.c
+    ¦               hc2cbdftv_8.c
+    ¦               hc2cfdftv_10.c
+    ¦               hc2cfdftv_12.c
+    ¦               hc2cfdftv_16.c
+    ¦               hc2cfdftv_2.c
+    ¦               hc2cfdftv_20.c
+    ¦               hc2cfdftv_32.c
+    ¦               hc2cfdftv_4.c
+    ¦               hc2cfdftv_6.c
+    ¦               hc2cfdftv_8.c
+    ¦               Makefile.am
+    ¦               Makefile.in
+    ¦               
+    +---reodft
+    ¦       conf.c
+    ¦       Makefile.am
+    ¦       Makefile.in
+    ¦       redft00e-r2hc-pad.c
+    ¦       redft00e-r2hc.c
+    ¦       reodft.h
+    ¦       reodft00e-splitradix.c
+    ¦       reodft010e-r2hc.c
+    ¦       reodft11e-r2hc-odd.c
+    ¦       reodft11e-r2hc.c
+    ¦       reodft11e-radix2.c
+    ¦       rodft00e-r2hc-pad.c
+    ¦       rodft00e-r2hc.c
+    ¦       
+    +---simd-support
+    ¦       altivec.c
+    ¦       amd64-cpuid.h
+    ¦       avx-128-fma.c
+    ¦       avx.c
+    ¦       avx2.c
+    ¦       avx512.c
+    ¦       kcvi.c
+    ¦       Makefile.am
+    ¦       Makefile.in
+    ¦       neon.c
+    ¦       simd-altivec.h
+    ¦       simd-avx-128-fma.h
+    ¦       simd-avx.h
+    ¦       simd-avx2-128.h
+    ¦       simd-avx2.h
+    ¦       simd-avx512.h
+    ¦       simd-common.h
+    ¦       simd-generic128.h
+    ¦       simd-generic256.h
+    ¦       simd-kcvi.h
+    ¦       simd-neon.h
+    ¦       simd-sse2.h
+    ¦       simd-vsx.h
+    ¦       sse2.c
+    ¦       taint.c
+    ¦       vsx.c
+    ¦       x86-cpuid.h
+    ¦       
+    +---support
+    ¦       addchain.c
+    ¦       codelet_prelude.dft
+    ¦       codelet_prelude.rdft
+    ¦       Makefile.am
+    ¦       Makefile.codelets
+    ¦       Makefile.in
+    ¦       twovers.sh
+    ¦       
+    +---tests
+    ¦       bench.c
+    ¦       check.pl
+    ¦       fftw-bench.c
+    ¦       fftw-bench.h
+    ¦       hook.c
+    ¦       Makefile.am
+    ¦       Makefile.in
+    ¦       README
+    ¦       
+    +---threads
+    ¦       api.c
+    ¦       conf.c
+    ¦       ct.c
+    ¦       dft-vrank-geq1.c
+    ¦       f77api.c
+    ¦       f77funcs.h
+    ¦       hc2hc.c
+    ¦       Makefile.am
+    ¦       Makefile.in
+    ¦       openmp.c
+    ¦       rdft-vrank-geq1.c
+    ¦       threads.c
+    ¦       threads.h
+    ¦       vrank-geq1-rdft2.c
+    ¦       
+    L---tools
+            fftw-wisdom-to-conf.1
+            fftw-wisdom-to-conf.in
+            fftw-wisdom.c
+            fftwf-wisdom.1
+            fftw_wisdom.1.in
+            Makefile.am
+            Makefile.in
+            

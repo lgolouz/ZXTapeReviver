@@ -14,6 +14,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
  <file source-language="en-US" target-language="en-US">
   <body>
+<trans-unit id="id_close_button_text"><source>Close</source><target>Close</target></trans-unit>
+<trans-unit id="id_ok_button_text"><source>OK</source><target>OK</target></trans-unit>
+<trans-unit id="id_restore_defaults_button_text"><source>Restore defaults</source><target>Restore defaults</target></trans-unit>
+<trans-unit id="id_goto_button_text"><source>Go to</source><target>Go to</target></trans-unit>
+<trans-unit id="id_cancel_button_text"><source>Cancel</source><target>Cancel</target></trans-unit>
 <trans-unit id="id_timeline_sec"><source>%1 sec</source><target>%1 sec</target></trans-unit>
 <trans-unit id="id_about_window_header"><source>About</source><target>About</target></trans-unit>
 <trans-unit id="id_email_link"><source>E-mail: %1</source><target>E-mail: %1</target></trans-unit>
@@ -118,6 +123,10 @@
 <trans-unit id="id_stop_playing_parsed_data"><source>Stop playing</source><target>Stop playing</target></trans-unit>
 <trans-unit id="id_parity_message"><source> (Parity: %1 ; Should be: %2)</source><target> (Parity: %1 ; Should be: %2)</target></trans-unit>
 <trans-unit id="id_playing_parsed_data_window_header"><source>Playing parsed data</source><target>Playing parsed data</target></trans-unit>
+<trans-unit id="id_cannot_save_tap_file"><source>Cannot save TAP file:&#10;%1&#10;&#10;%2</source><target>Cannot save TAP file:&#10;%1&#10;&#10;%2</target></trans-unit>
+<trans-unit id="id_no_parsed_data_for_selected_channel"><source>No parsed data for selected channel.</source><target>No parsed data for selected channel.</target></trans-unit>
+<trans-unit id="id_cannot_replace_tap_file"><source>Cannot replace existing file: %1</source><target>Cannot replace existing file: %1</target></trans-unit>
+<trans-unit id="id_cannot_open_tap_file_for_writing"><source>Cannot open file for writing: %1</source><target>Cannot open file for writing: %1</target></trans-unit>
   </body>
  </file>
 </xliff>

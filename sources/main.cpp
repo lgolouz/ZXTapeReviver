@@ -13,6 +13,7 @@
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQuickStyle>
 #include "sources/controls/waveformcontrol.h"
 #include "sources/core/waveformparser.h"
 #include "sources/models/fileworkermodel.h"
@@ -46,9 +47,14 @@ void registerTypes()
 
 int main(int argc, char *argv[])
 {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 
     QGuiApplication app(argc, argv);
+    app.setOrganizationName("ComputerEnthusiastsTips");
+    app.setOrganizationDomain("ComputerEnthusiastsTips");
+    QQuickStyle::setStyle("Fusion");
 
     registerTypes();
 
