@@ -28,7 +28,7 @@ DataPlayerModel::DataPlayerModel(QObject* parent) :
     connect(&m_notifyTimer, &QTimer::timeout, this, &DataPlayerModel::handleAudioOutputNotify);
 }
 
-void DataPlayerModel::playParsedData(uint chNum, uint currentBlock) {
+void DataPlayerModel::playParsedData([[maybe_unused]] uint chNum, [[maybe_unused]] uint currentBlock) {
     if (m_playingState != DP_Stopped) {
         return;
     }

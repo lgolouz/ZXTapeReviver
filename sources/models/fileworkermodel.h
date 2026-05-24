@@ -38,14 +38,16 @@ public:
     //setters
 
     //QML invokable members
-    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openTapFileByUrl(const QString& fileNameUrl);
-    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openTapFile(const QString& fileName);
-    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWavFileByUrl(const QString& fileNameUrl);
-    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWavFile(const QString& fileName);
-    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWaveformFileByUrl(const QString& fileNameUrl);
-    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int openWaveformFile(const QString& fileName);
-    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int saveWaveformFileByUrl(const QString& fileNameUrl);
-    Q_INVOKABLE /*WavReader::ErrorCodesEnum*/ int saveWaveformFile(const QString& fileName);
+    // QML boundary deliberately uses int: Qt/QML can be fragile with invokable
+    // methods returning enum types.
+    Q_INVOKABLE /*FileWorkerModel::FileWorkerResults*/ int openTapFileByUrl(const QString& fileNameUrl);
+    Q_INVOKABLE /*FileWorkerModel::FileWorkerResults*/ int openTapFile(const QString& fileName);
+    Q_INVOKABLE /*FileWorkerModel::FileWorkerResults*/ int openWavFileByUrl(const QString& fileNameUrl);
+    Q_INVOKABLE /*FileWorkerModel::FileWorkerResults*/ int openWavFile(const QString& fileName);
+    Q_INVOKABLE /*FileWorkerModel::FileWorkerResults*/ int openWaveformFileByUrl(const QString& fileNameUrl);
+    Q_INVOKABLE /*FileWorkerModel::FileWorkerResults*/ int openWaveformFile(const QString& fileName);
+    Q_INVOKABLE /*FileWorkerModel::FileWorkerResults*/ int saveWaveformFileByUrl(const QString& fileNameUrl);
+    Q_INVOKABLE /*FileWorkerModel::FileWorkerResults*/ int saveWaveformFile(const QString& fileName);
 
 signals:
     void wavFileNameChanged();

@@ -123,6 +123,10 @@
 <trans-unit id="id_stop_playing_parsed_data"><source>Stop playing</source><target>Stop playing</target></trans-unit>
 <trans-unit id="id_parity_message"><source> (Parity: %1 ; Should be: %2)</source><target> (Parity: %1 ; Should be: %2)</target></trans-unit>
 <trans-unit id="id_playing_parsed_data_window_header"><source>Playing parsed data</source><target>Playing parsed data</target></trans-unit>
+<trans-unit id="id_cannot_save_tap_file"><source>Cannot save TAP file:&#10;%1&#10;&#10;%2</source><target>Cannot save TAP file:&#10;%1&#10;&#10;%2</target></trans-unit>
+<trans-unit id="id_no_parsed_data_for_selected_channel"><source>No parsed data for selected channel.</source><target>No parsed data for selected channel.</target></trans-unit>
+<trans-unit id="id_cannot_replace_tap_file"><source>Cannot replace existing file: %1</source><target>Cannot replace existing file: %1</target></trans-unit>
+<trans-unit id="id_cannot_open_tap_file_for_writing"><source>Cannot open file for writing: %1</source><target>Cannot open file for writing: %1</target></trans-unit>
   </body>
  </file>
 </xliff>

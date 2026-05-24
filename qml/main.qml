@@ -287,6 +287,32 @@ ApplicationWindow {
         }
     }
 
+    MessageDialog {
+        id: saveTapErrorDialog
+
+        title: Translations.id_error
+        text: ""
+        buttons: MessageDialog.Ok
+    }
+
+    function saveTapErrorText(errorCode, details) {
+        switch (errorCode) {
+        case WaveformParser.NoParsedData:
+            return Translations.id_no_parsed_data_for_selected_channel;
+        case WaveformParser.CannotRemoveExistingFile:
+            return Translations.id_cannot_replace_tap_file.arg(details);
+        case WaveformParser.CannotOpenFile:
+            return Translations.id_cannot_open_tap_file_for_writing.arg(details);
+        default:
+            return details;
+        }
+    }
+
+    function showSaveTapError(fileName, errorCode, details) {
+        saveTapErrorDialog.text = Translations.id_cannot_save_tap_file.arg(fileName).arg(saveTapErrorText(errorCode, details));
+        saveTapErrorDialog.open();
+    }
+
     Connections {
         target: FileWorkerModel
         function onWavFileNameChanged() {
@@ -324,6 +350,10 @@ ApplicationWindow {
             onDoubleClick: (idx) => {
                 SuspiciousPointsModel.addSuspiciousPoint(idx);
             }
+
+            onSaveTapFailed: (fileName, error, details) => {
+                mainWindow.showSaveTapError(fileName, error, details);
+            }
         }
 
         WaveformControl {
@@ -340,6 +370,10 @@ ApplicationWindow {
 
             onDoubleClick: (idx) => {
                 SuspiciousPointsModel.addSuspiciousPoint(idx);
+            }
+
+            onSaveTapFailed: (fileName, error, details) => {
+                mainWindow.showSaveTapError(fileName, error, details);
             }
         }
 
@@ -747,6 +781,8 @@ ApplicationWindow {
                 left: parent.left
                 right: parent.right
             }
+
+            onCurrentIndexChanged: parsedDataView.invalidate()
         }
 
         Button {
@@ -840,6 +876,10 @@ ApplicationWindow {
                 topMargin: 2
             }
             model: channelsComboBox.currentIndex === 0 ? WaveformParser.parsedChannel0 : WaveformParser.parsedChannel1
+            checkableRows: true
+            checkedRowProvider: function(row) { return WaveformParser.isBlockSelected(channelsComboBox.currentIndex, row); }
+            checkedRowSetter: function(row, checked) { WaveformParser.setBlockSelected(channelsComboBox.currentIndex, row, checked); }
+            rowErrorProvider: function(row) { return WaveformParser.isBlockParseError(channelsComboBox.currentIndex, row); }
             fallbackHeaders: [
                 Translations.id_block_number,
                 Translations.id_block_type,

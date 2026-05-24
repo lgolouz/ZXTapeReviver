@@ -96,6 +96,7 @@ QtObject {
     property string id_remove_suspicious_point:              qsTrId("id_remove_suspicious_point") + TranslationManager.translationChanged //Button caption
     property string id_suspicious_point_number:              qsTrId("id_suspicious_point_number") + TranslationManager.translationChanged
     property string id_suspicious_point_position:            qsTrId("id_suspicious_point_position") + TranslationManager.translationChanged
+    property string id_error:                                qsTrId("id_error") + TranslationManager.translationChanged
     property string id_language_menu_item:                   qsTrId("id_language_menu_item") + TranslationManager.translationChanged
     property string id_hotkey_tooltip:                       qsTrId("id_hotkey_tooltip") + TranslationManager.translationChanged
     property string id_remove_action:                        qsTrId("id_remove_action") + TranslationManager.translationChanged //Button caption
@@ -109,4 +110,8 @@ QtObject {
     property string id_block_name:                           qsTrId("id_block_name") + TranslationManager.translationChanged
     property string id_block_size:                           qsTrId("id_block_size") + TranslationManager.translationChanged
     property string id_block_status:                         qsTrId("id_block_status") + TranslationManager.translationChanged
+    property string id_cannot_save_tap_file:                 qsTrId("id_cannot_save_tap_file") + TranslationManager.translationChanged
+    property string id_no_parsed_data_for_selected_channel:  qsTrId("id_no_parsed_data_for_selected_channel") + TranslationManager.translationChanged
+    property string id_cannot_replace_tap_file:              qsTrId("id_cannot_replace_tap_file") + TranslationManager.translationChanged
+    property string id_cannot_open_tap_file_for_writing:     qsTrId("id_cannot_open_tap_file_for_writing") + TranslationManager.translationChanged
 }

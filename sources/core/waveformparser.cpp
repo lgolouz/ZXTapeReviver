@@ -915,6 +915,7 @@ void WaveformParser::parse(uint chNum)
     const double sampleRate = mWavReader.getSampleRate();
     auto& parsedData = *getOrCreateParsedDataPtr(chNum);
     parsedData.clear(channel.size());
+    mSelectedBlocks[chNum].clear();
 
     auto currentState = SEARCH_OF_PILOT_TONE;
     auto it = parsed.begin();
@@ -1137,21 +1138,30 @@ void WaveformParser::parse(uint chNum)
     }
 }
 
-void WaveformParser::saveTap(uint chNum, const QString& fileName)
+WaveformParser::SaveTapResult WaveformParser::saveTap(uint chNum, const QString& fileName)
 {
     auto parsedDataPtr { getParsedDataPtr(chNum) };
     if (parsedDataPtr == nullptr) {
-        return;
+        return { SaveTapResultCode::NoParsedData, {} };
     }
 
     QFile f(fileName.isEmpty() ? QString("tape_%1_%2.tap").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")).arg(chNum ? "R" : "L") : fileName);
-    f.remove(); //Remove file if exists
-    f.open(QIODevice::WriteOnly);
+    if (f.exists() && !f.remove()) {
+        qDebug() << "Cannot remove existing TAP file:" << f.fileName() << f.errorString();
+        return { SaveTapResultCode::CannotRemoveExistingFile, f.errorString() };
+    }
+
+    if (!f.open(QIODevice::WriteOnly)) {
+        qDebug() << "Cannot open TAP file for writing:" << f.fileName() << f.errorString();
+        return { SaveTapResultCode::CannotOpenFile, f.errorString() };
+    }
 
     auto parsedDataSPtr { parsedDataPtr->getParsedData() };
     auto& parsedData = *parsedDataSPtr.data();
+    const auto selectedBlockSet { mSelectedBlocks.value(chNum) };
+
     for (auto i = 0; i < parsedData.size(); ++i) {
-        if (i < mSelectedBlocks.size() && !mSelectedBlocks[i]) {
+        if (!selectedBlockSet.empty() && !selectedBlockSet.contains(i)) {
             continue;
         }
 
@@ -1164,6 +1174,7 @@ void WaveformParser::saveTap(uint chNum, const QString& fileName)
     }
 
     f.close();
+    return {};
 }
 
 QVector<uint8_t> WaveformParser::getParsedWaveform(uint chNum) const {
@@ -1179,17 +1190,76 @@ QPair<QVector<QSharedPointer<ParsedData::DataBlock>>, QVector<bool>> WaveformPar
     if (parsedDataPtr == nullptr) {
         return {};
     }
-    return { *parsedDataPtr->getParsedData(), mSelectedBlocks };
+
+    const auto parsedData { *parsedDataPtr->getParsedData() };
+    const auto selectedBlockSet { mSelectedBlocks.value(chNum) };
+    QVector<bool> selectedBlocks;
+    selectedBlocks.reserve(parsedData.size());
+    for (auto i = 0; i < parsedData.size(); ++i) {
+        selectedBlocks.append(selectedBlockSet.empty() || selectedBlockSet.contains(i));
+    }
+
+    return { parsedData, selectedBlocks };
 }
 
-void WaveformParser::toggleBlockSelection(int blockNum) {
-    if (blockNum < mSelectedBlocks.size()) {
-        auto& blk = mSelectedBlocks[blockNum];
-        blk = !blk;
+bool WaveformParser::isBlockSelected(uint chNum, int blockNum) const
+{
+    return mSelectedBlocks.value(chNum).contains(blockNum);
+}
 
-        emit parsedChannel0Changed();
-        emit parsedChannel1Changed();
+bool WaveformParser::isBlockParseError(uint chNum, int blockNum) const
+{
+    auto parsedDataPtr { getParsedDataPtr(chNum) };
+    if (parsedDataPtr == nullptr || blockNum < 0) {
+        return false;
     }
+
+    const auto parsedData { parsedDataPtr->getParsedData() };
+    if (parsedData == nullptr || blockNum >= parsedData->size()) {
+        return false;
+    }
+
+    return parsedData->at(blockNum)->state != ParsedDataModel::OK;
+}
+
+void WaveformParser::setBlockSelected(uint chNum, int blockNum, bool selected)
+{
+    if (blockNum < 0) {
+        return;
+    }
+
+    auto& selectedBlocks { mSelectedBlocks[chNum] };
+    if (selected) {
+        selectedBlocks.insert(blockNum);
+    } else {
+        selectedBlocks.remove(blockNum);
+    }
+
+    emit blockSelectionChanged(chNum);
+}
+
+void WaveformParser::toggleBlockSelection(uint chNum, int blockNum)
+{
+    setBlockSelected(chNum, blockNum, !isBlockSelected(chNum, blockNum));
+}
+
+void WaveformParser::clearBlockSelection(uint chNum)
+{
+    mSelectedBlocks[chNum].clear();
+    emit blockSelectionChanged(chNum);
+}
+
+QVariantList WaveformParser::selectedBlocks(uint chNum) const
+{
+    QVariantList result;
+    const auto selectedBlocks { mSelectedBlocks.value(chNum) };
+    for (auto block: selectedBlocks) {
+        result.append(block);
+    }
+    std::sort(result.begin(), result.end(), [](const QVariant& left, const QVariant& right) {
+        return left.toInt() < right.toInt();
+    });
+    return result;
 }
 
 int WaveformParser::getBlockDataStart(uint chNum, uint blockNum) const

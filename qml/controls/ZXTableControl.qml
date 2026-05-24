@@ -11,6 +11,8 @@
 // permission of the Author.
 //*******************************************************************************
 
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQml.Models
@@ -26,13 +28,60 @@ Control {
     property bool userResizedColumns: false
     property var fallbackHeaders: []
     property var fallbackColumnWidths: []
+    property bool checkableRows: false
+    property var checkedRows: ({})
+    property var checkedRowProvider: null
+    property var checkedRowSetter: null
+    property var rowErrorProvider: null
 
     readonly property int rowHeight: 28
     readonly property int headerHeight: 30
     readonly property int defaultColumnWidth: 120
     readonly property int minimumColumnWidth: 40
+    readonly property color alternateBaseColor: "#f5f5f5"
+    readonly property color errorTextColor: "#a40000"
+    readonly property color errorSelectedColor: "#e7b8b8"
+    readonly property color errorCheckedColor: "#f4d3d3"
+    readonly property color errorBaseColor: "#fff2f2"
+    readonly property color errorAlternateBaseColor: "#fde7e7"
 
     padding: 0
+    focus: true
+
+    Keys.onPressed: (event) => {
+        switch (event.key) {
+        case Qt.Key_Space:
+            if (checkableRows && currentRow >= 0) {
+                toggleCheckedRow(currentRow);
+                event.accepted = true;
+            }
+            break;
+
+        case Qt.Key_Up:
+            moveCursor(-1);
+            event.accepted = true;
+            break;
+
+        case Qt.Key_Down:
+            moveCursor(1);
+            event.accepted = true;
+            break;
+
+        case Qt.Key_Home:
+            if (rowCount() > 0) {
+                selectRow(0);
+                event.accepted = true;
+            }
+            break;
+
+        case Qt.Key_End:
+            if (rowCount() > 0) {
+                selectRow(rowCount() - 1);
+                event.accepted = true;
+            }
+            break;
+        }
+    }
 
     background: Rectangle {
         color: root.palette.base
@@ -42,6 +91,7 @@ Control {
     onModelChanged: {
         currentRow = -1;
         userResizedColumns = false;
+        checkedRows = {};
         invalidate();
         Qt.callLater(applyDefaultColumnWidths);
     }
@@ -77,6 +127,81 @@ Control {
         var index = tableView.index(row, 0);
         itemSelectionModel.setCurrentIndex(index, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Rows);
         tableView.positionViewAtRow(row, TableView.Contain);
+    }
+
+    function moveCursor(delta) {
+        var count = rowCount();
+        if (count <= 0) {
+            return;
+        }
+
+        var nextRow = currentRow < 0 ? 0 : currentRow + delta;
+        nextRow = Math.max(0, Math.min(count - 1, nextRow));
+        selectRow(nextRow);
+    }
+
+    function isRowChecked(row) {
+        modelRevision;
+        if (checkedRowProvider !== null) {
+            return checkedRowProvider(row);
+        }
+        return checkedRows[row] === true;
+    }
+
+    function isRowError(row) {
+        modelRevision;
+        return rowErrorProvider !== null && rowErrorProvider(row);
+    }
+
+    function setCheckedRow(row, checked) {
+        if (row < 0 || row >= rowCount()) {
+            return;
+        }
+
+        if (checkedRowSetter !== null) {
+            checkedRowSetter(row, checked);
+        } else {
+            var rows = Object.assign({}, checkedRows);
+            if (checked) {
+                rows[row] = true;
+            } else {
+                delete rows[row];
+            }
+            checkedRows = rows;
+        }
+        invalidate();
+    }
+
+    function toggleCheckedRow(row) {
+        setCheckedRow(row, !isRowChecked(row));
+    }
+
+    function clearCheckedRows() {
+        checkedRows = {};
+        invalidate();
+    }
+
+    function checkedRowsArray() {
+        var rows = [];
+        for (var row in checkedRows) {
+            if (checkedRows[row]) {
+                rows.push(Number(row));
+            }
+        }
+        rows.sort(function(left, right) { return left - right; });
+        return rows;
+    }
+
+    function setCheckedRows(rows) {
+        var nextRows = {};
+        for (var i = 0; i < rows.length; ++i) {
+            var row = Number(rows[i]);
+            if (row >= 0) {
+                nextRows[row] = true;
+            }
+        }
+        checkedRows = nextRows;
+        invalidate();
     }
 
     function invalidate() {
@@ -224,6 +349,7 @@ Control {
         function onModelReset() {
             root.currentRow = -1;
             root.userResizedColumns = false;
+            root.clearCheckedRows();
             itemSelectionModel.clear();
             root.invalidate();
             Qt.callLater(root.applyDefaultColumnWidths);
@@ -285,9 +411,11 @@ Control {
                         Button {
                             id: headerCell
 
-                            width: root.columnWidth(index)
+                            required property int index
+
+                            width: root.columnWidth(headerCell.index)
                             height: headerView.height
-                            text: root.headerText(index)
+                            text: root.headerText(headerCell.index)
                             padding: 6
                             font: root.font
                             horizontalPadding: 8
@@ -311,7 +439,7 @@ Control {
                                 onPressed: (mouse) => {
                                     root.userResizedColumns = true;
                                     startX = mouse.x;
-                                    startWidth = root.columnWidth(index);
+                                    startWidth = root.columnWidth(headerCell.index);
                                     mouse.accepted = true;
                                 }
 
@@ -321,7 +449,7 @@ Control {
                                     }
 
                                     var nextWidth = Math.max(root.minimumColumnWidth, startWidth + mouse.x - startX);
-                                    tableView.setColumnWidth(index, nextWidth);
+                                    tableView.setColumnWidth(headerCell.index, nextWidth);
                                     root.invalidate();
                                     tableView.forceLayout();
                                 }
@@ -364,23 +492,32 @@ Control {
 
                 required property int row
                 required property int column
+                readonly property bool selectedRow: row === root.currentRow
+                readonly property bool checkedRow: root.isRowChecked(row)
+                readonly property bool errorRow: root.isRowError(row)
 
                 implicitWidth: root.defaultWidthForColumn(column)
                 implicitHeight: root.rowHeight
-                color: row === root.currentRow
-                       ? root.palette.highlight
+                color: selectedRow
+                       ? (errorRow ? root.errorSelectedColor : root.palette.highlight)
+                       : checkedRow
+                         ? (errorRow ? root.errorCheckedColor : Qt.lighter(root.palette.highlight, 1.7))
+                       : errorRow
+                         ? (tableView.alternatingRows && row % 2 !== 0 ? root.errorAlternateBaseColor : root.errorBaseColor)
                        : tableView.alternatingRows && row % 2 !== 0
-                         ? root.palette.alternateBase
+                         ? root.alternateBaseColor
                          : root.palette.base
 
                 Label {
                     anchors.fill: parent
-                    anchors.leftMargin: 8
+                    anchors.leftMargin: root.checkableRows && cell.column === 0 ? 28 : 8
                     anchors.rightMargin: 8
                     text: root.cellText(cell.row, cell.column)
-                    color: cell.row === root.currentRow
-                           ? root.palette.highlightedText
-                           : root.palette.text
+                    color: cell.errorRow
+                           ? root.errorTextColor
+                           : cell.selectedRow
+                             ? root.palette.highlightedText
+                             : root.palette.text
                     elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -404,7 +541,28 @@ Control {
                 MouseArea {
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton
-                    onClicked: root.selectRow(cell.row)
+                    onClicked: {
+                        root.forceActiveFocus();
+                        root.selectRow(cell.row);
+                    }
+                }
+
+                CheckBox {
+                    anchors {
+                        left: parent.left
+                        verticalCenter: parent.verticalCenter
+                    }
+                    width: 26
+                    height: parent.height
+                    visible: root.checkableRows && cell.column === 0
+                    focusPolicy: Qt.NoFocus
+                    activeFocusOnTab: false
+                    checked: root.isRowChecked(cell.row)
+                    z: 1
+                    onToggled: {
+                        root.forceActiveFocus();
+                        root.setCheckedRow(cell.row, checked);
+                    }
                 }
             }
 

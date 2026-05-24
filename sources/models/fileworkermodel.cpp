@@ -23,28 +23,28 @@ FileWorkerModel::FileWorkerModel(QObject* parent) :
 
 }
 
-/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::openTapFileByUrl(const QString& fileNameUrl) {
+/*FileWorkerModel::FileWorkerResults*/ int FileWorkerModel::openTapFileByUrl(const QString& fileNameUrl) {
     QUrl u(fileNameUrl);
     return openTapFile(u.toLocalFile());
 }
 
-/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::openTapFile(const QString& fileName) {
+/*FileWorkerModel::FileWorkerResults*/ int FileWorkerModel::openTapFile(const QString& fileName) {
     auto& r = *WavReader::instance();
     r.close();
 
     r.loadTap(fileName);
     m_wavFileName = fileName;
     emit wavFileNameChanged();
-    return WavReader::Ok;
+    return FW_OK;
 }
 
-/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::openWavFileByUrl(const QString& fileNameUrl)
+/*FileWorkerModel::FileWorkerResults*/ int FileWorkerModel::openWavFileByUrl(const QString& fileNameUrl)
 {
     QUrl u(fileNameUrl);
     return openWavFile(u.toLocalFile());
 }
 
-/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::openWavFile(const QString& fileName)
+/*FileWorkerModel::FileWorkerResults*/ int FileWorkerModel::openWavFile(const QString& fileName)
 {
     auto& r = *WavReader::instance();
     r.close();
@@ -59,16 +59,16 @@ FileWorkerModel::FileWorkerModel(QObject* parent) :
         }
     }
 
-    return result;
+    return result == WavReader::Ok ? FW_OK : FW_ERR;
 }
 
-/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::openWaveformFileByUrl(const QString& fileNameUrl)
+/*FileWorkerModel::FileWorkerResults*/ int FileWorkerModel::openWaveformFileByUrl(const QString& fileNameUrl)
 {
     QUrl u(fileNameUrl);
     return openWaveformFile(u.toLocalFile());
 }
 
-/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::openWaveformFile(const QString& fileName)
+/*FileWorkerModel::FileWorkerResults*/ int FileWorkerModel::openWaveformFile(const QString& fileName)
 {
     auto& r = *WavReader::instance();
     r.close();
@@ -76,20 +76,20 @@ FileWorkerModel::FileWorkerModel(QObject* parent) :
     r.loadWaveform(fileName);
     m_wavFileName = fileName;
     emit wavFileNameChanged();
-    return WavReader::Ok;
+    return FW_OK;
 }
 
-/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::saveWaveformFileByUrl(const QString& fileNameUrl)
+/*FileWorkerModel::FileWorkerResults*/ int FileWorkerModel::saveWaveformFileByUrl(const QString& fileNameUrl)
 {
     QUrl u(fileNameUrl);
     return saveWaveformFile(u.toLocalFile());
 }
 
-/*WavReader::ErrorCodesEnum*/ int FileWorkerModel::saveWaveformFile(const QString& fileName)
+/*FileWorkerModel::FileWorkerResults*/ int FileWorkerModel::saveWaveformFile(const QString& fileName)
 {
     auto& r = *WavReader::instance();
     r.saveWaveform(fileName);
-    return WavReader::Ok;
+    return FW_OK;
 }
 
 QString FileWorkerModel::getWavFileName() const

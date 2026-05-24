@@ -16,9 +16,10 @@
 
 #include <iterator>
 #include <QMap>
+#include <QSet>
+#include <QVariantList>
 #include <QVector>
 #include <QVariantMap>
-#include <QVariantList>
 #include "sources/core/parseddata.h"
 #include "sources/core/wavreader.h"
 #include "sources/defines.h"
@@ -80,7 +81,7 @@ private:
     QMap<uint, ParsedData*> m_parsedData;
     // QMap<uint, QVector<uint8_t>> mParsedWaveform;
     // QMap<uint, QVector<DataBlock>> mParsedData;
-    mutable QVector<bool> mSelectedBlocks;
+    QMap<uint, QSet<int>> mSelectedBlocks;
 
 protected:
     explicit WaveformParser(QObject* parent = nullptr);
@@ -89,10 +90,25 @@ protected:
     Q_ALWAYS_INLINE ParsedData* getParsedDataPtr(uint chNum) const;
 
 public:
+    enum class SaveTapResultCode {
+        Success,
+        NoParsedData,
+        CannotRemoveExistingFile,
+        CannotOpenFile
+    };
+    Q_ENUM(SaveTapResultCode)
+
+    struct SaveTapResult {
+        SaveTapResultCode code { SaveTapResultCode::Success };
+        QString details;
+
+        bool succeeded() const { return code == SaveTapResultCode::Success; }
+    };
+
     static WaveformParser* instance();
 
     void parse(uint chNum);
-    void saveTap(uint chNum, const QString& fileName = QString());
+    SaveTapResult saveTap(uint chNum, const QString& fileName = QString());
     void saveWaveform(uint chNum);
     QVector<uint8_t> getParsedWaveform(uint chNum) const;
     QPair<QVector<QSharedPointer<ParsedData::DataBlock>>, QVector<bool>> getParsedData(uint chNum) const;
@@ -100,7 +116,12 @@ public:
 
     void repairWaveform3(uint chNum);
 
-    Q_INVOKABLE void toggleBlockSelection(int blockNum);
+    Q_INVOKABLE bool isBlockSelected(uint chNum, int blockNum) const;
+    Q_INVOKABLE bool isBlockParseError(uint chNum, int blockNum) const;
+    Q_INVOKABLE void setBlockSelected(uint chNum, int blockNum, bool selected);
+    Q_INVOKABLE void toggleBlockSelection(uint chNum, int blockNum);
+    Q_INVOKABLE void clearBlockSelection(uint chNum);
+    Q_INVOKABLE QVariantList selectedBlocks(uint chNum) const;
     Q_INVOKABLE int getBlockDataStart(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getBlockDataEnd(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getPositionByAddress(uint chNum, uint blockNum, uint addr) const;
@@ -111,6 +132,7 @@ public:
 signals:
     void parsedChannel0Changed();
     void parsedChannel1Changed();
+    void blockSelectionChanged(uint chNum);
 };
 
 #endif // WAVEFORMPARSER_H
