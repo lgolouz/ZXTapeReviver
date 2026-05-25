@@ -30,6 +30,7 @@ class DataPlayerModel : public QObject
     };
 
     Q_PROPERTY(bool stopped READ getStopped NOTIFY stoppedChanged)
+    Q_PROPERTY(bool paused READ getPaused NOTIFY pausedChanged)
     Q_PROPERTY(int currentBlock READ getCurrentBlock NOTIFY currentBlockChanged)
     Q_PROPERTY(int blockTime READ getBlockTime NOTIFY blockTimeChanged)
     Q_PROPERTY(int processedTime READ getProcessedTime NOTIFY processedTimeChanged)
@@ -37,15 +38,19 @@ class DataPlayerModel : public QObject
 
     PlayingState m_playingState;
     QScopedPointer<QAudioSink> m_audio;
-    QPair<QVector<ParsedData::DataBlock>, QVector<bool>> m_data;
-    QVariantList m_parserData;
+    QPair<QVector<QSharedPointer<ParsedData::DataBlock>>, QVector<bool>> m_data;
+    ParsedDataModel* m_parserData;
     unsigned m_currentBlock;
     QTimer m_delayTimer;
     QTimer m_notifyTimer;
     QBuffer m_buffer;
-    const unsigned c_sampleRate { 44100 };
+    static constexpr unsigned c_sampleRate { 44100 };
     int m_blockTime;
     int m_processedTime;
+    qint64 m_blockStartTime;
+    QVector<QString> m_romLoaderBorderTimeline;
+    QVector<qsizetype> m_romLoaderBorderPulseSamples;
+    QVector<int> m_romLoaderBorderPulseLengths;
 
 protected slots:
     void handleAudioOutputStateChanged(QAudio::State state);
@@ -60,6 +65,7 @@ public:
     virtual ~DataPlayerModel() override;
 
     bool getStopped() const;
+    bool getPaused() const;
     int getCurrentBlock() const;
     int getBlockTime() const;
     int getProcessedTime() const;
@@ -67,16 +73,19 @@ public:
 
     Q_INVOKABLE void playParsedData(uint chNum, uint currentBlock = 0);
     Q_INVOKABLE void stop();
-    //Q_INVOKABLE void pause();
-    //Q_INVOKABLE void resume();
+    Q_INVOKABLE void pause();
+    Q_INVOKABLE void resume();
+    Q_INVOKABLE QVariant getRomLoaderBorderStripe(int timeMs, int stripeIndex) const;
 
     static DataPlayerModel* instance();
 
 signals:
     void stoppedChanged();
+    void pausedChanged();
     void currentBlockChanged();
     void blockTimeChanged();
     void processedTimeChanged();
+    void borderTimelineChanged();
 };
 
 #endif // DATAPLAYERMODEL_H
