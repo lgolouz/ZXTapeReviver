@@ -121,6 +121,8 @@
 <trans-unit id="id_sine_check_tolerance"><source>Sine Check Tolerance:</source><target>Sine Check Tolerance:</target></trans-unit>
 <trans-unit id="id_play_parsed_data"><source>Play parsed data</source><target>Play parsed data</target></trans-unit>
 <trans-unit id="id_stop_playing_parsed_data"><source>Stop playing</source><target>Stop playing</target></trans-unit>
+<trans-unit id="id_pause_playing_parsed_data"><source>Pause</source><target>Pause</target></trans-unit>
+<trans-unit id="id_resume_playing_parsed_data"><source>Resume</source><target>Resume</target></trans-unit>
 <trans-unit id="id_parity_message"><source> (Parity: %1 ; Should be: %2)</source><target> (Parity: %1 ; Should be: %2)</target></trans-unit>
 <trans-unit id="id_playing_parsed_data_window_header"><source>Playing parsed data</source><target>Playing parsed data</target></trans-unit>
 <trans-unit id="id_cannot_save_tap_file"><source>Cannot save TAP file:&#10;%1&#10;&#10;%2</source><target>Cannot save TAP file:&#10;%1&#10;&#10;%2</target></trans-unit>
