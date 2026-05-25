@@ -952,27 +952,12 @@ ApplicationWindow {
             height: parent.height * 0.25
             implicitHeight: parent.height * 0.25
 
-//             //selectionMode: SelectionMode.SingleSelection
              model: suspiciousPoints
              fallbackHeaders: [
                  Translations.id_suspicious_point_number,
                  Translations.id_suspicious_point_position
              ]
              fallbackColumnWidths: [70, 180]
-// //            itemDelegate: Text {
-// //                text: styleData.column === 0 ? styleData.row + 1 : styleData.value
-// //            }
-
-// //            TableModelColumn {
-//                 title: Translations.id_suspicious_point_number
-// ////                width: rightArea.width * 0.1
-// //            }
-
-// //            TableModelColumn {
-//                 title: Translations.id_suspicious_point_position
-//                 width: rightArea.width * 0.9
-//             }
-        //     }
         }
 
         Button {

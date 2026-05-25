@@ -25,6 +25,8 @@ Window {
 
     property int selectedChannel: 0
     property var parsedChannel: undefined
+    property int romBorderSize: 32
+    property int romContentGap: 10
 
     visible: false
     title: Translations.id_playing_parsed_data_window_header
@@ -42,14 +44,66 @@ Window {
         }
     }
 
+    Canvas {
+        id: romLoaderBorder
+
+        anchors.fill: parent
+        z: 10
+
+        onPaint: {
+            var ctx = getContext("2d");
+            ctx.clearRect(0, 0, width, height);
+
+            var border = dataPlayerDialog.romBorderSize;
+            if (border <= 0 || width <= border * 2 || height <= border * 2) {
+                return;
+            }
+
+            function paintStripe(y, height, color) {
+                ctx.fillStyle = color;
+
+                if (y < border || y + height > romLoaderBorder.height - border) {
+                    ctx.fillRect(0, y, width, height);
+                    return;
+                }
+
+                ctx.fillRect(0, y, border, height);
+                ctx.fillRect(width - border, y, border, height);
+            }
+
+            var stripeIndex = 0;
+            for (var y = 0; y < height; ) {
+                var stripe = DataPlayerModel.getRomLoaderBorderStripe(DataPlayerModel.processedTime, stripeIndex++);
+                var stripeHeight = Math.max(1, stripe.height);
+                paintStripe(y, Math.min(stripeHeight, height - y), stripe.color);
+                y += stripeHeight;
+            }
+        }
+
+        Connections {
+            target: DataPlayerModel
+            function onProcessedTimeChanged() { romLoaderBorder.requestPaint(); }
+            function onStoppedChanged() { romLoaderBorder.requestPaint(); }
+            function onPausedChanged() { romLoaderBorder.requestPaint(); }
+            function onBorderTimelineChanged() { romLoaderBorder.requestPaint(); }
+        }
+
+        onWidthChanged: requestPaint()
+        onHeightChanged: requestPaint()
+        Component.onCompleted: requestPaint()
+    }
+
     ZXTableControl {
         id: parsedDataView
 
         width: parent.width
         anchors {
             top: parent.top
+            topMargin: dataPlayerDialog.romBorderSize
             left: parent.left
+            leftMargin: dataPlayerDialog.romBorderSize
             right: parent.right
+            rightMargin: dataPlayerDialog.romBorderSize
             bottom: progressBarItem.top
             bottomMargin: 5
         }
@@ -70,7 +124,9 @@ Window {
 
         text: DataPlayerModel.stopped ? Translations.id_play_parsed_data : Translations.id_stop_playing_parsed_data
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: dataPlayerDialog.romBorderSize + dataPlayerDialog.romContentGap
         anchors.left: parent.left
+        anchors.leftMargin: dataPlayerDialog.romBorderSize
 
         onClicked: {
             if (DataPlayerModel.stopped) {
@@ -87,6 +143,7 @@ Window {
         text: DataPlayerModel.paused ? Translations.id_resume_playing_parsed_data : Translations.id_pause_playing_parsed_data
         enabled: !DataPlayerModel.stopped
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: dataPlayerDialog.romBorderSize + dataPlayerDialog.romContentGap
         anchors.left: playParsedData.right
         anchors.leftMargin: 5
 
@@ -104,7 +161,9 @@ Window {
         anchors {
             bottom:playParsedData.top
             left: parent.left
+            leftMargin: dataPlayerDialog.romBorderSize
             right: parent.right
+            rightMargin: dataPlayerDialog.romBorderSize
             bottomMargin: 5
         }
         height: progressBarRect.height + startDurationText.height

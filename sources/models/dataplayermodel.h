@@ -44,10 +44,13 @@ class DataPlayerModel : public QObject
     QTimer m_delayTimer;
     QTimer m_notifyTimer;
     QBuffer m_buffer;
-    const unsigned c_sampleRate { 44100 };
+    static constexpr unsigned c_sampleRate { 44100 };
     int m_blockTime;
     int m_processedTime;
     qint64 m_blockStartTime;
+    QVector<QString> m_romLoaderBorderTimeline;
+    QVector<qsizetype> m_romLoaderBorderPulseSamples;
+    QVector<int> m_romLoaderBorderPulseLengths;
 
 protected slots:
     void handleAudioOutputStateChanged(QAudio::State state);
@@ -72,6 +75,7 @@ public:
     Q_INVOKABLE void stop();
     Q_INVOKABLE void pause();
     Q_INVOKABLE void resume();
+    Q_INVOKABLE QVariant getRomLoaderBorderStripe(int timeMs, int stripeIndex) const;
 
     static DataPlayerModel* instance();
 
@@ -81,6 +85,7 @@ signals:
     void currentBlockChanged();
     void blockTimeChanged();
     void processedTimeChanged();
+    void borderTimelineChanged();
 };
 
 #endif // DATAPLAYERMODEL_H
