@@ -68,7 +68,7 @@ QColor WaveformControl::getBackgroundColor() const {
             return m_customData.measurementModeBgColor();
 
         case WaveformPlaybackMode:
-            return m_customData.measurementModeBgColor();
+            return m_customData.waveformPlaybackModeBgColor();
 
         default:
             return m_customData.operationModeBgColor();

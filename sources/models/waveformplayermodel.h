@@ -11,81 +11,69 @@
 // permission of the Author.
 //*******************************************************************************
 
-#ifndef DATAPLAYERMODEL_H
-#define DATAPLAYERMODEL_H
+#ifndef WAVEFORMPLAYERMODEL_H
+#define WAVEFORMPLAYERMODEL_H
 
-#include <QTimer>
-#include <QBuffer>
 #include <QAudioSink>
-#include "sources/core/waveformparser.h"
+#include <QIODevice>
+#include <QScopedPointer>
+#include <QTimer>
+#include <QObject>
 
-class DataPlayerModel : public QObject
+class WaveformPlayerModel : public QObject
 {
     Q_OBJECT
 
     enum PlayingState {
-        DP_Stopped = 0,
-        DP_Playing,
-        DP_Paused
+        WP_Stopped = 0,
+        WP_Playing,
+        WP_Paused
     };
 
     Q_PROPERTY(bool stopped READ getStopped NOTIFY stoppedChanged)
     Q_PROPERTY(bool paused READ getPaused NOTIFY pausedChanged)
-    Q_PROPERTY(int currentBlock READ getCurrentBlock NOTIFY currentBlockChanged)
+    Q_PROPERTY(int currentSample READ getCurrentSample NOTIFY currentSampleChanged)
     Q_PROPERTY(int blockTime READ getBlockTime NOTIFY blockTimeChanged)
     Q_PROPERTY(int processedTime READ getProcessedTime NOTIFY processedTimeChanged)
-    Q_PROPERTY(QVariant blockData READ getBlockData NOTIFY currentBlockChanged)
 
     PlayingState m_playingState;
     QScopedPointer<QAudioSink> m_audio;
-    QPair<QVector<QSharedPointer<ParsedData::DataBlock>>, QVector<bool>> m_data;
-    ParsedDataModel* m_parserData;
-    unsigned m_currentBlock;
-    QTimer m_delayTimer;
+    QScopedPointer<QIODevice> m_audioDevice;
     QTimer m_notifyTimer;
-    QBuffer m_buffer;
-    static constexpr unsigned c_sampleRate { 44100 };
+    int m_currentSample;
     int m_blockTime;
     int m_processedTime;
     qint64 m_blockStartTime;
-    QVector<QString> m_romLoaderBorderTimeline;
-    QVector<qsizetype> m_romLoaderBorderPulseSamples;
-    QVector<int> m_romLoaderBorderPulseLengths;
 
 protected slots:
     void handleAudioOutputStateChanged(QAudio::State state);
     void handleAudioOutputNotify();
-    void handleNextDataRecord();
 
 protected:
-    explicit DataPlayerModel(QObject* parent = nullptr);
-    void prepareNextDataRecord();
+    explicit WaveformPlayerModel(QObject* parent = nullptr);
 
 public:
-    virtual ~DataPlayerModel() override;
+    virtual ~WaveformPlayerModel() override;
 
     bool getStopped() const;
     bool getPaused() const;
-    int getCurrentBlock() const;
+    int getCurrentSample() const;
     int getBlockTime() const;
     int getProcessedTime() const;
-    QVariant getBlockData() const;
 
-    Q_INVOKABLE void playParsedData(uint chNum, uint currentBlock = 0);
+    Q_INVOKABLE bool playChannelFromSample(uint chNum, int startSample);
     Q_INVOKABLE void stop();
     Q_INVOKABLE void pause();
     Q_INVOKABLE void resume();
-    Q_INVOKABLE QVariant getRomLoaderBorderStripe(int timeMs, int stripeIndex) const;
 
-    static DataPlayerModel* instance();
+    static WaveformPlayerModel* instance();
 
 signals:
     void stoppedChanged();
     void pausedChanged();
-    void currentBlockChanged();
+    void currentSampleChanged();
     void blockTimeChanged();
     void processedTimeChanged();
-    void borderTimelineChanged();
 };
 
-#endif // DATAPLAYERMODEL_H
+#endif // WAVEFORMPLAYERMODEL_H

@@ -92,7 +92,7 @@
 <trans-unit id="id_measurement_mode"><source>Measurement mode</source><target>Measurement mode</target></trans-unit>
 <trans-unit id="id_waveform_playback_mode"><source>Waveform playback mode</source><target>Waveform playback mode</target></trans-unit>
 <trans-unit id="id_play_waveform_from_cursor"><source>Play waveform from cursor</source><target>Play waveform from cursor</target></trans-unit>
-<trans-unit id="id_keep_waveform_playback_position"><source>Keep position after stop</source><target>Keep position after stop</target></trans-unit>
+<trans-unit id="id_return_waveform_playback_position"><source>Return to initial position after stop</source><target>Return to initial position after stop</target></trans-unit>
 <trans-unit id="id_copy_from_r_to_l"><source>Copy from R to L (&#x25b2;)</source><target>Copy from R to L (&#x25b2;)</target></trans-unit>
 <trans-unit id="id_copy_from_l_to_r"><source>Copy from L to R (&#x25bc;)</source><target>Copy from L to R (&#x25bc;)</target></trans-unit>
 <trans-unit id="id_left_channel"><source>Left Channel</source><target>Left Channel</target></trans-unit>

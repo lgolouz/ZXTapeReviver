@@ -12,16 +12,12 @@
 //*******************************************************************************
 
 #include "dataplayermodel.h"
-#include "sources/core/wavreader.h"
-#include "sources/models/waveformmodel.h"
 #include <QAudioFormat>
 #include <QAudioDevice>
 #include <QMediaDevices>
 #include <QDebug>
 #include <QVariantMap>
 #include <algorithm>
-#include <cmath>
-#include <limits>
 
 namespace {
 constexpr const char* c_borderIdleColor { "#ffffff" };
@@ -43,96 +39,14 @@ int borderStripeHeightFromSamples(int samples, int sampleRate) {
     return std::clamp(screenLines, 2, 12);
 }
 
-class WaveformAudioDevice : public QIODevice
-{
-    QSharedPointer<QWavVector> m_channel;
-    qsizetype m_currentSample;
-    bool m_normalizedFloat;
-
-    static int16_t toAudioSample(QWavVectorType sample, bool normalizedFloat)
-    {
-        const float scaledSample { normalizedFloat ? sample * 32767.0f : sample };
-        return static_cast<int16_t>(std::clamp(std::lround(scaledSample), static_cast<long>(std::numeric_limits<int16_t>::min()), static_cast<long>(std::numeric_limits<int16_t>::max())));
-    }
-
-    bool detectNormalizedFloat() const
-    {
-        if (m_channel.isNull() || m_currentSample >= m_channel->size()) {
-            return false;
-        }
-
-        constexpr qsizetype probeSamples { 4096 };
-        const qsizetype endSample { std::min(m_currentSample + probeSamples, m_channel->size()) };
-        float maxAbsSample { 0.0f };
-        for (qsizetype sample { m_currentSample }; sample < endSample; ++sample) {
-            maxAbsSample = std::max(maxAbsSample, std::fabs(m_channel->at(sample)));
-        }
-
-        return maxAbsSample > 0.0f && maxAbsSample <= 1.0f;
-    }
-
-public:
-    WaveformAudioDevice(QSharedPointer<QWavVector> channel, int startSample, QObject* parent = nullptr) :
-        QIODevice(parent),
-        m_channel(channel),
-        m_currentSample(std::max(0, startSample)),
-        m_normalizedFloat(false)
-    {
-        m_normalizedFloat = detectNormalizedFloat();
-    }
-
-    qint64 readData(char* data, qint64 maxSize) override
-    {
-        if (m_channel.isNull() || maxSize < static_cast<qint64>(sizeof(int16_t)) || m_currentSample >= m_channel->size()) {
-            return 0;
-        }
-
-        const qsizetype requestedSamples { static_cast<qsizetype>(maxSize / sizeof(int16_t)) };
-        const qsizetype availableSamples { m_channel->size() - m_currentSample };
-        const qsizetype samplesToRead { std::min(requestedSamples, availableSamples) };
-        int16_t* out { reinterpret_cast<int16_t*>(data) };
-        for (qsizetype i { 0 }; i < samplesToRead; ++i) {
-            out[i] = toAudioSample(m_channel->at(m_currentSample + i), m_normalizedFloat);
-        }
-
-        m_currentSample += samplesToRead;
-        return static_cast<qint64>(samplesToRead * sizeof(int16_t));
-    }
-
-    qint64 writeData(const char*, qint64) override
-    {
-        return -1;
-    }
-
-    bool isSequential() const override
-    {
-        return true;
-    }
-
-    qint64 bytesAvailable() const override
-    {
-        if (m_channel.isNull() || m_currentSample >= m_channel->size()) {
-            return QIODevice::bytesAvailable();
-        }
-
-        return static_cast<qint64>((m_channel->size() - m_currentSample) * sizeof(int16_t)) + QIODevice::bytesAvailable();
-    }
-
-    int currentSample() const
-    {
-        return static_cast<int>(m_currentSample);
-    }
-};
 }
 
 DataPlayerModel::DataPlayerModel(QObject* parent) :
     QObject(parent),
     m_playingState(DP_Stopped),
-    m_playbackSource(PS_None),
     m_parserData(nullptr),
     m_blockTime(0),
     m_processedTime(0),
-    m_waveformPlaybackSample(-1),
     m_blockStartTime(0)
 {
     m_notifyTimer.setInterval(30);
@@ -165,91 +79,19 @@ void DataPlayerModel::playParsedData(uint chNum, uint currentBlock) {
     connect(m_audio.data(), &QAudioSink::stateChanged, this, &DataPlayerModel::handleAudioOutputStateChanged);
 
     m_buffer.close();
-    m_waveformDevice.reset();
-    m_playbackSource = PS_ParsedData;
     m_currentBlock = currentBlock;
     m_data = WaveformParser::instance()->getParsedData(chNum);
     m_parserData = chNum == 0 ? WaveformParser::instance()->getParsedChannel0() : WaveformParser::instance()->getParsedChannel1();
     if (m_currentBlock >= (unsigned) m_data.first.size()) {
         m_audio.reset();
-        m_playbackSource = PS_None;
         return;
     }
 
     m_playingState = DP_Playing;
     emit stoppedChanged();
     emit pausedChanged();
-    emit waveformPlaybackChanged();
     m_notifyTimer.start();
     handleNextDataRecord();
-}
-
-bool DataPlayerModel::playChannelFromSample(uint chNum, int startSample) {
-    if (m_playingState != DP_Stopped) {
-        return false;
-    }
-
-    const auto channel { WaveFormModel::instance()->getChannel(chNum) };
-    if (channel.isNull() || channel->empty()) {
-        qDebug() << "No waveform channel data available for audio playback:" << chNum;
-        return false;
-    }
-
-    const int clampedStartSample { std::clamp(startSample, 0, static_cast<int>(channel->size() - 1)) };
-    const auto sampleRate { WavReader::instance()->getSampleRate() };
-    if (sampleRate == 0) {
-        qDebug() << "Invalid sample rate, cannot play waveform.";
-        return false;
-    }
-
-    QAudioFormat format;
-    format.setSampleRate(static_cast<int>(sampleRate));
-    format.setChannelCount(1);
-    format.setSampleFormat(QAudioFormat::Int16);
-
-    const QAudioDevice info(QMediaDevices::defaultAudioOutput());
-    if (info.isNull()) {
-        qDebug() << "No audio output device available, cannot play waveform.";
-        return false;
-    }
-
-    if (!info.isFormatSupported(format)) {
-        qDebug() << "Audio format not supported, cannot play waveform:" << format;
-        return false;
-    }
-
-    m_audio.reset(new QAudioSink(info, format));
-    connect(m_audio.data(), &QAudioSink::stateChanged, this, &DataPlayerModel::handleAudioOutputStateChanged);
-
-    m_buffer.close();
-    m_waveformDevice.reset(new WaveformAudioDevice(channel, clampedStartSample, this));
-    m_waveformDevice->open(QIODevice::ReadOnly);
-
-    m_data = {};
-    m_parserData = nullptr;
-    m_currentBlock = 0;
-    m_playbackSource = PS_Waveform;
-    m_playingState = DP_Playing;
-    m_blockTime = static_cast<int>((static_cast<qint64>(channel->size() - clampedStartSample) * 1000) / sampleRate);
-    m_processedTime = 0;
-    m_waveformPlaybackSample = clampedStartSample;
-    m_romLoaderBorderTimeline.clear();
-    m_romLoaderBorderPulseSamples.clear();
-    m_romLoaderBorderPulseLengths.clear();
-    m_blockStartTime = 0;
-
-    emit stoppedChanged();
-    emit pausedChanged();
-    emit currentBlockChanged();
-    emit blockTimeChanged();
-    emit processedTimeChanged();
-    emit waveformPlaybackChanged();
-    emit waveformPlaybackSampleChanged();
-    emit borderTimelineChanged();
-
-    m_notifyTimer.start();
-    m_audio->start(m_waveformDevice.data());
-    return true;
 }
 
 void DataPlayerModel::handleNextDataRecord() {
@@ -377,14 +219,12 @@ void DataPlayerModel::prepareNextDataRecord() {
         }
         m_audio.reset();
         m_playingState = DP_Stopped;
-        m_playbackSource = PS_None;
         m_romLoaderBorderTimeline.clear();
         m_romLoaderBorderPulseSamples.clear();
         m_romLoaderBorderPulseLengths.clear();
         emit currentBlockChanged();
         emit stoppedChanged();
         emit pausedChanged();
-        emit waveformPlaybackChanged();
         emit borderTimelineChanged();
     }
 }
@@ -392,10 +232,8 @@ void DataPlayerModel::prepareNextDataRecord() {
 void DataPlayerModel::handleAudioOutputStateChanged(QAudio::State state) {
     switch (state) {
         case QAudio::IdleState:
-            if (m_playingState == DP_Playing && m_playbackSource == PS_ParsedData) {
+            if (m_playingState == DP_Playing) {
                 prepareNextDataRecord();
-            } else if (m_playingState == DP_Playing && m_playbackSource == PS_Waveform) {
-                stop();
             }
             break;
 
@@ -415,30 +253,8 @@ void DataPlayerModel::handleAudioOutputStateChanged(QAudio::State state) {
 
 void DataPlayerModel::stop() {
     if (m_playingState != DP_Stopped) {
-        if (m_playbackSource == PS_ParsedData) {
-            m_currentBlock = m_data.first.size();
-            prepareNextDataRecord();
-        } else {
-            m_notifyTimer.stop();
-            if (auto waveformDevice { dynamic_cast<WaveformAudioDevice*>(m_waveformDevice.data()) }) {
-                const int currentSample { waveformDevice->currentSample() };
-                if (m_waveformPlaybackSample != currentSample) {
-                    m_waveformPlaybackSample = currentSample;
-                    emit waveformPlaybackSampleChanged();
-                }
-            }
-            if (m_audio) {
-                m_audio->stop();
-            }
-            m_audio.reset();
-            m_waveformDevice.reset();
-            m_playingState = DP_Stopped;
-            m_playbackSource = PS_None;
-            m_blockStartTime = 0;
-            emit stoppedChanged();
-            emit pausedChanged();
-            emit waveformPlaybackChanged();
-        }
+        m_currentBlock = m_data.first.size();
+        prepareNextDataRecord();
     }
 }
 
@@ -461,16 +277,7 @@ void DataPlayerModel::resume() {
 }
 
 void DataPlayerModel::handleAudioOutputNotify() {
-    if (m_audio && m_playbackSource == PS_Waveform) {
-        m_processedTime = std::max<qint64>(0, m_audio->processedUSecs() / 1000 - m_blockStartTime);
-        if (auto waveformDevice { dynamic_cast<WaveformAudioDevice*>(m_waveformDevice.data()) }) {
-            const int currentSample { waveformDevice->currentSample() };
-            if (m_waveformPlaybackSample != currentSample) {
-                m_waveformPlaybackSample = currentSample;
-                emit waveformPlaybackSampleChanged();
-            }
-        }
-    } else if (m_audio) {
+    if (m_audio) {
         m_processedTime = std::max<qint64>(0, m_audio->processedUSecs() / 1000 - m_blockStartTime);
     }
     emit processedTimeChanged();
@@ -485,7 +292,7 @@ bool DataPlayerModel::getPaused() const {
 }
 
 int DataPlayerModel::getCurrentBlock() const {
-    return m_playbackSource == PS_ParsedData && m_currentBlock < (unsigned) m_data.first.size() ? m_currentBlock : -1;
+    return m_currentBlock < (unsigned) m_data.first.size() ? m_currentBlock : -1;
 }
 
 int DataPlayerModel::getBlockTime() const {
@@ -494,14 +301,6 @@ int DataPlayerModel::getBlockTime() const {
 
 int DataPlayerModel::getProcessedTime() const {
     return m_processedTime;
-}
-
-bool DataPlayerModel::getWaveformPlayback() const {
-    return m_playbackSource == PS_Waveform;
-}
-
-int DataPlayerModel::getWaveformPlaybackSample() const {
-    return m_waveformPlaybackSample;
 }
 
 QVariant DataPlayerModel::getBlockData() const {

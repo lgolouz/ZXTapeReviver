@@ -85,6 +85,7 @@ ConfigurationManager::WaveformCustomization::WaveformCustomization() :
     m_operationModeBgColor(7, 7, 36),
     m_selectionModeBgColor(37, 37, 37),
     m_measurementModeBgColor(0, 17, 17),
+    m_waveformPlaybackModeBgColor(22, 12, 36),
     m_rangeSelectionColor(7, 7, 137, 128),
     m_xAxisColor(11, 60, 0),
     m_yAxisColor(11, 60, 0),
@@ -102,6 +103,7 @@ ConfigurationManager::WaveformCustomization::WaveformCustomization() :
                   qMakePair(INIKeys::operationModeBgColor, make_ptr<INIQColorValue>(m_operationModeBgColor)),
                   qMakePair(INIKeys::selectionModeBgColor, make_ptr<INIQColorValue>(m_selectionModeBgColor)),
                   qMakePair(INIKeys::measurementModeBgColor, make_ptr<INIQColorValue>(m_measurementModeBgColor)),
+                  qMakePair(INIKeys::waveformPlaybackModeBgColor, make_ptr<INIQColorValue>(m_waveformPlaybackModeBgColor)),
                   qMakePair(INIKeys::rangeSelectionColor, make_ptr<INIQColorValue>(m_rangeSelectionColor)),
                   qMakePair(INIKeys::xAxisColor, make_ptr<INIQColorValue>(m_xAxisColor)),
                   qMakePair(INIKeys::yAxisColor, make_ptr<INIQColorValue>(m_yAxisColor)),
@@ -134,6 +136,10 @@ const QColor& ConfigurationManager::WaveformCustomization::selectioModeBgColor()
 
 const QColor& ConfigurationManager::WaveformCustomization::measurementModeBgColor() const {
     return m_measurementModeBgColor;
+}
+
+const QColor& ConfigurationManager::WaveformCustomization::waveformPlaybackModeBgColor() const {
+    return m_waveformPlaybackModeBgColor;
 }
 
 const QColor& ConfigurationManager::WaveformCustomization::rangeSelectionColor() const {

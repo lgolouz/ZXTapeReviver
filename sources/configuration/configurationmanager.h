@@ -61,6 +61,7 @@ public:
         operationModeBgColor,
         selectionModeBgColor,
         measurementModeBgColor,
+        waveformPlaybackModeBgColor,
         rangeSelectionColor,
         xAxisColor,
         yAxisColor,
@@ -154,6 +155,7 @@ public:
         QColor m_operationModeBgColor;
         QColor m_selectionModeBgColor;
         QColor m_measurementModeBgColor;
+        QColor m_waveformPlaybackModeBgColor;
         QColor m_rangeSelectionColor;
         QColor m_xAxisColor;
         QColor m_yAxisColor;
@@ -175,6 +177,7 @@ public:
         const QColor& operationModeBgColor() const;
         const QColor& selectioModeBgColor() const;
         const QColor& measurementModeBgColor() const;
+        const QColor& waveformPlaybackModeBgColor() const;
         const QColor& rangeSelectionColor() const;
         const QColor& xAxisColor() const;
         const QColor& yAxisColor() const;

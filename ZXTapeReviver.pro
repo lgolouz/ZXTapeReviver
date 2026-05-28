@@ -86,6 +86,7 @@ SOURCES += \
         sources/models/actionsmodel.cpp \
         sources/models/dataplayermodel.cpp \
         sources/models/fileworkermodel.cpp \
+        sources/models/waveformplayermodel.cpp \
         sources/controls/waveformcontrol.cpp \
         sources/core/waveformparser.cpp \
         sources/core/wavreader.cpp \
@@ -108,6 +109,7 @@ HEADERS += \
     sources/models/actionsmodel.h \
     sources/models/dataplayermodel.h \
     sources/models/fileworkermodel.h \
+    sources/models/waveformplayermodel.h \
     sources/controls/waveformcontrol.h \
     sources/core/waveformparser.h \
     sources/core/wavreader.h \

@@ -97,7 +97,7 @@ ApplicationWindow {
             return;
         }
 
-        if (!keepWaveformPlaybackPosition.checked) {
+        if (returnWaveformPlaybackPosition.checked) {
             waveformControlCh0.wavePos = waveformControlCh1.wavePos = waveformPlaybackInitialWavePos;
             getWaveformByChannel(waveformPlaybackActiveChannel).cursorSample = waveformPlaybackInitialCursorSample;
         }
@@ -116,14 +116,14 @@ ApplicationWindow {
     }
 
     Connections {
-        target: DataPlayerModel
+        target: WaveformPlayerModel
 
-        function onWaveformPlaybackSampleChanged() {
-            followWaveformPlayback(DataPlayerModel.waveformPlaybackSample);
+        function onCurrentSampleChanged() {
+            followWaveformPlayback(WaveformPlayerModel.currentSample);
         }
 
         function onStoppedChanged() {
-            if (DataPlayerModel.stopped && waveformPlaybackActiveChannel >= 0) {
+            if (WaveformPlayerModel.stopped && waveformPlaybackActiveChannel >= 0) {
                 finishWaveformPlayback();
             }
         }
@@ -423,7 +423,7 @@ ApplicationWindow {
             height: parent.height - parent.height / 2 - parent.spacerHeight / 2
 
             Behavior on wavePos {
-                enabled: DataPlayerModel.waveformPlayback
+                enabled: !WaveformPlayerModel.stopped
                 NumberAnimation { duration: 90; easing.type: Easing.OutQuad }
             }
 
@@ -449,7 +449,7 @@ ApplicationWindow {
             height: waveformControlCh0.height
 
             Behavior on wavePos {
-                enabled: DataPlayerModel.waveformPlayback
+                enabled: !WaveformPlayerModel.stopped
                 NumberAnimation { duration: 90; easing.type: Easing.OutQuad }
             }
 
@@ -575,7 +575,7 @@ ApplicationWindow {
             id: playParsedData
 
             text: DataPlayerModel.stopped ? Translations.id_play_parsed_data : Translations.id_stop_playing_parsed_data
-            enabled: DataPlayerModel.stopped || !DataPlayerModel.waveformPlayback
+            enabled: DataPlayerModel.stopped && WaveformPlayerModel.stopped
             anchors.top: hZoomOutButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -595,8 +595,8 @@ ApplicationWindow {
         Button {
             id: playWaveformFromCursor
 
-            text: DataPlayerModel.waveformPlayback && !DataPlayerModel.stopped ? Translations.id_stop_playing_parsed_data : Translations.id_play_waveform_from_cursor
-            enabled: playbackModeToggleButton.checked && (DataPlayerModel.stopped || DataPlayerModel.waveformPlayback)
+            text: WaveformPlayerModel.stopped ? Translations.id_play_waveform_from_cursor : Translations.id_stop_playing_parsed_data
+            enabled: playbackModeToggleButton.checked && DataPlayerModel.stopped
             anchors.top: playParsedData.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -604,8 +604,8 @@ ApplicationWindow {
             width: hZoomOutButton.width
 
             onClicked: {
-                if (DataPlayerModel.waveformPlayback && !DataPlayerModel.stopped) {
-                    DataPlayerModel.stop();
+                if (!WaveformPlayerModel.stopped) {
+                    WaveformPlayerModel.stop();
                     return;
                 }
 
@@ -613,7 +613,7 @@ ApplicationWindow {
                 waveformPlaybackInitialWavePos = waveformControlCh0.wavePos;
                 waveformPlaybackInitialCursorSample = control.cursorSample;
                 var channel = channelsComboBox.currentIndex;
-                if (DataPlayerModel.playChannelFromSample(channel, control.cursorSample)) {
+                if (WaveformPlayerModel.playChannelFromSample(channel, control.cursorSample)) {
                     waveformPlaybackActiveChannel = channel;
                 } else {
                     waveformPlaybackActiveChannel = -1;
@@ -621,16 +621,45 @@ ApplicationWindow {
             }
         }
 
-        CheckBox {
-            id: keepWaveformPlaybackPosition
+        Button {
+            id: pauseWaveformPlayback
 
-            text: Translations.id_keep_waveform_playback_position
+            text: WaveformPlayerModel.paused ? Translations.id_resume_playing_parsed_data : Translations.id_pause_playing_parsed_data
+            enabled: playbackModeToggleButton.checked && !WaveformPlayerModel.stopped
             anchors.top: playWaveformFromCursor.bottom
+            anchors.right: parent.right
+            anchors.rightMargin: 5
+            anchors.topMargin: 5
+            width: hZoomOutButton.width
+
+            onClicked: {
+                if (WaveformPlayerModel.paused) {
+                    WaveformPlayerModel.resume();
+                } else {
+                    WaveformPlayerModel.pause();
+                }
+            }
+        }
+
+        CheckBox {
+            id: returnWaveformPlaybackPosition
+
+            text: Translations.id_return_waveform_playback_position
+            checked: true
+            anchors.top: pauseWaveformPlayback.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
             anchors.topMargin: 2
             width: hZoomOutButton.width
             visible: playbackModeToggleButton.checked
+
+            contentItem: Text {
+                text: Translations.id_return_waveform_playback_position
+                color: "white"
+                wrapMode: Text.WordWrap
+                verticalAlignment: Text.AlignVCenter
+                leftPadding: returnWaveformPlaybackPosition.indicator.width + returnWaveformPlaybackPosition.spacing
+            }
         }
 
         Button {
@@ -861,8 +890,8 @@ ApplicationWindow {
                 if (checked) {
                     setWaveformOperationMode(WaveformControlOperationModes.WaveformPlaybackMode);
                 } else {
-                    if (DataPlayerModel.waveformPlayback) {
-                        DataPlayerModel.stop();
+                    if (!WaveformPlayerModel.stopped) {
+                        WaveformPlayerModel.stop();
                     }
                     finishWaveformPlayback();
                     setWaveformOperationMode(WaveformControlOperationModes.WaveformRepairMode);
