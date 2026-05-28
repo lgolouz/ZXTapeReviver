@@ -34,10 +34,20 @@ ApplicationWindow {
     visible: true
     width: 1600
     height: 800
-    title: "ZX Tape Reviver"
+    title: openedFileName().length > 0 ? "ZX Tape Reviver - " + openedFileName() : "ZX Tape Reviver"
 
     function getWaveShiftIndex(wfWidth, wfXScale) {
         return wfWidth * wfXScale / 2;
+    }
+
+    function openedFileName() {
+        var fileName = FileWorkerModel.wavFileName;
+        if (fileName === undefined || fileName === null || fileName.length === 0) {
+            return "";
+        }
+
+        var pathParts = fileName.split(/[\\/]/);
+        return pathParts.length > 0 ? pathParts[pathParts.length - 1] : fileName;
     }
 
     function getSelectedWaveform() {
