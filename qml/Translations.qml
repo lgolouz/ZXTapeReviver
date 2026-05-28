@@ -86,6 +86,9 @@ QtObject {
     property string id_goto_address:                         qsTrId("id_goto_address") + TranslationManager.translationChanged //Button caption
     property string id_selection_mode:                       qsTrId("id_selection_mode") + TranslationManager.translationChanged //Button caption
     property string id_measurement_mode:                     qsTrId("id_measurement_mode") + TranslationManager.translationChanged //Button caption
+    property string id_waveform_playback_mode:               qsTrId("id_waveform_playback_mode") + TranslationManager.translationChanged //Button caption
+    property string id_play_waveform_from_cursor:            qsTrId("id_play_waveform_from_cursor") + TranslationManager.translationChanged //Button caption
+    property string id_keep_waveform_playback_position:      qsTrId("id_keep_waveform_playback_position") + TranslationManager.translationChanged //CheckBox caption
     property string id_copy_from_r_to_l:                     qsTrId("id_copy_from_r_to_l") + TranslationManager.translationChanged //Button caption
     property string id_copy_from_l_to_r:                     qsTrId("id_copy_from_l_to_r") + TranslationManager.translationChanged //Button caption
     property string id_left_channel:                         qsTrId("id_left_channel") + TranslationManager.translationChanged

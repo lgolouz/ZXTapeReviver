@@ -33,6 +33,7 @@ class WaveformControl : public QQuickPaintedItem
     Q_PROPERTY(double yScaleFactor READ getYScaleFactor WRITE setYScaleFactor NOTIFY yScaleFactorChanged)
     Q_PROPERTY(bool isWaveformRepaired READ getIsWaveformRepaired NOTIFY isWaveformRepairedChanged)
     Q_PROPERTY(WaveformControlOperationModes operationMode READ getOperationMode WRITE setOperationMode NOTIFY operationModeChanged)
+    Q_PROPERTY(int cursorSample READ getCursorSample WRITE setCursorSample NOTIFY cursorSampleChanged)
 
     WavReader& mWavReader;
     WaveformParser& mWavParser;
@@ -45,7 +46,8 @@ public:
     enum WaveformControlOperationModes {
         WaveformRepairMode,
         WaveformSelectionMode,
-        WaveformMeasurementMode
+        WaveformMeasurementMode,
+        WaveformPlaybackMode
     };
     Q_ENUM(WaveformControlOperationModes)
 
@@ -58,12 +60,14 @@ public:
     double getYScaleFactor() const;
     bool getIsWaveformRepaired() const;
     WaveformControlOperationModes getOperationMode() const;
+    int getCursorSample() const;
 
     void setChannelNumber(uint chNum);
     void setWavePos(int wavPos);
     void setXScaleFactor(double xScaleFactor);
     void setYScaleFactor(double yScaleFactor);
     void setOperationMode(WaveformControlOperationModes mode);
+    void setCursorSample(int cursorSample);
 
     virtual void paint(QPainter* painter) override;
     virtual void mousePressEvent(QMouseEvent* event) override;
@@ -86,6 +90,7 @@ signals:
     void yScaleFactorChanged();
     void isWaveformRepairedChanged();
     void operationModeChanged();
+    void cursorSampleChanged();
 
     void doubleClick(int idx);
     void cannotSetMeasurementPoint();
@@ -113,6 +118,7 @@ private:
     ClickStates m_clickState;
     QDateTime m_clickTime;
     int m_clickPosition;
+    int m_cursorSample;
     WaveformControlOperationModes m_operationMode;
     bool m_rangeSelected;
     QPair<int, int> m_selectionRange;

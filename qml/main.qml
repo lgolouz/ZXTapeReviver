@@ -30,6 +30,9 @@ ApplicationWindow {
 
     readonly property int mainAreaWidth: width * 0.75
     property var suspiciousPoints: SuspiciousPointsModel
+    property int waveformPlaybackInitialWavePos: 0
+    property int waveformPlaybackInitialCursorSample: 0
+    property int waveformPlaybackActiveChannel: -1
 
     visible: true
     width: 1600
@@ -54,6 +57,54 @@ ApplicationWindow {
         return channelsComboBox.currentIndex == 0 ? waveformControlCh0 : waveformControlCh1;
     }
 
+    function getWaveformByChannel(chNum) {
+        return chNum == 0 ? waveformControlCh0 : waveformControlCh1;
+    }
+
+    function setWaveformOperationMode(mode) {
+        waveformControlCh0.operationMode = mode;
+        waveformControlCh1.operationMode = mode;
+    }
+
+    function followWaveformPlayback(sample) {
+        if (!playbackModeToggleButton.checked || waveformPlaybackActiveChannel < 0 || sample < 0) {
+            return;
+        }
+
+        var control = getWaveformByChannel(waveformPlaybackActiveChannel);
+        control.cursorSample = sample;
+
+        var visibleSamples = control.width * control.xScaleFactor;
+        var rightEdge = waveformControlCh0.wavePos + visibleSamples;
+        var targetWavePos = waveformControlCh0.wavePos;
+        if (sample > rightEdge - visibleSamples * 0.3) {
+            targetWavePos = sample - visibleSamples * 0.65;
+        } else if (sample < waveformControlCh0.wavePos + visibleSamples * 0.1) {
+            targetWavePos = sample - visibleSamples * 0.2;
+        }
+
+        if (targetWavePos < 0) {
+            targetWavePos = 0;
+        }
+
+        if (targetWavePos !== waveformControlCh0.wavePos) {
+            waveformControlCh0.wavePos = waveformControlCh1.wavePos = targetWavePos;
+        }
+    }
+
+    function finishWaveformPlayback() {
+        if (waveformPlaybackActiveChannel < 0) {
+            return;
+        }
+
+        if (!keepWaveformPlaybackPosition.checked) {
+            waveformControlCh0.wavePos = waveformControlCh1.wavePos = waveformPlaybackInitialWavePos;
+            getWaveformByChannel(waveformPlaybackActiveChannel).cursorSample = waveformPlaybackInitialCursorSample;
+        }
+
+        waveformPlaybackActiveChannel = -1;
+    }
+
     function restoreWaveformView() {
         waveformControlCh0.xScaleFactor = 1;
         waveformControlCh0.yScaleFactor = 80000;
@@ -62,6 +113,20 @@ ApplicationWindow {
         waveformControlCh1.xScaleFactor = 1;
         waveformControlCh1.yScaleFactor = 80000;
         waveformControlCh1.wavePos = 0;
+    }
+
+    Connections {
+        target: DataPlayerModel
+
+        function onWaveformPlaybackSampleChanged() {
+            followWaveformPlayback(DataPlayerModel.waveformPlaybackSample);
+        }
+
+        function onStoppedChanged() {
+            if (DataPlayerModel.stopped && waveformPlaybackActiveChannel >= 0) {
+                finishWaveformPlayback();
+            }
+        }
     }
 
     MenuBar {
@@ -357,6 +422,11 @@ ApplicationWindow {
             width: parent.width - (parent.width * 0.11)
             height: parent.height - parent.height / 2 - parent.spacerHeight / 2
 
+            Behavior on wavePos {
+                enabled: DataPlayerModel.waveformPlayback
+                NumberAnimation { duration: 90; easing.type: Easing.OutQuad }
+            }
+
             onDoubleClick: (idx) => {
                 SuspiciousPointsModel.addSuspiciousPoint(idx);
             }
@@ -377,6 +447,11 @@ ApplicationWindow {
             channelNumber: 1
             width: parent.width - (parent.width * 0.11)
             height: waveformControlCh0.height
+
+            Behavior on wavePos {
+                enabled: DataPlayerModel.waveformPlayback
+                NumberAnimation { duration: 90; easing.type: Easing.OutQuad }
+            }
 
             onDoubleClick: (idx) => {
                 SuspiciousPointsModel.addSuspiciousPoint(idx);
@@ -500,6 +575,7 @@ ApplicationWindow {
             id: playParsedData
 
             text: DataPlayerModel.stopped ? Translations.id_play_parsed_data : Translations.id_stop_playing_parsed_data
+            enabled: DataPlayerModel.stopped || !DataPlayerModel.waveformPlayback
             anchors.top: hZoomOutButton.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
@@ -514,6 +590,47 @@ ApplicationWindow {
                     DataPlayerModel.stop();
                 }
             }
+        }
+
+        Button {
+            id: playWaveformFromCursor
+
+            text: DataPlayerModel.waveformPlayback && !DataPlayerModel.stopped ? Translations.id_stop_playing_parsed_data : Translations.id_play_waveform_from_cursor
+            enabled: playbackModeToggleButton.checked && (DataPlayerModel.stopped || DataPlayerModel.waveformPlayback)
+            anchors.top: playParsedData.bottom
+            anchors.right: parent.right
+            anchors.rightMargin: 5
+            anchors.topMargin: 5
+            width: hZoomOutButton.width
+
+            onClicked: {
+                if (DataPlayerModel.waveformPlayback && !DataPlayerModel.stopped) {
+                    DataPlayerModel.stop();
+                    return;
+                }
+
+                var control = getSelectedWaveform();
+                waveformPlaybackInitialWavePos = waveformControlCh0.wavePos;
+                waveformPlaybackInitialCursorSample = control.cursorSample;
+                var channel = channelsComboBox.currentIndex;
+                if (DataPlayerModel.playChannelFromSample(channel, control.cursorSample)) {
+                    waveformPlaybackActiveChannel = channel;
+                } else {
+                    waveformPlaybackActiveChannel = -1;
+                }
+            }
+        }
+
+        CheckBox {
+            id: keepWaveformPlaybackPosition
+
+            text: Translations.id_keep_waveform_playback_position
+            anchors.top: playWaveformFromCursor.bottom
+            anchors.right: parent.right
+            anchors.rightMargin: 5
+            anchors.topMargin: 2
+            width: hZoomOutButton.width
+            visible: playbackModeToggleButton.checked
         }
 
         Button {
@@ -700,10 +817,10 @@ ApplicationWindow {
             anchors.rightMargin: 5
             width: hZoomOutButton.width
             checkable: true
-            visible: !measurementModeToggleButton.checked
+            visible: !measurementModeToggleButton.checked && !playbackModeToggleButton.checked
 
             onCheckedChanged: {
-                waveformControlCh0.operationMode = waveformControlCh1.operationMode = checked ? WaveformControlOperationModes.WaveformSelectionMode : WaveformControlOperationModes.WaveformRepairMode;
+                setWaveformOperationMode(checked ? WaveformControlOperationModes.WaveformSelectionMode : WaveformControlOperationModes.WaveformRepairMode);
             }
         }
 
@@ -719,20 +836,56 @@ ApplicationWindow {
             }
             width: hZoomOutButton.width
             checkable: true
-            visible: !selectionModeToggleButton.checked
+            visible: !selectionModeToggleButton.checked && !playbackModeToggleButton.checked
 
             onCheckedChanged: {
-                waveformControlCh0.operationMode = waveformControlCh1.operationMode = checked ? WaveformControlOperationModes.WaveformMeasurementMode : WaveformControlOperationModes.WaveformRepairMode;
+                setWaveformOperationMode(checked ? WaveformControlOperationModes.WaveformMeasurementMode : WaveformControlOperationModes.WaveformRepairMode);
             }
         }
 
-        states: State {
-            when: measurementModeToggleButton.checked
-            AnchorChanges {
-                target: measurementModeToggleButton
-                anchors.bottom: waveformControlCh1.bottom
+        Button {
+            id: playbackModeToggleButton
+
+            text: Translations.id_waveform_playback_mode
+            anchors {
+                right: parent.right
+                rightMargin: 5
+                bottom: measurementModeToggleButton.top
+                bottomMargin: 5
+            }
+            width: hZoomOutButton.width
+            checkable: true
+            visible: !selectionModeToggleButton.checked && !measurementModeToggleButton.checked
+
+            onCheckedChanged: {
+                if (checked) {
+                    setWaveformOperationMode(WaveformControlOperationModes.WaveformPlaybackMode);
+                } else {
+                    if (DataPlayerModel.waveformPlayback) {
+                        DataPlayerModel.stop();
+                    }
+                    finishWaveformPlayback();
+                    setWaveformOperationMode(WaveformControlOperationModes.WaveformRepairMode);
+                }
             }
         }
+
+        states: [
+            State {
+                when: measurementModeToggleButton.checked
+                AnchorChanges {
+                    target: measurementModeToggleButton
+                    anchors.bottom: waveformControlCh1.bottom
+                }
+            },
+            State {
+                when: playbackModeToggleButton.checked
+                AnchorChanges {
+                    target: playbackModeToggleButton
+                    anchors.bottom: waveformControlCh1.bottom
+                }
+            }
+        ]
 
         Button {
             id: copyFromRigthToLeftChannel

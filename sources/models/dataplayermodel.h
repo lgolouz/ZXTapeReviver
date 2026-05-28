@@ -29,15 +29,25 @@ class DataPlayerModel : public QObject
         DP_Paused
     };
 
+    enum PlaybackSource {
+        PS_None,
+        PS_ParsedData,
+        PS_Waveform
+    };
+
     Q_PROPERTY(bool stopped READ getStopped NOTIFY stoppedChanged)
     Q_PROPERTY(bool paused READ getPaused NOTIFY pausedChanged)
     Q_PROPERTY(int currentBlock READ getCurrentBlock NOTIFY currentBlockChanged)
     Q_PROPERTY(int blockTime READ getBlockTime NOTIFY blockTimeChanged)
     Q_PROPERTY(int processedTime READ getProcessedTime NOTIFY processedTimeChanged)
     Q_PROPERTY(QVariant blockData READ getBlockData NOTIFY currentBlockChanged)
+    Q_PROPERTY(bool waveformPlayback READ getWaveformPlayback NOTIFY waveformPlaybackChanged)
+    Q_PROPERTY(int waveformPlaybackSample READ getWaveformPlaybackSample NOTIFY waveformPlaybackSampleChanged)
 
     PlayingState m_playingState;
+    PlaybackSource m_playbackSource;
     QScopedPointer<QAudioSink> m_audio;
+    QScopedPointer<QIODevice> m_waveformDevice;
     QPair<QVector<QSharedPointer<ParsedData::DataBlock>>, QVector<bool>> m_data;
     ParsedDataModel* m_parserData;
     unsigned m_currentBlock;
@@ -47,6 +57,7 @@ class DataPlayerModel : public QObject
     static constexpr unsigned c_sampleRate { 44100 };
     int m_blockTime;
     int m_processedTime;
+    int m_waveformPlaybackSample;
     qint64 m_blockStartTime;
     QVector<QString> m_romLoaderBorderTimeline;
     QVector<qsizetype> m_romLoaderBorderPulseSamples;
@@ -69,9 +80,12 @@ public:
     int getCurrentBlock() const;
     int getBlockTime() const;
     int getProcessedTime() const;
+    bool getWaveformPlayback() const;
+    int getWaveformPlaybackSample() const;
     QVariant getBlockData() const;
 
     Q_INVOKABLE void playParsedData(uint chNum, uint currentBlock = 0);
+    Q_INVOKABLE bool playChannelFromSample(uint chNum, int startSample);
     Q_INVOKABLE void stop();
     Q_INVOKABLE void pause();
     Q_INVOKABLE void resume();
@@ -85,6 +99,8 @@ signals:
     void currentBlockChanged();
     void blockTimeChanged();
     void processedTimeChanged();
+    void waveformPlaybackChanged();
+    void waveformPlaybackSampleChanged();
     void borderTimelineChanged();
 };
 
