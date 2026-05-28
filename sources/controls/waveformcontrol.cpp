@@ -12,6 +12,7 @@
 //*******************************************************************************
 
 #include "waveformcontrol.h"
+#include <algorithm>
 #include <cmath>
 #include <climits>
 #include <QList>
@@ -49,6 +50,7 @@ WaveformControl::WaveformControl(QQuickItem* parent) :
     m_yScaleFactor(80000),
     m_clickState(WaitForFirstPress),
     m_clickPosition(0),
+    m_cursorSample(0),
     m_operationMode(WaveformControlOperationModes::WaveformRepairMode),
     m_rangeSelected(false),
     m_clickCount(0)
@@ -64,6 +66,9 @@ QColor WaveformControl::getBackgroundColor() const {
 
         case WaveformMeasurementMode:
             return m_customData.measurementModeBgColor();
+
+        case WaveformPlaybackMode:
+            return m_customData.waveformPlaybackModeBgColor();
 
         default:
             return m_customData.operationModeBgColor();
@@ -230,6 +235,15 @@ void WaveformControl::paint(QPainter* painter) {
         x += dx;
     }
 
+    if (m_operationMode == WaveformPlaybackMode && m_cursorSample >= pos && m_cursorSample <= pos + scale) {
+        const double cursorX { (m_cursorSample - pos) / getXScaleFactor() };
+        p.setStyle(Qt::SolidLine);
+        p.setWidth(2);
+        p.setColor(m_customData.blockMarkerColor());
+        painter->setPen(p);
+        painter->drawLine(QPointF(cursorX, 0), QPointF(cursorX, waveHeight));
+    }
+
     if (m_operationMode == WaveformSelectionMode && m_rangeSelected) {
         painter->setBackground(QBrush(m_customData.rangeSelectionColor()));
         auto bRect = boundingRect();
@@ -267,6 +281,11 @@ bool WaveformControl::getIsWaveformRepaired() const
 WaveformControl::WaveformControlOperationModes WaveformControl::getOperationMode() const
 {
     return m_operationMode;
+}
+
+int WaveformControl::getCursorSample() const
+{
+    return m_cursorSample;
 }
 
 void WaveformControl::setWavePos(int32_t wavePos)
@@ -311,12 +330,31 @@ void WaveformControl::setOperationMode(WaveformControlOperationModes mode)
     }
 }
 
+void WaveformControl::setCursorSample(int cursorSample)
+{
+    const auto ch { getChannel() };
+    const int maxSample { ch && !ch->empty() ? static_cast<int>(ch->size() - 1) : 0 };
+    const int clampedCursorSample { std::clamp(cursorSample, 0, maxSample) };
+    if (m_cursorSample != clampedCursorSample) {
+        m_cursorSample = clampedCursorSample;
+        update();
+
+        emit cursorSampleChanged();
+    }
+}
+
 void WaveformControl::mousePressEvent(QMouseEvent* event)
 {
     if (!event) {
         return;
     }
     const auto mousePosition = roundedMousePosition(*event);
+
+    if (m_operationMode == WaveformPlaybackMode && event->button() == Qt::LeftButton) {
+        setCursorSample(getWavPositionByMouseX(mousePosition.x()));
+        event->accept();
+        return;
+    }
 
     //Checking for double-click
     if (event->button() == Qt::LeftButton) {

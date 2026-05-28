@@ -38,6 +38,7 @@ int borderStripeHeightFromSamples(int samples, int sampleRate) {
     };
     return std::clamp(screenLines, 2, 12);
 }
+
 }
 
 DataPlayerModel::DataPlayerModel(QObject* parent) :

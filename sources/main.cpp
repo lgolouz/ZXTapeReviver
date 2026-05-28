@@ -21,6 +21,7 @@
 #include "sources/models/parsersettingsmodel.h"
 #include "sources/models/actionsmodel.h"
 #include "sources/models/dataplayermodel.h"
+#include "sources/models/waveformplayermodel.h"
 #include "sources/translations/translationmanager.h"
 
 void registerTypes()
@@ -43,6 +44,7 @@ void registerTypes()
     qmlRegisterSingletonInstance<ActionsModel>("com.models.zxtapereviver", 1, 0, "ActionsModel", ActionsModel::instance());
     qmlRegisterSingletonInstance<ConfigurationManager>("com.models.zxtapereviver", 1, 0, "ConfigurationManager", ConfigurationManager::instance());
     qmlRegisterSingletonInstance<DataPlayerModel>("com.models.zxtapereviver", 1, 0, "DataPlayerModel", DataPlayerModel::instance());
+    qmlRegisterSingletonInstance<WaveformPlayerModel>("com.models.zxtapereviver", 1, 0, "WaveformPlayerModel", WaveformPlayerModel::instance());
 }
 
 int main(int argc, char *argv[])

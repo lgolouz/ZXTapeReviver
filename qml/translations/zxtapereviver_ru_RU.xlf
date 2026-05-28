@@ -90,6 +90,9 @@
 <trans-unit id="id_goto_address"><source>Goto address...</source><target>Перейти на адрес</target></trans-unit>
 <trans-unit id="id_selection_mode"><source>Selection mode</source><target>Режим выделения</target></trans-unit>
 <trans-unit id="id_measurement_mode"><source>Measurement mode</source><target>Режим измерения</target></trans-unit>
+<trans-unit id="id_waveform_playback_mode"><source>Waveform playback mode</source><target>Режим прослушивания</target></trans-unit>
+<trans-unit id="id_play_waveform_from_cursor"><source>Play waveform from cursor</source><target>Играть волну от курсора</target></trans-unit>
+<trans-unit id="id_return_waveform_playback_position"><source>Return to initial position after stop</source><target>Вернуться к исходной позиции после стопа</target></trans-unit>
 <trans-unit id="id_copy_from_r_to_l"><source>Copy from R to L (&#x25b2;)</source><target>Копировать из П в Л (&#x25b2;)</target></trans-unit>
 <trans-unit id="id_copy_from_l_to_r"><source>Copy from L to R (&#x25bc;)</source><target>Копировать из Л в П (&#x25bc;)</target></trans-unit>
 <trans-unit id="id_left_channel"><source>Left Channel</source><target>Левый канал</target></trans-unit>
