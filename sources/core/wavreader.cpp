@@ -20,6 +20,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QScopeGuard>
+#include <limits>
 
 WavReader::WavReader(QObject* parent) :
     QObject(parent),
@@ -214,31 +215,75 @@ WavReader::ErrorCodesEnum WavReader::close()
 void WavReader::loadWaveform(const QString& fname)
 {
     QFile f(fname);
-    f.open(QIODevice::ReadOnly);
-    QByteArray b(f.read(f.size()));
-    size_t idx = 0;
+    if (!f.open(QIODevice::ReadOnly)) {
+        qDebug() << "Cannot open waveform file:" << fname << f.errorString();
+        return;
+    }
+    const auto guard = qScopeGuard([&f](){ f.close(); });
+
+    auto readValue = [&f]<typename T>(T& data) {
+        return f.read(reinterpret_cast<char*>(&data), sizeof(T)) == static_cast<qint64>(sizeof(T));
+    };
+
+    auto readWaveformSamples = [&f](QWavVector& channel) {
+        constexpr qsizetype chunkSamples { 1024 * 1024 };
+        qsizetype samplesRead { 0 };
+        while (samplesRead < channel.size()) {
+            const qsizetype samplesToRead { qMin(chunkSamples, channel.size() - samplesRead) };
+            const qint64 bytesToRead { static_cast<qint64>(samplesToRead * sizeof(QWavVectorType)) };
+            char* data { reinterpret_cast<char*>(channel.data() + samplesRead) };
+            if (f.read(data, bytesToRead) != bytesToRead) {
+                return false;
+            }
+            samplesRead += samplesToRead;
+        }
+        return true;
+    };
+
     //Get header
-    mWavFormatHeader = *getData<WavFmt>(b, idx);
+    if (!readValue(mWavFormatHeader) || (mWavFormatHeader.numberOfChannels != 1 && mWavFormatHeader.numberOfChannels != 2)) {
+        qDebug() << "Invalid waveform file header:" << fname;
+        return;
+    }
+
+    mChannel0.reset(nullptr);
+    mChannel1.reset(nullptr);
+
     for (auto i = 0; i < mWavFormatHeader.numberOfChannels; ++i) {
         //Get channel length
-        const int32_t l { *getData<int32_t>(b, idx) };
+        int32_t l { };
+        if (!readValue(l) || l < 0) {
+            qDebug() << "Invalid waveform channel length:" << fname;
+            return;
+        }
+
         auto& ch = i == 0 ? mChannel0 : mChannel1;
         ch.reset(new QWavVector(l));
         //Fill channel data
-        for (auto& v: *ch.get()) {
-            v = *getData<QWavVectorType>(b, idx);
+        if (!readWaveformSamples(*ch.get())) {
+            qDebug() << "Cannot read waveform channel data:" << fname;
+            return;
         }
     }
 
     //Restore suspicious points
-    const int32_t l { *getData<int32_t>(b, idx) };
+    int32_t l { };
+    if (!readValue(l) || l < 0) {
+        qDebug() << "Invalid waveform suspicious points data:" << fname;
+        return;
+    }
+
     QVariantList sp;
     for (auto i = 0; i < l; ++i) {
-        sp.append(*getData<uint32_t>(b, idx));
+        uint32_t point { };
+        if (!readValue(point)) {
+            qDebug() << "Cannot read waveform suspicious point:" << fname;
+            return;
+        }
+        sp.append(point);
     }
     SuspiciousPointsModel::instance()->setSuspiciousPoints(sp);
 
-    f.close();
     WaveFormModel::instance()->initialize({ getChannel0(), getChannel1() });
     mWavOpened = true;
 }
@@ -381,34 +426,79 @@ void WavReader::loadTap(const QString& fname) {
 void WavReader::saveWaveform(const QString& fname) const
 {
     QFile f(fname.isEmpty() ? QString("waveform_%1.wfm").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")) : fname);
-    f.open(QIODevice::ReadWrite);
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        qDebug() << "Cannot open waveform file for writing:" << f.fileName() << f.errorString();
+        return;
+    }
+    const auto guard = qScopeGuard([&f](){ f.close(); });
+
+    auto writeValue = [&f]<typename T>(const T& data) {
+        return f.write(reinterpret_cast<const char*>(&data), sizeof(T)) == static_cast<qint64>(sizeof(T));
+    };
+
+    auto writeWaveformSamples = [&f](const QWavVector& channel) {
+        constexpr qsizetype chunkSamples { 1024 * 1024 };
+        qsizetype samplesWritten { 0 };
+        while (samplesWritten < channel.size()) {
+            const qsizetype samplesToWrite { qMin(chunkSamples, channel.size() - samplesWritten) };
+            const qint64 bytesToWrite { static_cast<qint64>(samplesToWrite * sizeof(QWavVectorType)) };
+            const char* data { reinterpret_cast<const char*>(channel.constData() + samplesWritten) };
+            if (f.write(data, bytesToWrite) != bytesToWrite) {
+                return false;
+            }
+            samplesWritten += samplesToWrite;
+        }
+        return true;
+    };
 
     //Store header
-    QByteArray b;
-    appendData(b, mWavFormatHeader);
+    if (!writeValue(mWavFormatHeader)) {
+        qDebug() << "Cannot write waveform header:" << f.fileName();
+        return;
+    }
 
     for (auto i = 0; i < mWavFormatHeader.numberOfChannels; ++i) {
-        const auto& ch = i == 0 ? *getChannel0() : *getChannel1();
+        const auto channel { i == 0 ? getChannel0() : getChannel1() };
+        if (channel.isNull()) {
+            qDebug() << "Cannot save empty waveform channel:" << i;
+            return;
+        }
+
+        const auto& ch = *channel;
+        if (ch.length() > std::numeric_limits<int32_t>::max()) {
+            qDebug() << "Waveform channel is too long to save:" << ch.length();
+            return;
+        }
+
         //Store channel length
         const int32_t l = ch.length();
-        appendData(b, l);
+        if (!writeValue(l)) {
+            qDebug() << "Cannot write waveform channel length:" << f.fileName();
+            return;
+        }
+
         //Store channel
-        for (const auto& v: ch) {
-            appendData(b, v);
+        if (!writeWaveformSamples(ch)) {
+            qDebug() << "Cannot write waveform channel data:" << f.fileName();
+            return;
         }
     }
 
     //Store suspicious points
     const auto s = SuspiciousPointsModel::instance()->getSuspiciousPoints();
     const int32_t l = s.length();
-    appendData(b, l);
-    for (const auto& p: s) {
-        uint32_t sp = p.toUInt();
-        appendData(b, sp);
+    if (!writeValue(l)) {
+        qDebug() << "Cannot write waveform suspicious points length:" << f.fileName();
+        return;
     }
 
-    f.write(b);
-    f.close();
+    for (const auto& p: s) {
+        uint32_t sp = p.toUInt();
+        if (!writeValue(sp)) {
+            qDebug() << "Cannot write waveform suspicious point:" << f.fileName();
+            return;
+        }
+    }
 }
 
 void WavReader::shiftWaveform(uint chNum)
