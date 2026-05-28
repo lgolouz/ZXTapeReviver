@@ -41,6 +41,9 @@ WaveformControl::WaveformControl(QQuickItem* parent) :
     m_customData(*ConfigurationManager::instance()->getWaveformCustomization()),
     m_channelNumber(0),
     m_isWaveformRepaired(false),
+    m_allowToGrabPoint(false),
+    m_pointGrabbed(false),
+    m_pointIndex(0),
     m_wavePos(0),
     m_xScaleFactor(1),
     m_yScaleFactor(80000),
@@ -82,7 +85,7 @@ int WaveformControl::getWavPositionByMouseX(int x, int* point, double* dx) const
     int tpoint;
     int& rpoint = (point ? *point : tpoint) = std::round(x / rdx);
 
-    return rpoint + getWavePos() * xinc;
+    return getWavePos() + rpoint * xinc;
 }
 
 void WaveformControl::paint(QPainter* painter) {
@@ -370,6 +373,7 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
                         if (event->button() == Qt::LeftButton) {
                             m_pointIndex = point;
                             m_initialValue = initialVal;
+                            m_newValue = initialVal;
                             m_pointGrabbed = true;
                             qDebug() << "Grabbed point: " << initialVal; //getChannel()->operator[](m_clickPosition);
                         }
@@ -462,6 +466,11 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
                 }
             }
             else if (m_operationMode == WaveformRepairMode) {
+                if (!m_pointGrabbed) {
+                    event->accept();
+                    return;
+                }
+
                 const auto ch = getChannel();
                 if (!ch) {
                     return;
@@ -471,11 +480,11 @@ void WaveformControl::mouseMoveEvent(QMouseEvent* event)
                 const double halfHeight = waveHeight / 2;
                 const auto pointerPos = halfHeight - mousePosition.y();
                 double val = halfHeight + (m_yScaleFactor / waveHeight * pointerPos);
-                if (m_pointIndex + getWavePos() >= 0 && m_pointIndex + getWavePos() < ch->size()) {
+                if (m_clickPosition >= 0 && m_clickPosition < ch->size()) {
                     m_newValue = val;
-                    getChannel()->operator[](m_pointIndex + getWavePos()) = val;
+                    ch->operator[](m_clickPosition) = val;
                 }
-                qDebug() << "Setting point: " << m_pointIndex + getWavePos();
+                qDebug() << "Setting point: " << m_clickPosition;
             }
             event->accept();
             update();
