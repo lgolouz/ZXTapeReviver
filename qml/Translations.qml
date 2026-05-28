@@ -100,6 +100,7 @@ QtObject {
     property string id_language_menu_item:                   qsTrId("id_language_menu_item") + TranslationManager.translationChanged
     property string id_hotkey_tooltip:                       qsTrId("id_hotkey_tooltip") + TranslationManager.translationChanged
     property string id_remove_action:                        qsTrId("id_remove_action") + TranslationManager.translationChanged //Button caption
+    property string id_redo_action:                          qsTrId("id_redo_action") + TranslationManager.translationChanged //Button caption
     property string id_action_name:                          qsTrId("id_action_name") + TranslationManager.translationChanged
     property string id_sine_check_tolerance:                 qsTrId("id_sine_check_tolerance") + TranslationManager.translationChanged
     property string id_play_parsed_data:                     qsTrId("id_play_parsed_data") + TranslationManager.translationChanged

@@ -115,6 +115,7 @@
 <trans-unit id="id_russian_language"><source>Russian</source><target>Russian</target></trans-unit>
 <trans-unit id="id_hotkey_tooltip"><source>Hotkey: %1</source><target>Hotkey: %1</target></trans-unit>
 <trans-unit id="id_remove_action"><source>Remove action</source><target>Remove action</target></trans-unit>
+<trans-unit id="id_redo_action"><source>Redo action</source><target>Redo action</target></trans-unit>
 <trans-unit id="id_action_name"><source>Action name</source><target>Action name</target></trans-unit>
 <trans-unit id="id_edit_action"><source>Edit Sample</source><target>Edit Sample</target></trans-unit>
 <trans-unit id="id_shift_waveform_action"><source>Shift Waveform</source><target>Shift Waveform</target></trans-unit>

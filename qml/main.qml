@@ -966,12 +966,14 @@ ApplicationWindow {
             anchors {
                 top: suspiciousPointsView.bottom
                 left: parent.left
-                right: parent.right
+                right: parent.horizontalCenter
                 leftMargin: 2
+                rightMargin: 1
                 topMargin: 2
             }
 
             text: Translations.id_remove_action
+            enabled: ActionsModel.canUndo
 
             onClicked: {
                 ActionsModel.removeAction();
@@ -980,33 +982,45 @@ ApplicationWindow {
             }
         }
 
-        // TableView {
-        //     id: actionsView
+        Button {
+            id: redoActionButton
 
-        //     anchors {
-        //         top: removeActionButton.bottom
-        //         bottom: parent.bottom
-        //         left: parent.left
-        //         right: parent.right
-        //         topMargin: 2
-        //     }
+            anchors {
+                top: removeActionButton.top
+                left: parent.horizontalCenter
+                right: parent.right
+                leftMargin: 1
+                rightMargin: 2
+            }
 
-        //     selectionMode: SelectionMode.SingleSelection
-        //     model: ActionsModel.actions
-        //     itemDelegate: Text {
-        //         text: styleData.column === 0 ? styleData.row + 1 : modelData.name
-        //     }
+            text: Translations.id_redo_action
+            enabled: ActionsModel.canRedo
 
-            // model: TableModel {
-            // TableModelColumn {
-//                title: Translations.id_suspicious_point_number
-//                width: rightArea.width * 0.1
+            onClicked: {
+                ActionsModel.redoAction();
+                waveformControlCh0.update();
+                waveformControlCh1.update();
+            }
+        }
 
-        //     TableViewColumn {
-        //         title: Translations.id_action_name
-        //         width: rightArea.width * 0.9
-        //     }
-        // }
+        ZXTableControl {
+            id: actionsView
+
+            anchors {
+                top: removeActionButton.bottom
+                bottom: parent.bottom
+                left: parent.left
+                right: parent.right
+                topMargin: 2
+            }
+
+            model: ActionsModel
+            fallbackHeaders: [
+                Translations.id_suspicious_point_number,
+                Translations.id_action_name
+            ]
+            fallbackColumnWidths: [70, 180]
+        }
     }
 
     GoToAddress {

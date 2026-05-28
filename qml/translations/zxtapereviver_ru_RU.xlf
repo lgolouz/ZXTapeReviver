@@ -115,6 +115,7 @@
 <trans-unit id="id_russian_language"><source>Russian</source><target>Русский</target></trans-unit>
 <trans-unit id="id_hotkey_tooltip"><source>Hotkey: %1</source><target>Горячая клавиша: %1</target></trans-unit>
 <trans-unit id="id_remove_action"><source>Remove action</source><target>Удалить действие</target></trans-unit>
+<trans-unit id="id_redo_action"><source>Redo action</source><target>Повторить действие</target></trans-unit>
 <trans-unit id="id_action_name"><source>Action name</source><target>Название действия</target></trans-unit>
 <trans-unit id="id_edit_action"><source>Edit Sample</source><target>Редактирование семпла</target></trans-unit>
 <trans-unit id="id_shift_waveform_action"><source>Shift Waveform</source><target>Сдвиг волны</target></trans-unit>
