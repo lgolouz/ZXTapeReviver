@@ -239,25 +239,38 @@ void ParsedDataModel::invalidateItems() {
     for (const auto& i: m_items) {
         i->setUpdated(false);
     }
+
+    endResetModel();
 }
 
 void ParsedDataModel::removeOutdatedItems() {
+    beginResetModel();
+
     m_items.remove_if([](const auto& i) { return !i->updated(); });
 
     endResetModel();
 }
 
 void ParsedDataModel::addData(QSharedPointer<DataBlock> block) {
-    auto* item = new DataItem(block);
+    auto item { std::make_unique<DataItem>(block) };
+    int row { 0 };
     for (auto it { m_items.begin() }; it != m_items.end(); ++it) {
         if (*it->get() == *item) {
-            it->reset(item);
+            *it = std::move(item);
+            const auto modelIndexBegin { index(row, 0) };
+            const auto modelIndexEnd { index(row, columnCount() - 1) };
+            emit dataChanged(modelIndexBegin, modelIndexEnd);
             return;
         } else if (*item < *it->get()) {
-            m_items.emplace(it, item);
+            beginInsertRows({}, row, row);
+            m_items.emplace(it, std::move(item));
+            endInsertRows();
             return;
         }
+        ++row;
     }
 
-    m_items.emplace_back(item);
+    beginInsertRows({}, row, row);
+    m_items.emplace_back(std::move(item));
+    endInsertRows();
 }

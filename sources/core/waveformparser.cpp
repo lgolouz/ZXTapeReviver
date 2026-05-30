@@ -1487,7 +1487,7 @@ void WaveformParser::parse(uint chNum)
                     : detector == "pause"
                             ? QString("Payload stopped on pause")
                             : (valid ? QString("Candidate %1").arg(bit) : QString("No confident period")) },
-            { "message", QString("Live experimental parse\n%1\nbit=%2 score=%3 raw=%4 penalty=%5 zero=%6 one=%7 timing=%8 balance=%9 shape=%10 speed=%11 damaged=%12 zero-rescue=%13\nhalves=%14/%15 begin=%16 end=%17 len=%18 axis=%19 range=%20\ncarrier ready=%21 range=%22 ratio=%23 score floor=%24 axis jump=%25/%26\ncrc stop=%27 calculated=0x%28 awaited=0x%29 bytes=%30\nsample=%31")
+            { "message", QString("Live experimental parse\n%1\nbit=%2 score=%3 raw=%4 penalty=%5 zero=%6 one=%7 timing=%8 balance=%9 shape=%10 speed=%11 damaged=%12 shape-rescue=%13 zero-rescue=%14\nhalves=%15/%16 begin=%17 end=%18 len=%19 axis=%20 range=%21\ncarrier ready=%22 range=%23 ratio=%24 score floor=%25 axis jump=%26/%27\ncrc stop=%28 calculated=0x%29 awaited=0x%30 bytes=%31\nsample=%32")
                     .arg(detectorLine)
                     .arg(bit)
                     .arg(periodCandidate.value("score").toDouble(), 0, 'f', 3)
@@ -1500,6 +1500,7 @@ void WaveformParser::parse(uint chNum)
                     .arg(periodCandidate.value("shapeScore").toDouble(), 0, 'f', 3)
                     .arg(periodCandidate.value("speedRatio").toDouble(), 0, 'f', 3)
                     .arg(periodCandidate.value("damagedReadable").toBool() ? QString("yes") : QString("no"))
+                    .arg(periodCandidate.value("shapeReadable").toBool() ? QString("yes") : QString("no"))
                     .arg(periodCandidate.value("damagedZeroTimingRescue").toBool() ? QString("yes") : QString("no"))
                     .arg(periodCandidate.value("firstHalfLength").toInt())
                     .arg(periodCandidate.value("secondHalfLength").toInt())
@@ -2417,6 +2418,16 @@ void WaveformParser::parse(uint chNum)
             const double pathConfidence { periodCandidateMap.value("pathConfidence").toDouble() };
             const double timingScore { periodCandidateMap.value("timingScore").toDouble() };
             const double balanceScore { periodCandidateMap.value("balanceScore").toDouble() };
+            const double shapeScore { periodCandidateMap.value("shapeScore").toDouble() };
+            const bool shapeReadable {
+                periodCandidateMap.value("valid").toBool() &&
+                shapeScore >= 0.70 &&
+                balanceScore >= 0.58 &&
+                pathConfidence >= 0.45 &&
+                timingScore >= 0.32 &&
+                (!carrierReady || rangeRatio >= 0.10) &&
+                axisJump <= axisTolerance
+            };
             const bool damagedButReadable {
                 periodCandidateMap.value("valid").toBool() &&
                 timingScore >= 0.76 &&
@@ -2428,11 +2439,13 @@ void WaveformParser::parse(uint chNum)
                 periodCandidateMap.value("valid").toBool() &&
                 (candidateScore >= c_minScore ||
                  (candidateScore >= 0.48 && pathConfidence >= 0.66) ||
-                 damagedButReadable)
+                 damagedButReadable ||
+                 shapeReadable)
             };
             const bool carrierAccepted {
                 !carrierReady ||
                 damagedButReadable ||
+                shapeReadable ||
                 ((rangeRatio >= c_minRangeRatio || candidateScore >= 0.86) &&
                  candidateScore >= scoreFloor &&
                  axisJump <= axisTolerance)
@@ -2446,13 +2459,14 @@ void WaveformParser::parse(uint chNum)
             periodCandidateMap["axisJump"] = axisJump;
             periodCandidateMap["axisTolerance"] = axisTolerance;
             periodCandidateMap["damagedReadable"] = damagedButReadable;
+            periodCandidateMap["shapeReadable"] = shapeReadable;
             periodCandidateMap["balanceScore"] = balanceScore;
             publishExperimentalParseDebug(currentSample, periodCandidateMap);
             const auto periodCandidate { periodCandidateToBitCandidate(periodCandidateMap) };
             ExperimentalBitCandidate candidate;
             if (periodCandidate.valid && periodAccepted && carrierAccepted) {
                 candidate = periodCandidate;
-                if (damagedButReadable || candidateScore < c_minScore || pathConfidence < 0.70) {
+                if (damagedButReadable || shapeReadable || candidateScore < c_minScore || pathConfidence < 0.70) {
                     addAutoSuspiciousPoint(candidate.begin);
                 }
             } else {
