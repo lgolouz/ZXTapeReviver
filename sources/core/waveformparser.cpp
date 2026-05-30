@@ -12,21 +12,38 @@
 //*******************************************************************************
 
 #include "waveformparser.h"
+#include "sources/core/experimentaladaptiveparser.h"
 #include "sources/models/parsersettingsmodel.h"
+#include "sources/models/suspiciouspointsmodel.h"
 #include <QPointer>
 #include <QDebug>
 #include <QDateTime>
 #include <QByteArray>
 #include <QVariantMap>
 #include <QQmlEngine>
+#include <QCoreApplication>
+#include <QElapsedTimer>
+#include <QEventLoop>
 #include <algorithm>
+#include <atomic>
+#include <cmath>
 #include <deque>
+#include <future>
+#include <limits>
+#include <numeric>
 
 #define HARDCODED_DATA_SIGNAL_DELTA 0.75
 
 WaveformParser::WaveformParser(QObject* parent) :
     QObject(parent),
-    mWavReader(*WavReader::instance())
+    mWavReader(*WavReader::instance()),
+    m_experimentalDebugChannel(0),
+    m_experimentalDebugActive(false),
+    m_experimentalDebugManualInspection(false),
+    m_experimentalDebugSample(0),
+    m_parsingActive(false),
+    m_parsingCancellationRequested(false),
+    m_parsingProgress(0)
 {
 
 }
@@ -841,6 +858,8 @@ void WaveformParser::repairWaveform2(uint chNum) {
     }
 
     QWavVector& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
+    setParsingProgress(true, 0, QString("Channel %1: scanning waveform").arg(chNum + 1));
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
     QVector<ParsedData::WaveformPart> parsed = parseChannel<QWavVectorType>(channel);
 
     const auto& parserSettings = ParserSettingsModel::instance()->getParserSettings();
@@ -902,14 +921,442 @@ inline bool WaveformParser::isOneFreqFitsInDelta(uint32_t sampleRate, uint32_t l
     return isFreqFitsInDelta2(sampleRate, length, signalFreq, signalDeltaBelow, signalDeltaAbove);
 }
 
+void WaveformParser::setParsingProgress(bool active, int progress, const QString& status)
+{
+    progress = std::clamp(progress, 0, 100);
+    if (m_parsingActive == active && m_parsingProgress == progress && m_parsingStatus == status) {
+        return;
+    }
+
+    m_parsingActive = active;
+    m_parsingProgress = progress;
+    m_parsingStatus = status;
+    emit parsingProgressChanged();
+}
+
+double WaveformParser::scoreExperimentalWindow(const QWavVector& channel, size_t begin, size_t length, double* axis, double* upperLevel, double* lowerLevel) const
+{
+    if (length < 8 || begin >= static_cast<size_t>(channel.size()) || begin + length > static_cast<size_t>(channel.size())) {
+        return 0.0;
+    }
+
+    std::vector<double> samples;
+    samples.reserve(length);
+    for (size_t pos { begin }; pos < begin + length; ++pos) {
+        samples.push_back(channel.at(static_cast<qsizetype>(pos)));
+    }
+
+    auto sortedSamples { samples };
+    const auto medianIt { std::next(sortedSamples.begin(), static_cast<std::ptrdiff_t>(sortedSamples.size() / 2)) };
+    std::nth_element(sortedSamples.begin(), medianIt, sortedSamples.end());
+    const double virtualAxis { *medianIt };
+    if (axis) {
+        *axis = virtualAxis;
+    }
+
+    const auto [minIt, maxIt] { std::minmax_element(samples.cbegin(), samples.cend()) };
+    const double range { *maxIt - *minIt };
+    if (range <= 0.01) {
+        return 0.0;
+    }
+
+    int bucketCount { std::clamp(static_cast<int>(length / 6), 8, 24) };
+    bucketCount = std::min(bucketCount, static_cast<int>(length / 2));
+    if (bucketCount < 4) {
+        return 0.0;
+    }
+
+    QVector<int> bucketSigns;
+    QVector<double> bucketWeights;
+    QVector<double> positiveBuckets;
+    QVector<double> negativeBuckets;
+    bucketSigns.reserve(bucketCount);
+    bucketWeights.reserve(bucketCount);
+    const double weakBucketThreshold { range * 0.05 };
+    for (int bucket { 0 }; bucket < bucketCount; ++bucket) {
+        const size_t bucketBegin { length * static_cast<size_t>(bucket) / static_cast<size_t>(bucketCount) };
+        const size_t bucketEnd { length * static_cast<size_t>(bucket + 1) / static_cast<size_t>(bucketCount) };
+        double sum { 0.0 };
+        for (size_t sample { bucketBegin }; sample < bucketEnd; ++sample) {
+            sum += samples.at(sample) - virtualAxis;
+        }
+
+        const double mean { sum / std::max<size_t>(1, bucketEnd - bucketBegin) };
+        bucketSigns.append(std::fabs(mean) < weakBucketThreshold ? 0 : (mean > 0.0 ? 1 : -1));
+        bucketWeights.append(std::max(std::fabs(mean), weakBucketThreshold));
+        if (mean > weakBucketThreshold) {
+            positiveBuckets.append(virtualAxis + mean);
+        } else if (mean < -weakBucketThreshold) {
+            negativeBuckets.append(virtualAxis + mean);
+        }
+    }
+
+    const auto medianValue = [](QVector<double> values, double fallback) {
+        if (values.empty()) {
+            return fallback;
+        }
+
+        const auto median { std::next(values.begin(), values.size() / 2) };
+        std::nth_element(values.begin(), median, values.end());
+        return *median;
+    };
+    if (upperLevel) {
+        *upperLevel = medianValue(positiveBuckets, *maxIt);
+    }
+    if (lowerLevel) {
+        *lowerLevel = medianValue(negativeBuckets, *minIt);
+    }
+
+    auto scorePolarity = [&bucketSigns, &bucketWeights, bucketCount](int split, int firstSign) {
+        double matchedWeight { 0.0 };
+        double totalWeight { 0.0 };
+        int firstStrongBuckets { 0 };
+        int secondStrongBuckets { 0 };
+        for (int bucket { 0 }; bucket < bucketCount; ++bucket) {
+            const int expectedSign { bucket < split ? firstSign : -firstSign };
+            const int sign { bucketSigns.at(bucket) };
+            const double weight { bucketWeights.at(bucket) };
+            totalWeight += weight;
+            if (sign == expectedSign) {
+                matchedWeight += weight;
+                if (bucket < split) {
+                    ++firstStrongBuckets;
+                } else {
+                    ++secondStrongBuckets;
+                }
+            } else if (sign == 0) {
+                matchedWeight += weight * 0.5;
+            }
+        }
+
+        if (firstStrongBuckets < split / 2 || secondStrongBuckets < (bucketCount - split) / 2) {
+            return 0.0;
+        }
+
+        int signChanges { 0 };
+        int previousSign { 0 };
+        for (const int sign: bucketSigns) {
+            if (sign == 0) {
+                continue;
+            }
+
+            if (previousSign != 0 && sign != previousSign) {
+                ++signChanges;
+            }
+            previousSign = sign;
+        }
+
+        const double roughnessPenalty { std::max(0, signChanges - 1) * 0.035 };
+        return totalWeight > 0.0 ? std::max(0.0, matchedWeight / totalWeight - roughnessPenalty) : 0.0;
+    };
+
+    double bestScore { 0.0 };
+    const int minSplit { std::max(2, static_cast<int>(std::floor(bucketCount * 0.35))) };
+    const int maxSplit { std::min(bucketCount - 2, static_cast<int>(std::ceil(bucketCount * 0.65))) };
+    for (int split { minSplit }; split <= maxSplit; ++split) {
+        bestScore = std::max(bestScore, scorePolarity(split, 1));
+        bestScore = std::max(bestScore, scorePolarity(split, -1));
+    }
+
+    double bestPlateauScore { 0.0 };
+    const auto scorePlateauPolarity = [&samples, virtualAxis, range](size_t split, int firstSign) {
+        double firstSum { 0.0 };
+        double secondSum { 0.0 };
+        int firstMatchingSamples { 0 };
+        int secondMatchingSamples { 0 };
+        const size_t secondSize { samples.size() - split };
+        for (size_t sample { 0 }; sample < split; ++sample) {
+            const double value { samples.at(sample) - virtualAxis };
+            firstSum += value;
+            if ((firstSign > 0 && value > 0.0) || (firstSign < 0 && value < 0.0)) {
+                ++firstMatchingSamples;
+            }
+        }
+        for (size_t sample { split }; sample < samples.size(); ++sample) {
+            const double value { samples.at(sample) - virtualAxis };
+            secondSum += value;
+            if ((firstSign > 0 && value < 0.0) || (firstSign < 0 && value > 0.0)) {
+                ++secondMatchingSamples;
+            }
+        }
+
+        const double firstMean { firstSum / std::max<size_t>(1, split) };
+        const double secondMean { secondSum / std::max<size_t>(1, secondSize) };
+        if ((firstSign > 0 && (firstMean <= 0.0 || secondMean >= 0.0)) ||
+                (firstSign < 0 && (firstMean >= 0.0 || secondMean <= 0.0))) {
+            return 0.0;
+        }
+
+        const double firstDominance { firstMatchingSamples / static_cast<double>(std::max<size_t>(1, split)) };
+        const double secondDominance { secondMatchingSamples / static_cast<double>(std::max<size_t>(1, secondSize)) };
+        const double dominanceScore { std::min(firstDominance, secondDominance) };
+        const double strengthScore { std::clamp(std::min(std::fabs(firstMean), std::fabs(secondMean)) / (range * 0.18), 0.0, 1.0) };
+        const double balanceScore { 1.0 - std::clamp(std::fabs(static_cast<double>(split) / samples.size() - 0.5) / 0.2, 0.0, 1.0) };
+        return dominanceScore * 0.55 + strengthScore * 0.30 + balanceScore * 0.15;
+    };
+
+    const size_t minPlateauSplit { std::max<size_t>(2, static_cast<size_t>(std::floor(samples.size() * 0.35))) };
+    const size_t maxPlateauSplit { std::min(samples.size() - 2, static_cast<size_t>(std::ceil(samples.size() * 0.65))) };
+    for (size_t split { minPlateauSplit }; split <= maxPlateauSplit; ++split) {
+        bestPlateauScore = std::max(bestPlateauScore, scorePlateauPolarity(split, 1));
+        bestPlateauScore = std::max(bestPlateauScore, scorePlateauPolarity(split, -1));
+    }
+
+    const bool normalizedFloat { std::max(std::fabs(*minIt), std::fabs(*maxIt)) <= 2.0 };
+    const double amplitudeScale { normalizedFloat ? 0.25 : 2500.0 };
+    const double amplitudeScore { std::clamp(range / amplitudeScale, 0.0, 1.0) };
+    const double shapeScore { std::max(bestScore, bestPlateauScore) };
+    return std::clamp(shapeScore * 0.9 + amplitudeScore * 0.1, 0.0, 1.0);
+}
+
+QVariantMap WaveformParser::findExperimentalBitCandidate(const QWavVector& channel, size_t expectedBegin, uint8_t bit, const ParserSettingsModel::ParserSettings& parserSettings, double sampleRate) const
+{
+    const int signalFreq { bit == 0 ? parserSettings.zeroFreq : parserSettings.oneFreq };
+    const double deltaBelow { bit == 0 ? parserSettings.zeroDelta : HARDCODED_DATA_SIGNAL_DELTA };
+    const double deltaAbove { bit == 0 ? HARDCODED_DATA_SIGNAL_DELTA : parserSettings.oneDelta };
+    const int expectedLength { static_cast<int>(std::lround(sampleRate / signalFreq)) };
+    const int minLength { std::max(8, static_cast<int>(std::floor(sampleRate / (signalFreq * (1.0 + deltaAbove))))) };
+    const int maxLength { std::max(minLength, static_cast<int>(std::ceil(sampleRate / (signalFreq * (1.0 - std::min(deltaBelow, 0.95)))))) };
+    const int startJitter { std::max(2, expectedLength / 8) };
+
+    QVariantMap best {
+        { "valid", false },
+        { "bit", bit },
+        { "begin", static_cast<int>(expectedBegin) },
+        { "end", static_cast<int>(expectedBegin) },
+        { "expectedLength", expectedLength },
+        { "minLength", minLength },
+        { "maxLength", maxLength },
+        { "startJitter", startJitter },
+        { "referenceBegin", static_cast<int>(expectedBegin) },
+        { "referenceExpectedEnd", static_cast<int>(expectedBegin + static_cast<size_t>(expectedLength) - 1) },
+        { "referenceMinEnd", static_cast<int>(expectedBegin + static_cast<size_t>(minLength) - 1) },
+        { "referenceMaxEnd", static_cast<int>(expectedBegin + static_cast<size_t>(maxLength) - 1) },
+        { "rawScore", 0.0 },
+        { "startPenalty", 0.0 },
+        { "lengthPenalty", 0.0 },
+        { "greedyOnePenalty", 0.0 },
+        { "zeroPrefixScore", 0.0 },
+        { "totalPenalty", 0.0 },
+        { "score", 0.0 },
+        { "axis", 0.0 },
+        { "upperLevel", 0.0 },
+        { "lowerLevel", 0.0 },
+        { "range", 0.0 },
+        { "upperSample", static_cast<int>(expectedBegin) },
+        { "lowerSample", static_cast<int>(expectedBegin) },
+        { "upperPointValue", 0.0 },
+        { "lowerPointValue", 0.0 },
+    };
+
+    for (int startOffset { -startJitter }; startOffset <= startJitter; ++startOffset) {
+        if (startOffset < 0 && expectedBegin < static_cast<size_t>(-startOffset)) {
+            continue;
+        }
+        const size_t begin { static_cast<size_t>(static_cast<qint64>(expectedBegin) + startOffset) };
+        for (int length { minLength }; length <= maxLength; ++length) {
+            double axis { 0.0 };
+            double upperLevel { 0.0 };
+            double lowerLevel { 0.0 };
+            double score { scoreExperimentalWindow(channel, begin, static_cast<size_t>(length), &axis, &upperLevel, &lowerLevel) };
+            if (score <= 0.0) {
+                continue;
+            }
+
+            const double rawScore { score };
+            const double startPenalty { std::fabs(startOffset) / static_cast<double>(std::max(1, startJitter)) * 0.08 };
+            const double lengthPenalty { std::fabs(length - expectedLength) / static_cast<double>(std::max(1, expectedLength)) * (bit == 0 ? 0.22 : 0.16) };
+            const double totalPenalty { startPenalty + lengthPenalty };
+            score = std::max(0.0, score - totalPenalty);
+            if (!best["valid"].toBool() || score > best["score"].toDouble()) {
+                best["valid"] = true;
+                best["begin"] = static_cast<int>(begin);
+                best["end"] = static_cast<int>(begin + static_cast<size_t>(length) - 1);
+                best["length"] = length;
+                best["rawScore"] = rawScore;
+                best["startPenalty"] = startPenalty;
+                best["lengthPenalty"] = lengthPenalty;
+                best["totalPenalty"] = totalPenalty;
+                best["score"] = score;
+                best["axis"] = axis;
+                best["upperLevel"] = upperLevel;
+                best["lowerLevel"] = lowerLevel;
+            }
+        }
+    }
+
+    if (best["valid"].toBool()) {
+        const int begin { best["begin"].toInt() };
+        const int end { best["end"].toInt() };
+        int upperSample { begin };
+        int lowerSample { begin };
+        double upperValue { channel.at(begin) };
+        double lowerValue { channel.at(begin) };
+        for (int sample { begin + 1 }; sample <= end; ++sample) {
+            const double value { channel.at(sample) };
+            if (value > upperValue) {
+                upperValue = value;
+                upperSample = sample;
+            }
+            if (value < lowerValue) {
+                lowerValue = value;
+                lowerSample = sample;
+            }
+        }
+
+        best["upperSample"] = upperSample;
+        best["lowerSample"] = lowerSample;
+        best["upperPointValue"] = upperValue;
+        best["lowerPointValue"] = lowerValue;
+        best["range"] = upperValue - lowerValue;
+    }
+
+    return best;
+}
+
+QVariantMap WaveformParser::findExperimentalPeriodCandidate(const QWavVector& channel, size_t expectedBegin, const ParserSettingsModel::ParserSettings& parserSettings, double sampleRate) const
+{
+    const int zeroExpectedLength { static_cast<int>(std::lround(sampleRate / parserSettings.zeroFreq)) };
+    const int oneExpectedLength { static_cast<int>(std::lround(sampleRate / parserSettings.oneFreq)) };
+    const int zeroMinLength { std::max(8, static_cast<int>(std::floor(sampleRate / (parserSettings.zeroFreq * (1.0 + HARDCODED_DATA_SIGNAL_DELTA))))) };
+    const int zeroMaxLength { std::max(zeroMinLength, static_cast<int>(std::ceil(sampleRate / (parserSettings.zeroFreq * (1.0 - std::min(parserSettings.zeroDelta, 0.95)))))) };
+    const int oneMinLength { std::max(8, static_cast<int>(std::floor(sampleRate / (parserSettings.oneFreq * (1.0 + parserSettings.oneDelta))))) };
+    const int oneMaxLength { std::max(oneMinLength, static_cast<int>(std::ceil(sampleRate / (parserSettings.oneFreq * (1.0 - std::min(HARDCODED_DATA_SIGNAL_DELTA, 0.95)))))) };
+    const int minLength { std::min(zeroMinLength, oneMinLength) };
+    const int maxLength { std::max(zeroMaxLength, oneMaxLength) };
+    const int classificationBoundary { (zeroMaxLength + oneMinLength) / 2 };
+    const int startJitter { std::max(2, zeroExpectedLength / 8) };
+
+    QVariantMap best {
+        { "valid", false },
+        { "bit", -1 },
+        { "begin", static_cast<int>(expectedBegin) },
+        { "end", static_cast<int>(expectedBegin) },
+        { "expectedLength", 0 },
+        { "zeroExpectedLength", zeroExpectedLength },
+        { "oneExpectedLength", oneExpectedLength },
+        { "minLength", minLength },
+        { "maxLength", maxLength },
+        { "startJitter", startJitter },
+        { "classificationBoundary", classificationBoundary },
+        { "referenceBegin", static_cast<int>(expectedBegin) },
+        { "referenceExpectedEnd", static_cast<int>(expectedBegin + static_cast<size_t>(classificationBoundary) - 1) },
+        { "referenceMinEnd", static_cast<int>(expectedBegin + static_cast<size_t>(minLength) - 1) },
+        { "referenceMaxEnd", static_cast<int>(expectedBegin + static_cast<size_t>(maxLength) - 1) },
+        { "rawScore", 0.0 },
+        { "startPenalty", 0.0 },
+        { "lengthPenalty", 0.0 },
+        { "totalPenalty", 0.0 },
+        { "score", 0.0 },
+        { "axis", 0.0 },
+        { "upperLevel", 0.0 },
+        { "lowerLevel", 0.0 },
+        { "range", 0.0 },
+        { "upperSample", static_cast<int>(expectedBegin) },
+        { "lowerSample", static_cast<int>(expectedBegin) },
+        { "upperPointValue", 0.0 },
+        { "lowerPointValue", 0.0 },
+        { "detector", QString("period") },
+    };
+
+    for (int startOffset { -startJitter }; startOffset <= startJitter; ++startOffset) {
+        if (startOffset < 0 && expectedBegin < static_cast<size_t>(-startOffset)) {
+            continue;
+        }
+
+        const size_t begin { static_cast<size_t>(static_cast<qint64>(expectedBegin) + startOffset) };
+        for (int length { minLength }; length <= maxLength; ++length) {
+            double axis { 0.0 };
+            double upperLevel { 0.0 };
+            double lowerLevel { 0.0 };
+            double score { scoreExperimentalWindow(channel, begin, static_cast<size_t>(length), &axis, &upperLevel, &lowerLevel) };
+            if (score <= 0.0) {
+                continue;
+            }
+
+            const int bit { length >= classificationBoundary ? 1 : 0 };
+            const int expectedLength { bit == 0 ? zeroExpectedLength : oneExpectedLength };
+            const double rawScore { score };
+            const double startPenalty { std::fabs(startOffset) / static_cast<double>(std::max(1, startJitter)) * 0.06 };
+            const double lengthPenalty { std::fabs(length - expectedLength) / static_cast<double>(std::max(1, expectedLength)) * 0.08 };
+            double greedyOnePenalty { 0.0 };
+            double zeroPrefixScore { 0.0 };
+            if (bit == 1 && zeroExpectedLength >= minLength && zeroExpectedLength < length) {
+                zeroPrefixScore = scoreExperimentalWindow(channel, begin, static_cast<size_t>(zeroExpectedLength));
+                if (zeroPrefixScore >= 0.82 && rawScore - zeroPrefixScore <= 0.14) {
+                    greedyOnePenalty = (0.14 - (rawScore - zeroPrefixScore)) * 1.5;
+                }
+            }
+            const double totalPenalty { startPenalty + lengthPenalty + greedyOnePenalty };
+            score = std::max(0.0, score - totalPenalty);
+            if (!best["valid"].toBool() || score > best["score"].toDouble()) {
+                best["valid"] = true;
+                best["bit"] = bit;
+                best["begin"] = static_cast<int>(begin);
+                best["end"] = static_cast<int>(begin + static_cast<size_t>(length) - 1);
+                best["length"] = length;
+                best["expectedLength"] = expectedLength;
+                best["referenceExpectedEnd"] = static_cast<int>(expectedBegin + static_cast<size_t>(expectedLength) - 1);
+                best["rawScore"] = rawScore;
+                best["startPenalty"] = startPenalty;
+                best["lengthPenalty"] = lengthPenalty;
+                best["greedyOnePenalty"] = greedyOnePenalty;
+                best["zeroPrefixScore"] = zeroPrefixScore;
+                best["totalPenalty"] = totalPenalty;
+                best["score"] = score;
+                best["axis"] = axis;
+                best["upperLevel"] = upperLevel;
+                best["lowerLevel"] = lowerLevel;
+            }
+        }
+    }
+
+    if (best["valid"].toBool()) {
+        const int begin { best["begin"].toInt() };
+        const int end { best["end"].toInt() };
+        int upperSample { begin };
+        int lowerSample { begin };
+        double upperValue { channel.at(begin) };
+        double lowerValue { channel.at(begin) };
+        for (int sample { begin + 1 }; sample <= end; ++sample) {
+            const double value { channel.at(sample) };
+            if (value > upperValue) {
+                upperValue = value;
+                upperSample = sample;
+            }
+            if (value < lowerValue) {
+                lowerValue = value;
+                lowerSample = sample;
+            }
+        }
+
+        best["upperSample"] = upperSample;
+        best["lowerSample"] = lowerSample;
+        best["upperPointValue"] = upperValue;
+        best["lowerPointValue"] = lowerValue;
+        best["range"] = upperValue - lowerValue;
+    }
+
+    return best;
+}
+
 void WaveformParser::parse(uint chNum)
 {
+    if (m_parsingCancellationRequested) {
+        return;
+    }
+
     if (chNum >= mWavReader.getNumberOfChannels()) {
         qDebug() << "Trying to parse channel that exceeds overall number of channels";
         return;
     }
 
+    setParsingProgress(true, 0, QString("Channel %1: preparing parser").arg(chNum + 1));
+    QCoreApplication::processEvents();
+
     QWavVector& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
+    setParsingProgress(true, 0, QString("Channel %1: detecting half-waves").arg(chNum + 1));
+    QCoreApplication::processEvents();
     QVector<ParsedData::WaveformPart> parsed = parseChannel<QWavVectorType>(channel);
 
     const double sampleRate = mWavReader.getSampleRate();
@@ -919,6 +1366,41 @@ void WaveformParser::parse(uint chNum)
 
     auto currentState = SEARCH_OF_PILOT_TONE;
     auto it = parsed.begin();
+    m_experimentalDebugManualInspection = false;
+    QElapsedTimer progressTimer;
+    progressTimer.start();
+    const auto updateProgress = [&](size_t sample, const QString& phase, bool force = false) {
+        if (!force && progressTimer.elapsed() < 100) {
+            return;
+        }
+
+        const int progress { channel.empty() ? 0 : static_cast<int>(std::min<size_t>(99, sample * 100 / static_cast<size_t>(channel.size()))) };
+        setParsingProgress(true, progress, QString("Channel %1: %2").arg(chNum + 1).arg(phase));
+        progressTimer.restart();
+        QCoreApplication::processEvents();
+    };
+    QElapsedTimer parserHeartbeatTimer;
+    parserHeartbeatTimer.start();
+    int parserHeartbeatCounter { 0 };
+    const auto updateProgressHeartbeat = [&](size_t sample, const QString& phase) {
+        if (parserHeartbeatTimer.elapsed() < 300) {
+            return;
+        }
+
+        const int progress { channel.empty() ? 0 : static_cast<int>(std::min<size_t>(99, sample * 100 / static_cast<size_t>(channel.size()))) };
+        setParsingProgress(true,
+                           progress,
+                           QString("Channel %1: %2\nsample %3/%4, tick %5")
+                                   .arg(chNum + 1)
+                                   .arg(phase)
+                                   .arg(sample)
+                                   .arg(channel.size())
+                                   .arg(++parserHeartbeatCounter));
+        parserHeartbeatTimer.restart();
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    };
+    setParsingProgress(true, 0, QString("Channel %1: parsing waveform").arg(chNum + 1));
+    QCoreApplication::processEvents();
     QVector<uint8_t> data;
     QVector<ParsedData::WaveformPart> waveformData;
     QMap<size_t, uint> data_mapping;
@@ -946,11 +1428,1134 @@ void WaveformParser::parse(uint chNum)
     const auto isSynchroSecondHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p, double deltaDivider = 1.0) -> bool {
         return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroSecondHalfFreq, parserSettings.synchroDelta, deltaDivider);
     };
+    QElapsedTimer experimentalDebugTimer;
+    experimentalDebugTimer.start();
+    const auto publishExperimentalParseDebug = [&](size_t sample, const QVariantMap& periodCandidate, bool force = false) {
+        if (parserSettings.parserMode != ParserSettingsModel::ExperimentalAdaptiveParser) {
+            return;
+        }
+        if (m_experimentalDebugManualInspection) {
+            return;
+        }
+        if (!force && experimentalDebugTimer.elapsed() < 120) {
+            return;
+        }
+
+        const int bit { periodCandidate.contains("bit") ? periodCandidate.value("bit").toInt() : -1 };
+        const bool valid { periodCandidate.value("valid").toBool() };
+        m_experimentalDebugChannel = chNum;
+        m_experimentalDebugActive = true;
+        m_experimentalDebugSample = sample;
+        const QString detector { periodCandidate.value("detector").toString() };
+        const QString detectorLine {
+            detector == "next pilot"
+                    ? QString("next pilot half-waves=%1").arg(periodCandidate.value("pilotHalfWaves").toInt())
+                            : detector == "pause"
+                                    ? QString("pause detector rms=%1 rms ratio=%2")
+                                            .arg(periodCandidate.value("rms").toDouble(), 0, 'f', 4)
+                                            .arg(periodCandidate.value("rmsRatio").toDouble(), 0, 'f', 3)
+                            : detector == "adaptive scan"
+                                    ? QString("adaptive scan checked=%1 depth=%2 skip=%3")
+                                            .arg(periodCandidate.value("checkedHypotheses").toInt())
+                                            .arg(periodCandidate.value("pathDepth").toInt())
+                                            .arg(periodCandidate.value("skippedHalfWaves").toInt())
+                            : detector == "half-wave pair"
+                                    ? QString("half-wave pair detector")
+                                    : detector == "half-wave viterbi"
+                                            ? QString("half-wave viterbi path=%1 depth=%2 skip=%3 score=%4 confidence=%5")
+                                                    .arg(periodCandidate.value("pathBits").toString())
+                                                    .arg(periodCandidate.value("pathDepth").toInt())
+                                                    .arg(periodCandidate.value("skippedHalfWaves").toInt())
+                                                    .arg(periodCandidate.value("pathScore").toDouble(), 0, 'f', 3)
+                                                    .arg(periodCandidate.value("pathConfidence").toDouble(), 0, 'f', 3)
+                                            : QString("period detector")
+        };
+        m_experimentalDebugState = {
+            { "active", true },
+            { "chNum", static_cast<int>(chNum) },
+            { "sample", static_cast<int>(sample) },
+            { "followSample", periodCandidate.value("followSample", true).toBool() },
+            { "phase", QString("Live experimental parse") },
+            { "zero", bit == 0 ? periodCandidate : QVariantMap() },
+            { "one", bit == 1 ? periodCandidate : QVariantMap() },
+            { "period", periodCandidate },
+            { "selected", valid ? periodCandidate : QVariantMap() },
+            { "result", periodCandidate.value("crcMismatchStop").toBool()
+                    ? QString("Parser stopped on CRC mismatch")
+                    : detector == "next pilot"
+                    ? QString("Payload stopped before next pilot")
+                    : detector == "pause"
+                            ? QString("Payload stopped on pause")
+                            : (valid ? QString("Candidate %1").arg(bit) : QString("No confident period")) },
+            { "message", QString("Live experimental parse\n%1\nbit=%2 score=%3 raw=%4 penalty=%5 zero=%6 one=%7 timing=%8 balance=%9 shape=%10 speed=%11 damaged=%12 zero-rescue=%13\nhalves=%14/%15 begin=%16 end=%17 len=%18 axis=%19 range=%20\ncarrier ready=%21 range=%22 ratio=%23 score floor=%24 axis jump=%25/%26\ncrc stop=%27 calculated=0x%28 awaited=0x%29 bytes=%30\nsample=%31")
+                    .arg(detectorLine)
+                    .arg(bit)
+                    .arg(periodCandidate.value("score").toDouble(), 0, 'f', 3)
+                    .arg(periodCandidate.value("rawScore").toDouble(), 0, 'f', 3)
+                    .arg(periodCandidate.value("totalPenalty").toDouble(), 0, 'f', 3)
+                    .arg(periodCandidate.value("zeroScore").toDouble(), 0, 'f', 3)
+                    .arg(periodCandidate.value("oneScore").toDouble(), 0, 'f', 3)
+                    .arg(periodCandidate.value("timingScore").toDouble(), 0, 'f', 3)
+                    .arg(periodCandidate.value("balanceScore").toDouble(), 0, 'f', 3)
+                    .arg(periodCandidate.value("shapeScore").toDouble(), 0, 'f', 3)
+                    .arg(periodCandidate.value("speedRatio").toDouble(), 0, 'f', 3)
+                    .arg(periodCandidate.value("damagedReadable").toBool() ? QString("yes") : QString("no"))
+                    .arg(periodCandidate.value("damagedZeroTimingRescue").toBool() ? QString("yes") : QString("no"))
+                    .arg(periodCandidate.value("firstHalfLength").toInt())
+                    .arg(periodCandidate.value("secondHalfLength").toInt())
+                    .arg(periodCandidate.value("begin").toInt())
+                    .arg(periodCandidate.value("end").toInt())
+                    .arg(periodCandidate.value("length").toInt())
+                    .arg(periodCandidate.value("axis").toDouble(), 0, 'f', 1)
+                    .arg(periodCandidate.value("range").toDouble(), 0, 'f', 1)
+                    .arg(periodCandidate.value("carrierReady").toBool() ? QString("yes") : QString("no"))
+                    .arg(periodCandidate.value("carrierRange").toDouble(), 0, 'f', 1)
+                    .arg(periodCandidate.value("rangeRatio").toDouble(), 0, 'f', 3)
+                    .arg(periodCandidate.value("scoreFloor").toDouble(), 0, 'f', 3)
+                    .arg(periodCandidate.value("axisJump").toDouble(), 0, 'f', 1)
+                    .arg(periodCandidate.value("axisTolerance").toDouble(), 0, 'f', 1)
+                    .arg(periodCandidate.value("crcMismatchStop").toBool() ? QString("yes") : QString("no"))
+                    .arg(periodCandidate.value("parityCalculated").toInt(), 2, 16, QLatin1Char('0'))
+                    .arg(periodCandidate.value("parityAwaited").toInt(), 2, 16, QLatin1Char('0'))
+                    .arg(periodCandidate.value("parsedBytes").toInt())
+                    .arg(static_cast<int>(sample)) },
+        };
+        emit experimentalDebugChanged(chNum);
+        experimentalDebugTimer.restart();
+        QCoreApplication::processEvents();
+    };
+
+    struct ExperimentalBitCandidate {
+        bool valid { false };
+        uint8_t bit { 0 };
+        size_t begin { 0 };
+        size_t end { 0 };
+        double score { 0.0 };
+        qsizetype firstPartIndex { -1 };
+        qsizetype secondPartIndex { -1 };
+    };
+
+    const auto periodCandidateToBitCandidate = [](const QVariantMap& periodCandidate) {
+        ExperimentalBitCandidate result;
+        if (periodCandidate["valid"].toBool()) {
+            result.valid = true;
+            result.bit = static_cast<uint8_t>(periodCandidate["bit"].toInt());
+            result.begin = static_cast<size_t>(periodCandidate["begin"].toInt());
+            result.end = static_cast<size_t>(periodCandidate["end"].toInt());
+            result.score = periodCandidate["score"].toDouble();
+            result.firstPartIndex = periodCandidate.value("firstPartIndex", -1).toInt();
+            result.secondPartIndex = periodCandidate.value("secondPartIndex", -1).toInt();
+        }
+        return result;
+    };
+
+    const auto scoreExperimentalWindow = [&channel](size_t begin, size_t length) {
+        if (length < 8 || begin >= static_cast<size_t>(channel.size()) || begin + length > static_cast<size_t>(channel.size())) {
+            return 0.0;
+        }
+
+        std::vector<double> samples;
+        samples.reserve(length);
+        for (size_t pos { begin }; pos < begin + length; ++pos) {
+            samples.push_back(channel.at(static_cast<qsizetype>(pos)));
+        }
+
+        auto sortedSamples { samples };
+        const auto medianIt { std::next(sortedSamples.begin(), static_cast<std::ptrdiff_t>(sortedSamples.size() / 2)) };
+        std::nth_element(sortedSamples.begin(), medianIt, sortedSamples.end());
+        const double axis { *medianIt };
+        const auto [minIt, maxIt] { std::minmax_element(samples.cbegin(), samples.cend()) };
+        const double range { *maxIt - *minIt };
+        if (range <= 0.01) {
+            return 0.0;
+        }
+
+        int bucketCount { std::clamp(static_cast<int>(length / 6), 8, 24) };
+        bucketCount = std::min(bucketCount, static_cast<int>(length / 2));
+        if (bucketCount < 4) {
+            return 0.0;
+        }
+
+        QVector<int> bucketSigns;
+        QVector<double> bucketWeights;
+        bucketSigns.reserve(bucketCount);
+        bucketWeights.reserve(bucketCount);
+        const double weakBucketThreshold { range * 0.05 };
+        for (int bucket { 0 }; bucket < bucketCount; ++bucket) {
+            const size_t bucketBegin { length * static_cast<size_t>(bucket) / static_cast<size_t>(bucketCount) };
+            const size_t bucketEnd { length * static_cast<size_t>(bucket + 1) / static_cast<size_t>(bucketCount) };
+            double sum { 0.0 };
+            for (size_t sample { bucketBegin }; sample < bucketEnd; ++sample) {
+                sum += samples.at(sample) - axis;
+            }
+
+            const double mean { sum / std::max<size_t>(1, bucketEnd - bucketBegin) };
+            bucketSigns.append(std::fabs(mean) < weakBucketThreshold ? 0 : (mean > 0.0 ? 1 : -1));
+            bucketWeights.append(std::max(std::fabs(mean), weakBucketThreshold));
+        }
+
+        auto scorePolarity = [&bucketSigns, &bucketWeights, bucketCount](int split, int firstSign) {
+            double matchedWeight { 0.0 };
+            double totalWeight { 0.0 };
+            int firstStrongBuckets { 0 };
+            int secondStrongBuckets { 0 };
+            for (int bucket { 0 }; bucket < bucketCount; ++bucket) {
+                const int expectedSign { bucket < split ? firstSign : -firstSign };
+                const int sign { bucketSigns.at(bucket) };
+                const double weight { bucketWeights.at(bucket) };
+                totalWeight += weight;
+                if (sign == expectedSign) {
+                    matchedWeight += weight;
+                    if (bucket < split) {
+                        ++firstStrongBuckets;
+                    } else {
+                        ++secondStrongBuckets;
+                    }
+                } else if (sign == 0) {
+                    matchedWeight += weight * 0.5;
+                }
+            }
+
+            if (firstStrongBuckets < split / 2 || secondStrongBuckets < (bucketCount - split) / 2) {
+                return 0.0;
+            }
+
+            int signChanges { 0 };
+            int previousSign { 0 };
+            for (const int sign: bucketSigns) {
+                if (sign == 0) {
+                    continue;
+                }
+
+                if (previousSign != 0 && sign != previousSign) {
+                    ++signChanges;
+                }
+                previousSign = sign;
+            }
+
+            const double roughnessPenalty { std::max(0, signChanges - 1) * 0.035 };
+            return totalWeight > 0.0 ? std::max(0.0, matchedWeight / totalWeight - roughnessPenalty) : 0.0;
+        };
+
+        double bestScore { 0.0 };
+        const int minSplit { std::max(2, static_cast<int>(std::floor(bucketCount * 0.35))) };
+        const int maxSplit { std::min(bucketCount - 2, static_cast<int>(std::ceil(bucketCount * 0.65))) };
+        for (int split { minSplit }; split <= maxSplit; ++split) {
+            bestScore = std::max(bestScore, scorePolarity(split, 1));
+            bestScore = std::max(bestScore, scorePolarity(split, -1));
+        }
+
+        double bestPlateauScore { 0.0 };
+        const auto scorePlateauPolarity = [&samples, axis, range](size_t split, int firstSign) {
+            double firstSum { 0.0 };
+            double secondSum { 0.0 };
+            int firstMatchingSamples { 0 };
+            int secondMatchingSamples { 0 };
+            const size_t secondSize { samples.size() - split };
+            for (size_t sample { 0 }; sample < split; ++sample) {
+                const double value { samples.at(sample) - axis };
+                firstSum += value;
+                if ((firstSign > 0 && value > 0.0) || (firstSign < 0 && value < 0.0)) {
+                    ++firstMatchingSamples;
+                }
+            }
+            for (size_t sample { split }; sample < samples.size(); ++sample) {
+                const double value { samples.at(sample) - axis };
+                secondSum += value;
+                if ((firstSign > 0 && value < 0.0) || (firstSign < 0 && value > 0.0)) {
+                    ++secondMatchingSamples;
+                }
+            }
+
+            const double firstMean { firstSum / std::max<size_t>(1, split) };
+            const double secondMean { secondSum / std::max<size_t>(1, secondSize) };
+            if ((firstSign > 0 && (firstMean <= 0.0 || secondMean >= 0.0)) ||
+                    (firstSign < 0 && (firstMean >= 0.0 || secondMean <= 0.0))) {
+                return 0.0;
+            }
+
+            const double firstDominance { firstMatchingSamples / static_cast<double>(std::max<size_t>(1, split)) };
+            const double secondDominance { secondMatchingSamples / static_cast<double>(std::max<size_t>(1, secondSize)) };
+            const double dominanceScore { std::min(firstDominance, secondDominance) };
+            const double strengthScore { std::clamp(std::min(std::fabs(firstMean), std::fabs(secondMean)) / (range * 0.18), 0.0, 1.0) };
+            const double balanceScore { 1.0 - std::clamp(std::fabs(static_cast<double>(split) / samples.size() - 0.5) / 0.2, 0.0, 1.0) };
+            return dominanceScore * 0.55 + strengthScore * 0.30 + balanceScore * 0.15;
+        };
+
+        const size_t minPlateauSplit { std::max<size_t>(2, static_cast<size_t>(std::floor(samples.size() * 0.35))) };
+        const size_t maxPlateauSplit { std::min(samples.size() - 2, static_cast<size_t>(std::ceil(samples.size() * 0.65))) };
+        for (size_t split { minPlateauSplit }; split <= maxPlateauSplit; ++split) {
+            bestPlateauScore = std::max(bestPlateauScore, scorePlateauPolarity(split, 1));
+            bestPlateauScore = std::max(bestPlateauScore, scorePlateauPolarity(split, -1));
+        }
+
+        const bool normalizedFloat { std::max(std::fabs(*minIt), std::fabs(*maxIt)) <= 2.0 };
+        const double amplitudeScale { normalizedFloat ? 0.25 : 2500.0 };
+        const double amplitudeScore { std::clamp(range / amplitudeScale, 0.0, 1.0) };
+        const double shapeScore { std::max(bestScore, bestPlateauScore) };
+        return std::clamp(shapeScore * 0.9 + amplitudeScore * 0.1, 0.0, 1.0);
+    };
+
+    [[maybe_unused]] const auto findExperimentalBitCandidate = [&parserSettings, sampleRate, &scoreExperimentalWindow](size_t expectedBegin, uint8_t bit) {
+        const int signalFreq { bit == 0 ? parserSettings.zeroFreq : parserSettings.oneFreq };
+        const double deltaBelow { bit == 0 ? parserSettings.zeroDelta : HARDCODED_DATA_SIGNAL_DELTA };
+        const double deltaAbove { bit == 0 ? HARDCODED_DATA_SIGNAL_DELTA : parserSettings.oneDelta };
+        const int expectedLength { static_cast<int>(std::lround(sampleRate / signalFreq)) };
+        const int minLength { std::max(8, static_cast<int>(std::floor(sampleRate / (signalFreq * (1.0 + deltaAbove))))) };
+        const int maxLength { std::max(minLength, static_cast<int>(std::ceil(sampleRate / (signalFreq * (1.0 - std::min(deltaBelow, 0.95)))))) };
+        const int startJitter { std::max(2, expectedLength / 8) };
+
+        ExperimentalBitCandidate best;
+        best.bit = bit;
+        for (int startOffset { -startJitter }; startOffset <= startJitter; ++startOffset) {
+            if (startOffset < 0 && expectedBegin < static_cast<size_t>(-startOffset)) {
+                continue;
+            }
+            const size_t begin { static_cast<size_t>(static_cast<qint64>(expectedBegin) + startOffset) };
+            for (int length { minLength }; length <= maxLength; ++length) {
+                double score { scoreExperimentalWindow(begin, static_cast<size_t>(length)) };
+                if (score <= 0.0) {
+                    continue;
+                }
+
+                const double startPenalty { std::fabs(startOffset) / static_cast<double>(std::max(1, startJitter)) * 0.08 };
+                const double lengthPenalty { std::fabs(length - expectedLength) / static_cast<double>(std::max(1, expectedLength)) * (bit == 0 ? 0.22 : 0.16) };
+                score = std::max(0.0, score - startPenalty - lengthPenalty);
+                if (!best.valid || score > best.score) {
+                    best = { true, bit, begin, begin + static_cast<size_t>(length) - 1, score };
+                }
+            }
+        }
+
+        return best;
+    };
+
+    const auto findNextPilotRun = [&parsed, &isPilotHalfFreq, &channel, sampleRate](size_t sample, double referenceRange) {
+        struct PilotRun {
+            bool found { false };
+            size_t begin { 0 };
+            size_t end { 0 };
+            qsizetype halfWaveCount { 0 };
+        };
+
+        constexpr qsizetype c_minPilotHalfWaves { 96 };
+        constexpr double c_minPauseSecondsBeforePilot { 0.008 };
+        const size_t minPauseSamples { static_cast<size_t>(sampleRate * c_minPauseSecondsBeforePilot) };
+        const size_t maxLookAheadSamples { static_cast<size_t>(sampleRate * 0.45) };
+        auto it { std::lower_bound(parsed.begin(), parsed.end(), sample, [](const ParsedData::WaveformPart& part, size_t value) {
+            return part.end < value;
+        }) };
+        const size_t lookAheadEnd { sample + maxLookAheadSamples };
+
+        const auto hasPauseBeforePilot = [&channel, referenceRange, minPauseSamples, sample](size_t pilotBegin) {
+            if (referenceRange <= 0.0 || pilotBegin <= sample || pilotBegin - sample < minPauseSamples) {
+                return false;
+            }
+
+            const size_t windowBegin { pilotBegin - minPauseSamples };
+            double minValue { channel.at(static_cast<qsizetype>(windowBegin)) };
+            double maxValue { minValue };
+            double sum { 0.0 };
+            for (size_t pos { windowBegin }; pos < pilotBegin; ++pos) {
+                const double value { channel.at(static_cast<qsizetype>(pos)) };
+                minValue = std::min(minValue, value);
+                maxValue = std::max(maxValue, value);
+                sum += value;
+            }
+
+            const double mean { sum / static_cast<double>(minPauseSamples) };
+            double squareSum { 0.0 };
+            for (size_t pos { windowBegin }; pos < pilotBegin; ++pos) {
+                const double diff { channel.at(static_cast<qsizetype>(pos)) - mean };
+                squareSum += diff * diff;
+            }
+
+            const double rangeRatio { (maxValue - minValue) / referenceRange };
+            const double rmsRatio { std::sqrt(squareSum / static_cast<double>(minPauseSamples)) / referenceRange };
+            return rangeRatio < 0.30 && rmsRatio < 0.11;
+        };
+
+        while (it != parsed.end() && it->begin <= lookAheadEnd) {
+            it = std::find_if(it, parsed.end(), [&isPilotHalfFreq, lookAheadEnd](const ParsedData::WaveformPart& part) {
+                return part.begin <= lookAheadEnd && isPilotHalfFreq(part);
+            });
+            if (it == parsed.end() || it->begin > lookAheadEnd) {
+                break;
+            }
+
+            const auto pilotBeginIt { it };
+            auto pilotEndIt { it };
+            for (; pilotEndIt != parsed.end() && isPilotHalfFreq(*pilotEndIt); ++pilotEndIt) {
+            }
+
+            const qsizetype halfWaveCount { std::distance(pilotBeginIt, pilotEndIt) };
+            if (halfWaveCount >= c_minPilotHalfWaves && hasPauseBeforePilot(pilotBeginIt->begin)) {
+                return PilotRun {
+                    true,
+                    pilotBeginIt->begin,
+                    std::prev(pilotEndIt)->end,
+                    halfWaveCount
+                };
+            }
+
+            it = pilotEndIt;
+        }
+
+        return PilotRun {};
+    };
+
+    const auto analyzeExperimentalSignalWindow = [&channel, sampleRate](size_t sample, double referenceRange) {
+        struct SignalWindow {
+            bool pause { false };
+            double range { 0.0 };
+            double rms { 0.0 };
+            double rangeRatio { 1.0 };
+            double rmsRatio { 1.0 };
+        };
+
+        if (referenceRange <= 0.0 || sample >= static_cast<size_t>(channel.size())) {
+            return SignalWindow {};
+        }
+
+        const size_t windowLength {
+            std::min<size_t>(
+                    static_cast<size_t>(channel.size()) - sample,
+                    std::max<size_t>(64, static_cast<size_t>(sampleRate * 0.025)))
+        };
+        if (windowLength < 16) {
+            return SignalWindow {};
+        }
+
+        double minValue { channel.at(static_cast<qsizetype>(sample)) };
+        double maxValue { minValue };
+        double sum { 0.0 };
+        for (size_t offset { 0 }; offset < windowLength; ++offset) {
+            const double value { channel.at(static_cast<qsizetype>(sample + offset)) };
+            minValue = std::min(minValue, value);
+            maxValue = std::max(maxValue, value);
+            sum += value;
+        }
+
+        const double mean { sum / static_cast<double>(windowLength) };
+        double squareSum { 0.0 };
+        for (size_t offset { 0 }; offset < windowLength; ++offset) {
+            const double value { channel.at(static_cast<qsizetype>(sample + offset)) - mean };
+            squareSum += value * value;
+        }
+
+        SignalWindow result;
+        result.range = maxValue - minValue;
+        result.rms = std::sqrt(squareSum / static_cast<double>(windowLength));
+        result.rangeRatio = result.range / referenceRange;
+        result.rmsRatio = result.rms / referenceRange;
+        result.pause = result.rangeRatio < 0.22 && result.rmsRatio < 0.08;
+        return result;
+    };
+
+    bool stopParsingAfterExperimentalCrcError { false };
+    const auto decodeExperimentalData = [&](qsizetype startPartIndex) {
+        QVector<uint8_t> experimentalData;
+        QVector<ParsedData::WaveformPart> experimentalWaveformData;
+        QMap<size_t, uint> experimentalDataMapping;
+        uint8_t experimentalBitIndex { 0 };
+        uint8_t experimentalByte { 0 };
+        uint8_t experimentalParity { 0 };
+        qsizetype currentPartIndex { startPartIndex };
+        size_t currentSample { currentPartIndex >= 0 && currentPartIndex < parsed.size() ? parsed.at(currentPartIndex).begin : 0 };
+        const size_t startSample { currentSample };
+        size_t lastSample { currentSample };
+        ParsedData::WaveformPart lastBytePart { currentSample, currentSample, 1, ParsedData::POSITIVE };
+        constexpr double c_minScore { 0.62 };
+        constexpr int c_carrierWarmupBits { 16 };
+        constexpr double c_minRangeRatio { 0.32 };
+        constexpr double c_scoreDropTolerance { 0.24 };
+        int acceptedBits { 0 };
+        double carrierRange { 0.0 };
+        double carrierAxis { 0.0 };
+        double carrierScore { 0.0 };
+        double speedRatio { 1.0 };
+        size_t lastAutoSuspiciousPoint { std::numeric_limits<size_t>::max() };
+        const auto calculatedParity = [&experimentalData, &experimentalParity]() {
+            return experimentalData.empty() ? uint8_t { 0 } : static_cast<uint8_t>(experimentalParity ^ experimentalData.last());
+        };
+        const auto hasCrcMismatch = [&experimentalData, &calculatedParity]() {
+            return !experimentalData.empty() && calculatedParity() != experimentalData.last();
+        };
+        const auto addAutoSuspiciousPoint = [&](size_t sample) {
+            constexpr size_t c_minAutoSuspiciousDistance { 96 };
+            if (lastAutoSuspiciousPoint != std::numeric_limits<size_t>::max() &&
+                    sample > lastAutoSuspiciousPoint &&
+                    sample - lastAutoSuspiciousPoint < c_minAutoSuspiciousDistance) {
+                return;
+            }
+
+            if (sample <= static_cast<size_t>(std::numeric_limits<uint>::max())) {
+                SuspiciousPointsModel::instance()->addSuspiciousPoint(static_cast<uint>(sample));
+                lastAutoSuspiciousPoint = sample;
+            }
+        };
+
+        const int zeroExpectedLength { static_cast<int>(std::lround(sampleRate / parserSettings.zeroFreq)) };
+        const int oneExpectedLength { static_cast<int>(std::lround(sampleRate / parserSettings.oneFreq)) };
+        const int classificationBoundary { (zeroExpectedLength + oneExpectedLength) / 2 };
+        const auto scoreLength = [](double length, double expected, double deltaBelow, double deltaAbove) {
+            const double minLength { expected / (1.0 + deltaAbove) };
+            const double maxLength { expected / (1.0 - std::min(deltaBelow, 0.95)) };
+            if (length < minLength || length > maxLength) {
+                const double miss { length < minLength ? minLength - length : length - maxLength };
+                return std::max(0.0, 0.45 - miss / std::max(1.0, expected) * 2.0);
+            }
+
+            return 1.0 - std::min(0.55, std::fabs(length - expected) / std::max(1.0, expected) * 1.4);
+        };
+        const auto buildHalfWaveCandidates = [&](qsizetype partIndex, double candidateSpeedRatio) {
+            QVariantMap best {
+                { "valid", false },
+                { "bit", -1 },
+                { "begin", partIndex >= 0 && partIndex < parsed.size() ? static_cast<int>(parsed.at(partIndex).begin) : 0 },
+                { "end", partIndex >= 0 && partIndex < parsed.size() ? static_cast<int>(parsed.at(partIndex).end) : 0 },
+                { "length", 0 },
+                { "expectedLength", 0 },
+                { "zeroExpectedLength", zeroExpectedLength },
+                { "oneExpectedLength", oneExpectedLength },
+                { "classificationBoundary", classificationBoundary },
+                { "score", 0.0 },
+                { "rawScore", 0.0 },
+                { "totalPenalty", 0.0 },
+                { "axis", 0.0 },
+                { "upperLevel", 0.0 },
+                { "lowerLevel", 0.0 },
+                { "range", 0.0 },
+                { "upperSample", 0 },
+                { "lowerSample", 0 },
+                { "detector", QString("half-wave pair") },
+                { "firstPartIndex", static_cast<int>(partIndex) },
+                { "secondPartIndex", static_cast<int>(partIndex + 1) },
+                { "speedRatio", candidateSpeedRatio },
+                { "balanceScore", 0.0 },
+                { "zeroScore", 0.0 },
+                { "oneScore", 0.0 },
+                { "timingScore", 0.0 },
+            };
+            QVector<QVariantMap> rawCandidates;
+            const auto appendCandidate = [&rawCandidates](const QVariantMap& candidate) {
+                for (auto& existingCandidate: rawCandidates) {
+                    if (existingCandidate.value("bit").toInt() == candidate.value("bit").toInt() &&
+                            existingCandidate.value("secondPartIndex").toInt() == candidate.value("secondPartIndex").toInt() &&
+                            existingCandidate.value("splitPartIndex").toInt() == candidate.value("splitPartIndex").toInt()) {
+                        if (candidate.value("score").toDouble() > existingCandidate.value("score").toDouble()) {
+                            existingCandidate = candidate;
+                        }
+                        return;
+                    }
+                }
+
+                rawCandidates.append(candidate);
+            };
+
+            if (partIndex < 0 || partIndex + 1 >= parsed.size()) {
+                return rawCandidates;
+            }
+
+            const auto dominantSign = [&parsed](qsizetype beginIndex, qsizetype endIndex) {
+                size_t positiveLength { 0 };
+                size_t negativeLength { 0 };
+                for (qsizetype index { beginIndex }; index <= endIndex; ++index) {
+                    if (parsed.at(index).sign == ParsedData::POSITIVE) {
+                        positiveLength += parsed.at(index).length;
+                    } else {
+                        negativeLength += parsed.at(index).length;
+                    }
+                }
+                return positiveLength >= negativeLength ? ParsedData::POSITIVE : ParsedData::NEGATIVE;
+            };
+            const auto spanLength = [&parsed](qsizetype beginIndex, qsizetype endIndex) {
+                size_t result { 0 };
+                for (qsizetype index { beginIndex }; index <= endIndex; ++index) {
+                    result += parsed.at(index).length;
+                }
+                return result;
+            };
+
+            constexpr qsizetype c_maxPhysicalPartsPerBit { 8 };
+            for (qsizetype partsConsumed { 2 }; partsConsumed <= c_maxPhysicalPartsPerBit && partIndex + partsConsumed - 1 < parsed.size(); ++partsConsumed) {
+                for (qsizetype splitOffset { 1 }; splitOffset < partsConsumed; ++splitOffset) {
+                    const qsizetype splitIndex { partIndex + splitOffset - 1 };
+                    const qsizetype endIndex { partIndex + partsConsumed - 1 };
+                    const auto& first { parsed.at(partIndex) };
+                    const auto& endPart { parsed.at(endIndex) };
+                    const size_t firstHalfLength { spanLength(partIndex, splitIndex) };
+                    const size_t secondHalfLength { spanLength(splitIndex + 1, endIndex) };
+                    const size_t length { firstHalfLength + secondHalfLength };
+                    const double balanceScore {
+                        1.0 - std::clamp(std::fabs(static_cast<double>(firstHalfLength) - static_cast<double>(secondHalfLength)) /
+                                          static_cast<double>(std::max<size_t>(1, std::max(firstHalfLength, secondHalfLength))) / 0.55,
+                                          0.0,
+                                          1.0)
+                    };
+                    const double polarityScore { dominantSign(partIndex, splitIndex) != dominantSign(splitIndex + 1, endIndex) ? 1.0 : 0.0 };
+                    const double mergePenalty { (partsConsumed - 2) * 0.055 };
+                    const double splitPenalty {
+                        std::abs(static_cast<double>(splitOffset) / static_cast<double>(partsConsumed) - 0.5) * 0.08
+                    };
+                    const double zeroScore { scoreLength(static_cast<double>(length), zeroExpectedLength * candidateSpeedRatio, parserSettings.zeroDelta, HARDCODED_DATA_SIGNAL_DELTA) };
+                    const double oneScore { scoreLength(static_cast<double>(length), oneExpectedLength * candidateSpeedRatio, HARDCODED_DATA_SIGNAL_DELTA, parserSettings.oneDelta) };
+                    const bool zeroHalfNormal { isSineNormal(first, endPart, true) };
+                    const bool oneHalfNormal { isSineNormal(first, endPart, false) };
+                    const double zeroRawScore { zeroScore * 0.70 + balanceScore * 0.22 + polarityScore * 0.08 };
+                    const double oneRawScore { oneScore * 0.70 + balanceScore * 0.22 + polarityScore * 0.08 };
+                    const double zeroPenalty { (zeroHalfNormal ? 0.0 : 0.10) + mergePenalty + splitPenalty };
+                    const double onePenalty { (oneHalfNormal ? 0.0 : 0.10) + mergePenalty + splitPenalty };
+                    const double zeroTotal { std::max(0.0, zeroRawScore - zeroPenalty) };
+                    const double oneTotal { std::max(0.0, oneRawScore - onePenalty) };
+                    const uint8_t bit { oneTotal > zeroTotal ? uint8_t { 1 } : uint8_t { 0 } };
+                    const double rawScore { bit == 0 ? zeroRawScore : oneRawScore };
+                    const double score { bit == 0 ? zeroTotal : oneTotal };
+                    // Damaged tape can produce a visually clear zero with poor shape/balance score.
+                    // Keep timing-strong zero candidates alive so the lookahead can decide with context.
+                    const bool damagedZeroTimingRescue { bit == 0 && zeroScore >= 0.82 && polarityScore > 0.0 };
+                    const double effectiveScore {
+                        damagedZeroTimingRescue && score < 0.40
+                                ? std::min(0.58, zeroScore * 0.62 + balanceScore * 0.18 - mergePenalty * 0.5)
+                                : score
+                    };
+                    if (polarityScore <= 0.0 || effectiveScore <= 0.0) {
+                        continue;
+                    }
+
+                    double axis { 0.0 };
+                    double upperLevel { 0.0 };
+                    double lowerLevel { 0.0 };
+                    const double shapeScore { this->scoreExperimentalWindow(channel, first.begin, length, &axis, &upperLevel, &lowerLevel) };
+                    int upperSample { static_cast<int>(first.begin) };
+                    int lowerSample { static_cast<int>(first.begin) };
+                    double upperValue { channel.at(static_cast<qsizetype>(first.begin)) };
+                    double lowerValue { upperValue };
+                    for (size_t sample { first.begin + 1 }; sample <= endPart.end; ++sample) {
+                        const double value { channel.at(static_cast<qsizetype>(sample)) };
+                        if (value > upperValue) {
+                            upperValue = value;
+                            upperSample = static_cast<int>(sample);
+                        }
+                        if (value < lowerValue) {
+                            lowerValue = value;
+                            lowerSample = static_cast<int>(sample);
+                        }
+                    }
+
+                    QVariantMap candidate { best };
+                    candidate["valid"] = true;
+                    candidate["bit"] = bit;
+                    candidate["begin"] = static_cast<int>(first.begin);
+                    candidate["end"] = static_cast<int>(endPart.end);
+                    candidate["length"] = static_cast<int>(length);
+                    candidate["expectedLength"] = bit == 0 ? static_cast<int>(std::lround(zeroExpectedLength * candidateSpeedRatio)) : static_cast<int>(std::lround(oneExpectedLength * candidateSpeedRatio));
+                    candidate["score"] = effectiveScore;
+                    candidate["rawScore"] = std::max(rawScore, effectiveScore);
+                    candidate["totalPenalty"] = std::max(0.0, rawScore - effectiveScore);
+                    candidate["axis"] = axis;
+                    candidate["upperLevel"] = upperLevel;
+                    candidate["lowerLevel"] = lowerLevel;
+                    candidate["range"] = upperValue - lowerValue;
+                    candidate["upperSample"] = upperSample;
+                    candidate["lowerSample"] = lowerSample;
+                    candidate["upperPointValue"] = upperValue;
+                    candidate["lowerPointValue"] = lowerValue;
+                    candidate["shapeScore"] = shapeScore;
+                    candidate["balanceScore"] = balanceScore;
+                    candidate["zeroScore"] = zeroTotal;
+                    candidate["oneScore"] = oneTotal;
+                    candidate["timingScore"] = bit == 0 ? zeroScore : oneScore;
+                    candidate["firstHalfLength"] = static_cast<int>(firstHalfLength);
+                    candidate["secondHalfLength"] = static_cast<int>(secondHalfLength);
+                    candidate["zeroHalfNormal"] = zeroHalfNormal;
+                    candidate["oneHalfNormal"] = oneHalfNormal;
+                    candidate["firstPartIndex"] = static_cast<int>(partIndex);
+                    candidate["secondPartIndex"] = static_cast<int>(endIndex);
+                    candidate["splitPartIndex"] = static_cast<int>(splitIndex);
+                    candidate["physicalParts"] = static_cast<int>(partsConsumed);
+                    candidate["mergePenalty"] = mergePenalty;
+                    candidate["splitPenalty"] = splitPenalty;
+                    candidate["damagedZeroTimingRescue"] = damagedZeroTimingRescue && effectiveScore > score;
+                    appendCandidate(candidate);
+                }
+            }
+            constexpr qsizetype c_maxAlternatives { 8 };
+            return ExperimentalAdaptiveParser::selectAlternatives(rawCandidates,
+                                                                  parserSettings.adaptiveAlternativeMode,
+                                                                  c_maxAlternatives);
+        };
+        const auto buildHalfWaveCandidate = [&](qsizetype partIndex, double candidateSpeedRatio) {
+            const auto candidates { buildHalfWaveCandidates(partIndex, candidateSpeedRatio) };
+            if (!candidates.empty()) {
+                return candidates.first();
+            }
+
+            return QVariantMap {
+                { "valid", false },
+                { "bit", -1 },
+                { "begin", partIndex >= 0 && partIndex < parsed.size() ? static_cast<int>(parsed.at(partIndex).begin) : 0 },
+                { "end", partIndex >= 0 && partIndex < parsed.size() ? static_cast<int>(parsed.at(partIndex).end) : 0 },
+                { "length", 0 },
+                { "expectedLength", 0 },
+                { "zeroExpectedLength", zeroExpectedLength },
+                { "oneExpectedLength", oneExpectedLength },
+                { "classificationBoundary", classificationBoundary },
+                { "score", 0.0 },
+                { "rawScore", 0.0 },
+                { "totalPenalty", 0.0 },
+                { "axis", 0.0 },
+                { "upperLevel", 0.0 },
+                { "lowerLevel", 0.0 },
+                { "range", 0.0 },
+                { "upperSample", 0 },
+                { "lowerSample", 0 },
+                { "detector", QString("half-wave pair") },
+                { "firstPartIndex", static_cast<int>(partIndex) },
+                { "secondPartIndex", static_cast<int>(partIndex + 1) },
+                { "speedRatio", candidateSpeedRatio },
+                { "balanceScore", 0.0 },
+                { "zeroScore", 0.0 },
+                { "oneScore", 0.0 },
+                { "timingScore", 0.0 },
+            };
+        };
+
+        const auto selectHalfWavePath = [&](qsizetype partIndex, double initialSpeedRatio) {
+            struct Path {
+                bool valid { false };
+                QVariantMap firstCandidate;
+                double score { 0.0 };
+                double confidence { 0.0 };
+                QString bits;
+                int depth { 0 };
+                int skippedHalfWaves { 0 };
+            };
+
+            constexpr int c_maxSkippedHalfWaves { 3 };
+            constexpr double c_minCandidateScore { 0.36 };
+            constexpr double c_futureWeight { 0.88 };
+            constexpr double c_skipPenalty { 0.52 };
+            const int baseDepth { std::clamp(parserSettings.adaptiveBaseDepth, 2, 128) };
+            const int uncertainDepth { std::clamp(parserSettings.adaptiveUncertainDepth, baseDepth, 128) };
+            const int maxDepth { std::clamp(parserSettings.adaptiveMaxDepth, uncertainDepth, 128) };
+            const int beamWidth { std::clamp(parserSettings.adaptiveBeamWidth, 2, 64) };
+            const double timingStabilityPenalty { std::clamp(parserSettings.adaptiveTimingStabilityPenalty, 0.0, 2.0) };
+            const auto firstCandidateProbe { buildHalfWaveCandidate(partIndex, initialSpeedRatio) };
+            const double firstProbeScore { firstCandidateProbe.value("score").toDouble() };
+            const double firstProbeTimingScore { firstCandidateProbe.value("timingScore").toDouble() };
+            const bool firstProbeRescued { firstCandidateProbe.value("damagedZeroTimingRescue").toBool() };
+            const int pathDepth {
+                !firstCandidateProbe.value("valid").toBool() || firstProbeScore < 0.50
+                        ? maxDepth
+                        : (firstProbeScore < 0.74 || firstProbeTimingScore < 0.86 || firstProbeRescued ? uncertainDepth : baseDepth)
+            };
+
+            struct BeamState {
+                qsizetype index { 0 };
+                double speedRatio { 1.0 };
+                double score { 0.0 };
+                double weight { 0.0 };
+                QVariantMap firstCandidate;
+                QString bits;
+                int depth { 0 };
+                int skippedHalfWaves { 0 };
+            };
+
+            QVector<BeamState> beam {
+                BeamState {
+                    partIndex,
+                    initialSpeedRatio,
+                    0.0,
+                    0.0,
+                    {},
+                    {},
+                    0,
+                    0
+                }
+            };
+            Path path;
+            std::atomic<int> checkedHypotheses { 0 };
+
+            for (int depth { 0 }; depth < pathDepth && !beam.empty(); ++depth) {
+                if (m_parsingCancellationRequested) {
+                    return Path {};
+                }
+
+                const auto frontIndex { beam.first().index };
+                const size_t statusSample { frontIndex >= 0 && frontIndex < parsed.size() ? parsed.at(frontIndex).begin : currentSample };
+                updateProgressHeartbeat(statusSample,
+                                        QString("adaptive beam, accepted bits %1, depth %2/%3, states %4, checked %5")
+                                                .arg(acceptedBits)
+                                                .arg(depth + 1)
+                                                .arg(pathDepth)
+                                                .arg(beam.size())
+                                                .arg(checkedHypotheses.load()));
+                if (frontIndex >= 0 && frontIndex < parsed.size()) {
+                    const qsizetype endIndex { std::min<qsizetype>(parsed.size() - 1, frontIndex + 4) };
+                    QVariantMap scanCandidate {
+                        { "valid", true },
+                        { "bit", -1 },
+                        { "begin", static_cast<int>(parsed.at(frontIndex).begin) },
+                        { "end", static_cast<int>(parsed.at(endIndex).end) },
+                        { "length", static_cast<int>(parsed.at(endIndex).end - parsed.at(frontIndex).begin + 1) },
+                        { "score", 0.0 },
+                        { "rawScore", 0.0 },
+                        { "totalPenalty", 0.0 },
+                        { "axis", 0.0 },
+                        { "upperLevel", 0.0 },
+                        { "lowerLevel", 0.0 },
+                        { "range", 0.0 },
+                        { "upperSample", static_cast<int>(parsed.at(frontIndex).begin) },
+                        { "lowerSample", static_cast<int>(parsed.at(endIndex).end) },
+                        { "upperPointValue", 0.0 },
+                        { "lowerPointValue", 0.0 },
+                        { "detector", QString("adaptive scan") },
+                        { "followSample", false },
+                        { "checkedHypotheses", checkedHypotheses.load() },
+                        { "pathDepth", depth + 1 },
+                        { "skippedHalfWaves", beam.first().skippedHalfWaves },
+                    };
+                    publishExperimentalParseDebug(statusSample, scanCandidate);
+                }
+
+                QVector<BeamState> nextBeam;
+                nextBeam.reserve(beamWidth * 2);
+                const auto buildSuccessors = [&](const BeamState& state) {
+                        QVector<BeamState> successors;
+                        if (state.index + 1 >= parsed.size()) {
+                            return successors;
+                        }
+
+                        const auto candidates { buildHalfWaveCandidates(state.index, state.speedRatio) };
+                        checkedHypotheses.fetch_add(static_cast<int>(candidates.size()));
+                        for (auto candidate: candidates) {
+                            const double candidateScore { candidate.value("score").toDouble() };
+                            if (!candidate.value("valid").toBool() || candidateScore < c_minCandidateScore) {
+                                continue;
+                            }
+
+                            const uint8_t bit { static_cast<uint8_t>(candidate.value("bit").toInt()) };
+                            const double expectedLength { static_cast<double>(bit == 0 ? zeroExpectedLength : oneExpectedLength) };
+                            const double observedSpeedRatio { candidate.value("length").toDouble() / std::max(1.0, expectedLength) };
+                            const double nextSpeedRatio { std::clamp(state.speedRatio * 0.86 + observedSpeedRatio * 0.14, 0.70, 1.35) };
+                            const double speedJumpPenalty {
+                                timingStabilityPenalty *
+                                std::clamp(std::fabs(std::log(std::max(0.01, observedSpeedRatio) / std::max(0.01, state.speedRatio))) / 0.18,
+                                           0.0,
+                                           1.0)
+                            };
+                            const double transitionBonus {
+                                state.bits.endsWith("0") && bit == 1 ? 0.06 :
+                                state.bits.endsWith("1") && bit == 0 ? 0.03 :
+                                0.0
+                            };
+                            candidate["speedJumpPenalty"] = speedJumpPenalty;
+                            successors.append(BeamState {
+                                static_cast<qsizetype>(candidate.value("secondPartIndex").toInt()) + 1,
+                                nextSpeedRatio,
+                                state.score + (candidateScore + transitionBonus - speedJumpPenalty) * std::pow(c_futureWeight, state.depth),
+                                state.weight + std::pow(c_futureWeight, state.depth),
+                                state.firstCandidate.empty() ? candidate : state.firstCandidate,
+                                state.bits + QString::number(bit),
+                                state.depth + 1,
+                                state.skippedHalfWaves
+                            });
+                        }
+
+                        if (state.skippedHalfWaves < c_maxSkippedHalfWaves && state.index + 1 < parsed.size()) {
+                            successors.append(BeamState {
+                                state.index + 1,
+                                state.speedRatio,
+                                state.score - c_skipPenalty,
+                                state.weight,
+                                state.firstCandidate,
+                                state.bits,
+                                state.depth,
+                                state.skippedHalfWaves + 1
+                            });
+                        }
+
+                        return successors;
+                };
+
+                if (ExperimentalAdaptiveParser::shouldRunBeamInParallel(beam.size())) {
+                    std::vector<std::future<QVector<BeamState>>> futures;
+                    futures.reserve(static_cast<size_t>(beam.size()));
+                    for (const auto& state: beam) {
+                        futures.push_back(std::async(std::launch::async, buildSuccessors, state));
+                    }
+
+                    for (auto& future: futures) {
+                        const auto successors { future.get() };
+                        for (const auto& state: successors) {
+                            nextBeam.append(state);
+                        }
+                    }
+                } else {
+                    for (const auto& state: beam) {
+                        const auto successors { buildSuccessors(state) };
+                        for (const auto& successor: successors) {
+                            nextBeam.append(successor);
+                        }
+                    }
+                }
+
+                std::sort(nextBeam.begin(), nextBeam.end(), [](const BeamState& left, const BeamState& right) {
+                    return left.score > right.score;
+                });
+                if (nextBeam.size() > beamWidth) {
+                    nextBeam.resize(beamWidth);
+                }
+
+                for (const auto& state: nextBeam) {
+                    if (!state.firstCandidate.empty() && (!path.valid || state.score > path.score)) {
+                        path.valid = true;
+                        path.firstCandidate = state.firstCandidate;
+                        path.score = state.score;
+                        path.confidence = state.weight > 0.0 ? state.score / state.weight : 0.0;
+                        path.bits = state.bits;
+                        path.depth = state.depth;
+                        path.skippedHalfWaves = state.skippedHalfWaves;
+                    }
+                }
+                beam = std::move(nextBeam);
+            }
+            if (path.valid) {
+                path.firstCandidate["detector"] = QString("half-wave viterbi");
+                path.firstCandidate["pathScore"] = path.score;
+                path.firstCandidate["pathConfidence"] = path.confidence;
+                path.firstCandidate["pathBits"] = path.bits;
+                path.firstCandidate["pathDepth"] = path.depth;
+                path.firstCandidate["skippedHalfWaves"] = path.skippedHalfWaves;
+            }
+            return path;
+        };
+
+        while (currentPartIndex + 1 < parsed.size() && currentSample < static_cast<size_t>(channel.size())) {
+            if (m_parsingCancellationRequested) {
+                break;
+            }
+
+            updateProgress(currentSample,
+                           QString("experimental adaptive: accepted bits %1, part %2/%3")
+                                   .arg(acceptedBits)
+                                   .arg(currentPartIndex)
+                                   .arg(parsed.size()));
+            const bool carrierReadyForPause { acceptedBits >= c_carrierWarmupBits && carrierRange > 0.0 };
+            const auto signalWindow { analyzeExperimentalSignalWindow(currentSample, carrierRange) };
+            if (carrierReadyForPause && signalWindow.pause) {
+                QVariantMap stopCandidate {
+                    { "valid", false },
+                    { "bit", -1 },
+                    { "begin", static_cast<int>(currentSample) },
+                    { "end", static_cast<int>(currentSample) },
+                    { "length", 0 },
+                    { "score", 0.0 },
+                    { "rawScore", 0.0 },
+                    { "totalPenalty", 0.0 },
+                    { "axis", 0.0 },
+                    { "range", signalWindow.range },
+                    { "carrierReady", carrierReadyForPause },
+                    { "carrierRange", carrierRange },
+                    { "carrierAxis", carrierAxis },
+                    { "carrierScore", carrierScore },
+                    { "rangeRatio", signalWindow.rangeRatio },
+                    { "scoreFloor", 0.0 },
+                    { "axisJump", 0.0 },
+                    { "axisTolerance", 0.0 },
+                    { "detector", QString("pause") },
+                    { "rms", signalWindow.rms },
+                    { "rmsRatio", signalWindow.rmsRatio },
+                };
+                publishExperimentalParseDebug(currentSample, stopCandidate, true);
+                break;
+            }
+
+            const auto nextPilotRun { findNextPilotRun(currentSample, carrierRange) };
+            if (nextPilotRun.found) {
+                QVariantMap stopCandidate {
+                    { "valid", false },
+                    { "bit", -1 },
+                    { "begin", static_cast<int>(nextPilotRun.begin) },
+                    { "end", static_cast<int>(nextPilotRun.end) },
+                    { "length", static_cast<int>(nextPilotRun.end - nextPilotRun.begin + 1) },
+                    { "score", 0.0 },
+                    { "rawScore", 0.0 },
+                    { "totalPenalty", 0.0 },
+                    { "axis", 0.0 },
+                    { "range", 0.0 },
+                    { "carrierReady", acceptedBits >= c_carrierWarmupBits },
+                    { "carrierRange", carrierRange },
+                    { "carrierAxis", carrierAxis },
+                    { "carrierScore", carrierScore },
+                    { "rangeRatio", 0.0 },
+                    { "scoreFloor", 0.0 },
+                    { "axisJump", 0.0 },
+                    { "axisTolerance", 0.0 },
+                    { "detector", QString("next pilot") },
+                    { "pilotHalfWaves", static_cast<int>(nextPilotRun.halfWaveCount) },
+                };
+                publishExperimentalParseDebug(currentSample, stopCandidate, true);
+                break;
+            }
+
+            auto path { selectHalfWavePath(currentPartIndex, speedRatio) };
+            auto periodCandidateMap {
+                path.valid && !path.firstCandidate.empty()
+                        ? path.firstCandidate
+                        : buildHalfWaveCandidate(currentPartIndex, speedRatio)
+            };
+            const double candidateRange { periodCandidateMap.value("range").toDouble() };
+            const double candidateAxis { periodCandidateMap.value("axis").toDouble() };
+            const double candidateScore { periodCandidateMap.value("score").toDouble() };
+            const bool carrierReady { acceptedBits >= c_carrierWarmupBits && carrierRange > 0.0 };
+            const double rangeRatio { carrierReady ? candidateRange / carrierRange : 1.0 };
+            const double scoreFloor { carrierReady ? std::max(c_minScore, carrierScore - c_scoreDropTolerance) : c_minScore };
+            const double axisJump { carrierReady ? std::fabs(candidateAxis - carrierAxis) : 0.0 };
+            const double axisTolerance { carrierReady ? std::max(carrierRange * 2.0, candidateRange * 3.0) : std::numeric_limits<double>::max() };
+            const double pathConfidence { periodCandidateMap.value("pathConfidence").toDouble() };
+            const double timingScore { periodCandidateMap.value("timingScore").toDouble() };
+            const double balanceScore { periodCandidateMap.value("balanceScore").toDouble() };
+            const bool damagedButReadable {
+                periodCandidateMap.value("valid").toBool() &&
+                timingScore >= 0.76 &&
+                pathConfidence >= 0.62 &&
+                (!carrierReady || rangeRatio >= 0.10) &&
+                axisJump <= axisTolerance
+            };
+            const bool periodAccepted {
+                periodCandidateMap.value("valid").toBool() &&
+                (candidateScore >= c_minScore ||
+                 (candidateScore >= 0.48 && pathConfidence >= 0.66) ||
+                 damagedButReadable)
+            };
+            const bool carrierAccepted {
+                !carrierReady ||
+                damagedButReadable ||
+                ((rangeRatio >= c_minRangeRatio || candidateScore >= 0.86) &&
+                 candidateScore >= scoreFloor &&
+                 axisJump <= axisTolerance)
+            };
+            periodCandidateMap["carrierReady"] = carrierReady;
+            periodCandidateMap["carrierRange"] = carrierRange;
+            periodCandidateMap["carrierAxis"] = carrierAxis;
+            periodCandidateMap["carrierScore"] = carrierScore;
+            periodCandidateMap["rangeRatio"] = rangeRatio;
+            periodCandidateMap["scoreFloor"] = scoreFloor;
+            periodCandidateMap["axisJump"] = axisJump;
+            periodCandidateMap["axisTolerance"] = axisTolerance;
+            periodCandidateMap["damagedReadable"] = damagedButReadable;
+            periodCandidateMap["balanceScore"] = balanceScore;
+            publishExperimentalParseDebug(currentSample, periodCandidateMap);
+            const auto periodCandidate { periodCandidateToBitCandidate(periodCandidateMap) };
+            ExperimentalBitCandidate candidate;
+            if (periodCandidate.valid && periodAccepted && carrierAccepted) {
+                candidate = periodCandidate;
+                if (damagedButReadable || candidateScore < c_minScore || pathConfidence < 0.70) {
+                    addAutoSuspiciousPoint(candidate.begin);
+                }
+            } else {
+                const int suspiciousBegin { periodCandidateMap.value("begin", static_cast<int>(currentSample)).toInt() };
+                if (suspiciousBegin >= 0 &&
+                        (periodCandidateMap.value("valid").toBool() ||
+                         timingScore >= 0.60 ||
+                         pathConfidence >= 0.50)) {
+                    addAutoSuspiciousPoint(static_cast<size_t>(suspiciousBegin));
+                }
+                if (hasCrcMismatch()) {
+                    stopParsingAfterExperimentalCrcError = true;
+                    periodCandidateMap["crcMismatchStop"] = true;
+                    periodCandidateMap["parityCalculated"] = static_cast<int>(calculatedParity());
+                    periodCandidateMap["parityAwaited"] = static_cast<int>(experimentalData.last());
+                    periodCandidateMap["parsedBytes"] = experimentalData.size();
+                    publishExperimentalParseDebug(currentSample, periodCandidateMap, true);
+                }
+                break;
+            }
+
+            if (candidate.secondPartIndex < currentPartIndex) {
+                periodCandidateMap["detector"] = QString("parser guard");
+                periodCandidateMap["valid"] = false;
+                periodCandidateMap["score"] = candidate.score;
+                publishExperimentalParseDebug(currentSample, periodCandidateMap, true);
+                break;
+            }
+
+            const ParsedData::WaveformPart bitPart {
+                candidate.begin,
+                candidate.end,
+                candidate.end - candidate.begin + 1,
+                lessThanZero(channel.at(static_cast<qsizetype>(candidate.begin))) ? ParsedData::NEGATIVE : ParsedData::POSITIVE
+            };
+
+            const uint8_t waveformFlag { candidate.bit == 0 ? ParsedData::zeroBit : ParsedData::oneBit };
+            parsedData.fillParsedWaveform(bitPart,
+                                          waveformFlag | ParsedData::sequenceMiddle,
+                                          bitPart.begin,
+                                          waveformFlag | ParsedData::sequenceBegin | (experimentalBitIndex == 0 ? ParsedData::byteBound : 0),
+                                          bitPart.end,
+                                          waveformFlag | ParsedData::sequenceEnd | (experimentalBitIndex == 7 ? ParsedData::byteBound : 0));
+
+            if (experimentalBitIndex == 0) {
+                experimentalDataMapping.insert(bitPart.begin, experimentalData.size());
+            }
+
+            if (candidate.bit != 0) {
+                experimentalByte |= 1 << (7 - experimentalBitIndex);
+            }
+            lastBytePart = bitPart;
+            lastSample = bitPart.end;
+            currentPartIndex = candidate.secondPartIndex + 1;
+            currentSample = currentPartIndex >= 0 && currentPartIndex < parsed.size() ? parsed.at(currentPartIndex).begin : bitPart.end + 1;
+            if (carrierRange <= 0.0) {
+                carrierRange = candidateRange;
+                carrierAxis = candidateAxis;
+                carrierScore = candidateScore;
+            } else {
+                const double alpha { acceptedBits < c_carrierWarmupBits ? 1.0 / static_cast<double>(acceptedBits + 1) : 0.08 };
+                carrierRange = carrierRange * (1.0 - alpha) + candidateRange * alpha;
+                carrierAxis = carrierAxis * (1.0 - alpha) + candidateAxis * alpha;
+                carrierScore = carrierScore * (1.0 - alpha) + candidateScore * alpha;
+            }
+            const double bitExpectedLength { static_cast<double>(candidate.bit == 0 ? zeroExpectedLength : oneExpectedLength) };
+            const double observedSpeedRatio { static_cast<double>(bitPart.length) / std::max(1.0, bitExpectedLength) };
+            const double speedAlpha { acceptedBits < c_carrierWarmupBits ? 1.0 / static_cast<double>(acceptedBits + 1) : 0.05 };
+            speedRatio = std::clamp(speedRatio * (1.0 - speedAlpha) + observedSpeedRatio * speedAlpha, 0.70, 1.35);
+            ++acceptedBits;
+
+            if (experimentalBitIndex++ == 7) {
+                experimentalDataMapping.insert(bitPart.end, experimentalData.size());
+                experimentalBitIndex = 0;
+                experimentalData.append(experimentalByte);
+                experimentalWaveformData.append(lastBytePart);
+                experimentalParity ^= experimentalByte;
+                experimentalByte = 0;
+            }
+        }
+
+        if (!experimentalData.empty()) {
+            experimentalParity ^= experimentalData.last();
+            parsedData.storeData(std::move(experimentalData), std::move(experimentalDataMapping), startSample, lastSample, std::move(experimentalWaveformData), experimentalParity);
+        }
+
+        return lastSample;
+    };
 
     parsedData.beginParse();
 
     while (currentState != NO_MORE_DATA) {
+        if (m_parsingCancellationRequested) {
+            break;
+        }
+
         auto prevIt = it;
+        const size_t progressSample {
+            it != parsed.end() ? it->begin :
+            prevIt != parsed.end() ? prevIt->end :
+            static_cast<size_t>(channel.size())
+        };
+        updateProgress(progressSample, QString("standard states"));
         switch (currentState) {
         case SEARCH_OF_PILOT_TONE:
             it = std::find_if(it, parsed.end(), [&isPilotHalfFreq, &parsedData](const ParsedData::WaveformPart& p) {
@@ -1021,6 +2626,16 @@ void WaveformParser::parse(uint chNum)
             break;
 
         case DATA_SIGNAL:
+            if (parserSettings.parserMode == ParserSettingsModel::ExperimentalAdaptiveParser) {
+                const qsizetype experimentalStartPart { it != parsed.end() ? std::distance(parsed.begin(), it) : std::distance(parsed.begin(), prevIt) + 1 };
+                const size_t endSample { decodeExperimentalData(experimentalStartPart) };
+                it = std::find_if(it, parsed.end(), [endSample](const ParsedData::WaveformPart& p) {
+                    return p.begin > endSample;
+                });
+                currentState = stopParsingAfterExperimentalCrcError ? NO_MORE_DATA : END_OF_DATA;
+                break;
+            }
+
             it = std::next(it);
             if (const auto storeParsedData = [&](size_t parsedBegin, size_t parsedEnd) {
                     if (!data.empty()) {
@@ -1129,6 +2744,10 @@ void WaveformParser::parse(uint chNum)
     }
 
     parsedData.endParse();
+    setParsingProgress(true,
+                       m_parsingCancellationRequested ? m_parsingProgress : 100,
+                       m_parsingCancellationRequested ? QString("Channel %1: canceled").arg(chNum + 1) : QString("Channel %1: done").arg(chNum + 1));
+    QCoreApplication::processEvents();
 
     if (chNum == 0) {
         emit parsedChannel0Changed();
@@ -1136,6 +2755,278 @@ void WaveformParser::parse(uint chNum)
     else {
         emit parsedChannel1Changed();
     }
+    setParsingProgress(false, 100, QString());
+}
+
+void WaveformParser::setExperimentalDebugInactive(uint chNum, const QString& message)
+{
+    m_experimentalDebugActive = false;
+    m_experimentalDebugManualInspection = false;
+    m_experimentalDebugState = {
+        { "active", false },
+        { "chNum", static_cast<int>(chNum) },
+        { "message", message },
+    };
+    emit experimentalDebugChanged(chNum);
+}
+
+bool WaveformParser::startExperimentalDebug(uint chNum)
+{
+    if (chNum >= mWavReader.getNumberOfChannels()) {
+        setExperimentalDebugInactive(chNum, "Invalid channel.");
+        return false;
+    }
+
+    const auto channel { chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1() };
+    if (channel.isNull() || channel->empty()) {
+        setExperimentalDebugInactive(chNum, "No channel data.");
+        return false;
+    }
+
+    const double sampleRate { static_cast<double>(mWavReader.getSampleRate()) };
+    const auto& parserSettings { ParserSettingsModel::instance()->getParserSettings() };
+    const auto isPilotHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p) {
+        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.pilotHalfFreq, parserSettings.pilotDelta, 1.0);
+    };
+    const auto isSynchroFirstHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p, double deltaDivider = 1.0) {
+        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroFirstHalfFreq, parserSettings.synchroDelta, deltaDivider);
+    };
+    const auto isSynchroSecondHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p, double deltaDivider = 1.0) {
+        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroSecondHalfFreq, parserSettings.synchroDelta, deltaDivider);
+    };
+    m_experimentalDebugParsed = parseChannel<QWavVectorType>(*channel);
+    auto it { m_experimentalDebugParsed.begin() };
+    while (it != m_experimentalDebugParsed.end()) {
+        it = std::find_if(it, m_experimentalDebugParsed.end(), isPilotHalfFreq);
+        if (it == m_experimentalDebugParsed.end()) {
+            break;
+        }
+
+        for (; it != m_experimentalDebugParsed.end() && isPilotHalfFreq(*it); ++it) {
+        }
+
+        if (it == m_experimentalDebugParsed.end()) {
+            break;
+        }
+
+        const auto itnext { std::next(it) };
+        const bool syncFound {
+            (parserSettings.preciseSynchroCheck && isSynchroFirstHalfFreq(*it)) ||
+            (!parserSettings.preciseSynchroCheck &&
+             (itnext != m_experimentalDebugParsed.end() &&
+              isFreqFitsInDelta(sampleRate, it->length + itnext->length, parserSettings.synchroFreq, parserSettings.synchroDelta, 1.0)))
+        };
+
+        if (syncFound && itnext != m_experimentalDebugParsed.end() &&
+                (!parserSettings.preciseSynchroCheck || isSynchroSecondHalfFreq(*itnext))) {
+            m_experimentalDebugChannel = chNum;
+            m_experimentalDebugActive = true;
+            m_experimentalDebugManualInspection = false;
+            m_experimentalDebugSample = itnext->end + 1;
+            m_experimentalDebugState = {
+                { "active", true },
+                { "chNum", static_cast<int>(chNum) },
+                { "sample", static_cast<int>(m_experimentalDebugSample) },
+                { "message", QString("Pilot/sync found. Press Next.") },
+            };
+            emit experimentalDebugChanged(chNum);
+            return true;
+        }
+    }
+
+    setExperimentalDebugInactive(chNum, "Pilot/sync not found.");
+    return false;
+}
+
+bool WaveformParser::nextExperimentalDebugStep()
+{
+    if (!m_experimentalDebugActive) {
+        return false;
+    }
+
+    const auto channel { m_experimentalDebugChannel == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1() };
+    if (channel.isNull() || channel->empty() || m_experimentalDebugSample >= static_cast<size_t>(channel->size())) {
+        setExperimentalDebugInactive(m_experimentalDebugChannel, "No more samples.");
+        return false;
+    }
+
+    const auto& parserSettings { ParserSettingsModel::instance()->getParserSettings() };
+    const double sampleRate { static_cast<double>(mWavReader.getSampleRate()) };
+    constexpr double c_minScore { 0.68 };
+    const auto candidateSummary = [](const QString& name, const QVariantMap& candidate) {
+        if (candidate.empty()) {
+            return QString("%1: not checked on this step").arg(name);
+        }
+
+        return QString("%1: %2 bit=%3 score=%4 raw=%5 penalty=%6, ref len=%7 [%8..%9], jitter=%10\n"
+                       "   found begin=%11 end=%12 len=%13, axis=%14, upper=%15@%16, lower=%17@%18")
+                .arg(name)
+                .arg(candidate["valid"].toBool() ? QString("valid") : QString("invalid"))
+                .arg(candidate["bit"].toInt())
+                .arg(candidate["score"].toDouble(), 0, 'f', 3)
+                .arg(candidate["rawScore"].toDouble(), 0, 'f', 3)
+                .arg(candidate["totalPenalty"].toDouble(), 0, 'f', 3)
+                .arg(candidate["expectedLength"].toInt())
+                .arg(candidate["minLength"].toInt())
+                .arg(candidate["maxLength"].toInt())
+                .arg(candidate["startJitter"].toInt())
+                .arg(candidate["begin"].toInt())
+                .arg(candidate["end"].toInt())
+                .arg(candidate["length"].toInt())
+                .arg(candidate["axis"].toDouble(), 0, 'f', 1)
+                .arg(candidate["upperLevel"].toDouble(), 0, 'f', 1)
+                .arg(candidate["upperSample"].toInt())
+                .arg(candidate["lowerLevel"].toDouble(), 0, 'f', 1)
+                .arg(candidate["lowerSample"].toInt());
+    };
+
+    QVariantMap periodCandidate { findExperimentalPeriodCandidate(*channel, m_experimentalDebugSample, parserSettings, sampleRate) };
+    QVariantMap selectedCandidate;
+    QString result;
+    QString phase;
+
+    const bool periodAccepted { periodCandidate["valid"].toBool() && periodCandidate["score"].toDouble() >= c_minScore };
+    phase = "Step: detected complete period first, then classified by length";
+    if (periodAccepted) {
+        selectedCandidate = periodCandidate;
+        result = QString("Selected %1").arg(periodCandidate["bit"].toInt());
+    } else {
+        result = QString("No confident period. score=%1")
+                .arg(periodCandidate["score"].toDouble(), 0, 'f', 3);
+    }
+
+    if (!selectedCandidate.empty()) {
+        m_experimentalDebugSample = static_cast<size_t>(selectedCandidate["end"].toInt()) + 1;
+    }
+
+    m_experimentalDebugManualInspection = false;
+    m_experimentalDebugState = {
+        { "active", true },
+        { "chNum", static_cast<int>(m_experimentalDebugChannel) },
+        { "sample", static_cast<int>(m_experimentalDebugSample) },
+        { "phase", phase },
+        { "zero", periodCandidate["bit"].toInt() == 0 ? periodCandidate : QVariantMap() },
+        { "one", periodCandidate["bit"].toInt() == 1 ? periodCandidate : QVariantMap() },
+        { "period", periodCandidate },
+        { "selected", selectedCandidate },
+        { "result", result },
+        { "message", QString("%1\nscore threshold=%2, boundary=%3, zero ref=%4, one ref=%5\n%6\n%7\nnext sample: %8")
+                .arg(phase)
+                .arg(c_minScore, 0, 'f', 3)
+                .arg(periodCandidate["classificationBoundary"].toInt())
+                .arg(periodCandidate["zeroExpectedLength"].toInt())
+                .arg(periodCandidate["oneExpectedLength"].toInt())
+                .arg(candidateSummary("period", periodCandidate))
+                .arg(result)
+                .arg(static_cast<int>(m_experimentalDebugSample)) },
+    };
+    emit experimentalDebugChanged(m_experimentalDebugChannel);
+    return !selectedCandidate.empty();
+}
+
+bool WaveformParser::inspectExperimentalDebugAt(uint chNum, int sample)
+{
+    if (sample < 0 || chNum >= mWavReader.getNumberOfChannels()) {
+        return false;
+    }
+
+    const auto channel { chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1() };
+    if (channel.isNull() || channel->empty() || sample >= channel->size()) {
+        setExperimentalDebugInactive(chNum, "Invalid debug sample.");
+        return false;
+    }
+
+    const auto& parserSettings { ParserSettingsModel::instance()->getParserSettings() };
+    const double sampleRate { static_cast<double>(mWavReader.getSampleRate()) };
+    constexpr double c_minScore { 0.68 };
+    QVariantMap periodCandidate { findExperimentalPeriodCandidate(*channel, static_cast<size_t>(sample), parserSettings, sampleRate) };
+    QVariantMap selectedCandidate;
+    const bool periodAccepted { periodCandidate["valid"].toBool() && periodCandidate["score"].toDouble() >= c_minScore };
+    if (periodAccepted) {
+        selectedCandidate = periodCandidate;
+    }
+
+    m_experimentalDebugChannel = chNum;
+    m_experimentalDebugActive = true;
+    m_experimentalDebugManualInspection = true;
+    m_experimentalDebugSample = static_cast<size_t>(sample);
+    m_experimentalDebugState = {
+        { "active", true },
+        { "chNum", static_cast<int>(chNum) },
+        { "sample", sample },
+        { "requestedSample", sample },
+        { "phase", QString("Manual experimental inspection") },
+        { "zero", periodCandidate["bit"].toInt() == 0 ? periodCandidate : QVariantMap() },
+        { "one", periodCandidate["bit"].toInt() == 1 ? periodCandidate : QVariantMap() },
+        { "period", periodCandidate },
+        { "selected", selectedCandidate },
+        { "result", periodAccepted ? QString("Selected %1").arg(periodCandidate["bit"].toInt()) : QString("No confident period") },
+        { "message", QString("Manual experimental inspection\nrequested sample=%1, window offset=%2\nscore threshold=%3, boundary=%4, zero ref=%5, one ref=%6\n"
+                              "period: %7 bit=%8 score=%9 raw=%10 penalty=%11 greedy=%12 zero-prefix=%13\n"
+                              "found begin=%14 end=%15 len=%16, axis=%17, range=%18\n"
+                              "upper=%19@%20, lower=%21@%22")
+                .arg(sample)
+                .arg(periodCandidate["begin"].toInt() - sample)
+                .arg(c_minScore, 0, 'f', 3)
+                .arg(periodCandidate["classificationBoundary"].toInt())
+                .arg(periodCandidate["zeroExpectedLength"].toInt())
+                .arg(periodCandidate["oneExpectedLength"].toInt())
+                .arg(periodCandidate["valid"].toBool() ? QString("valid") : QString("invalid"))
+                .arg(periodCandidate["bit"].toInt())
+                .arg(periodCandidate["score"].toDouble(), 0, 'f', 3)
+                .arg(periodCandidate["rawScore"].toDouble(), 0, 'f', 3)
+                .arg(periodCandidate["totalPenalty"].toDouble(), 0, 'f', 3)
+                .arg(periodCandidate["greedyOnePenalty"].toDouble(), 0, 'f', 3)
+                .arg(periodCandidate["zeroPrefixScore"].toDouble(), 0, 'f', 3)
+                .arg(periodCandidate["begin"].toInt())
+                .arg(periodCandidate["end"].toInt())
+                .arg(periodCandidate["length"].toInt())
+                .arg(periodCandidate["axis"].toDouble(), 0, 'f', 1)
+                .arg(periodCandidate["range"].toDouble(), 0, 'f', 1)
+                .arg(periodCandidate["upperLevel"].toDouble(), 0, 'f', 1)
+                .arg(periodCandidate["upperSample"].toInt())
+                .arg(periodCandidate["lowerLevel"].toDouble(), 0, 'f', 1)
+                .arg(periodCandidate["lowerSample"].toInt()) },
+    };
+    emit experimentalDebugChanged(chNum);
+    return periodAccepted;
+}
+
+void WaveformParser::stopExperimentalDebug()
+{
+    setExperimentalDebugInactive(m_experimentalDebugChannel, "Experimental debug stopped.");
+}
+
+void WaveformParser::cancelParsing()
+{
+    if (!m_parsingActive || m_parsingCancellationRequested) {
+        return;
+    }
+
+    m_parsingCancellationRequested = true;
+    setParsingProgress(true, m_parsingProgress, QString("Canceling parser..."));
+}
+
+void WaveformParser::clearParsingCancellation()
+{
+    if (!m_parsingCancellationRequested) {
+        return;
+    }
+
+    m_parsingCancellationRequested = false;
+    emit parsingProgressChanged();
+}
+
+QVariantMap WaveformParser::experimentalDebugState(uint chNum) const
+{
+    if (!m_experimentalDebugActive || chNum != m_experimentalDebugChannel) {
+        return {
+            { "active", false },
+            { "chNum", static_cast<int>(chNum) },
+        };
+    }
+
+    return m_experimentalDebugState;
 }
 
 WaveformParser::SaveTapResult WaveformParser::saveTap(uint chNum, const QString& fileName)
@@ -1395,6 +3286,26 @@ ParsedDataModel* WaveformParser::getParsedChannel0() const
 ParsedDataModel* WaveformParser::getParsedChannel1() const
 {
     return getParsedChannelData(1);
+}
+
+bool WaveformParser::getParsingActive() const
+{
+    return m_parsingActive;
+}
+
+bool WaveformParser::getParsingCancellationRequested() const
+{
+    return m_parsingCancellationRequested;
+}
+
+int WaveformParser::getParsingProgress() const
+{
+    return m_parsingProgress;
+}
+
+QString WaveformParser::getParsingStatus() const
+{
+    return m_parsingStatus;
 }
 
 WaveformParser* WaveformParser::instance()

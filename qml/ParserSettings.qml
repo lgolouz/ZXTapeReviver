@@ -248,8 +248,151 @@ Window {
             visible: checkForAbnormalSineCheckbox.checked
         }
 
+        Text {
+            id: parserModeText
+            anchors.top: sineCheckToleranceTextField.visible ? sineCheckToleranceTextField.bottom : checkForAbnormalSineCheckbox.bottom
+            anchors.left: grid.left
+            anchors.topMargin: 5
+            text: Translations.id_parser_mode
+        }
+
+        ComboBox {
+            id: parserModeComboBox
+            anchors.top: parserModeText.bottom
+            anchors.left: grid.left
+            model: [
+                Translations.id_parser_mode_standard,
+                Translations.id_parser_mode_experimental_adaptive
+            ]
+            currentIndex: ParserSettingsModel.parserMode
+            onActivated: ParserSettingsModel.parserMode = currentIndex
+
+            Connections {
+                target: ParserSettingsModel
+                function onParserModeChanged() {
+                    parserModeComboBox.currentIndex = ParserSettingsModel.parserMode;
+                }
+            }
+        }
+
+        GroupBox {
+            id: adaptiveParserSettingsGroup
+            title: Translations.id_adaptive_parser_settings
+            anchors.top: parserModeComboBox.bottom
+            anchors.left: grid.left
+            anchors.topMargin: 5
+            visible: ParserSettingsModel.parserMode === ParserSettingsModel.ExperimentalAdaptiveParser
+
+            GridLayout {
+                columns: 2
+
+                Text {
+                    text: Translations.id_adaptive_parser_preset
+                }
+
+                RowLayout {
+                    Button {
+                        text: Translations.id_adaptive_parser_preset_basic
+                        onClicked: ParserSettingsModel.applyAdaptiveParserPreset(ParserSettingsModel.AdaptiveBasicPreset)
+                    }
+
+                    Button {
+                        text: Translations.id_adaptive_parser_preset_fast
+                        onClicked: ParserSettingsModel.applyAdaptiveParserPreset(ParserSettingsModel.AdaptiveFastPreset)
+                    }
+
+                    Button {
+                        text: Translations.id_adaptive_parser_preset_accurate
+                        onClicked: ParserSettingsModel.applyAdaptiveParserPreset(ParserSettingsModel.AdaptiveAccuratePreset)
+                    }
+
+                    Button {
+                        text: Translations.id_adaptive_parser_preset_maximum
+                        onClicked: ParserSettingsModel.applyAdaptiveParserPreset(ParserSettingsModel.AdaptiveMaximumPreset)
+                    }
+                }
+
+                Text {
+                    text: Translations.id_adaptive_alternative_mode
+                }
+
+                ComboBox {
+                    id: adaptiveAlternativeModeComboBox
+                    Layout.preferredWidth: 150
+                    model: [
+                        Translations.id_adaptive_alternative_mode_smart,
+                        Translations.id_adaptive_alternative_mode_full
+                    ]
+                    currentIndex: ParserSettingsModel.adaptiveAlternativeMode
+                    onActivated: ParserSettingsModel.adaptiveAlternativeMode = currentIndex
+
+                    Connections {
+                        target: ParserSettingsModel
+                        function onAdaptiveAlternativeModeChanged() {
+                            adaptiveAlternativeModeComboBox.currentIndex = ParserSettingsModel.adaptiveAlternativeMode
+                        }
+                    }
+                }
+
+                Text {
+                    text: Translations.id_adaptive_base_depth
+                }
+
+                TextField {
+                    text: ParserSettingsModel.adaptiveBaseDepth
+                    Layout.preferredWidth: 90
+                    validator: IntValidator { bottom: 2; top: 128 }
+                    onEditingFinished: ParserSettingsModel.adaptiveBaseDepth = parseInt(text, 10)
+                }
+
+                Text {
+                    text: Translations.id_adaptive_uncertain_depth
+                }
+
+                TextField {
+                    text: ParserSettingsModel.adaptiveUncertainDepth
+                    Layout.preferredWidth: 90
+                    validator: IntValidator { bottom: 2; top: 128 }
+                    onEditingFinished: ParserSettingsModel.adaptiveUncertainDepth = parseInt(text, 10)
+                }
+
+                Text {
+                    text: Translations.id_adaptive_max_depth
+                }
+
+                TextField {
+                    text: ParserSettingsModel.adaptiveMaxDepth
+                    Layout.preferredWidth: 90
+                    validator: IntValidator { bottom: 2; top: 128 }
+                    onEditingFinished: ParserSettingsModel.adaptiveMaxDepth = parseInt(text, 10)
+                }
+
+                Text {
+                    text: Translations.id_adaptive_beam_width
+                }
+
+                TextField {
+                    text: ParserSettingsModel.adaptiveBeamWidth
+                    Layout.preferredWidth: 90
+                    validator: IntValidator { bottom: 2; top: 64 }
+                    onEditingFinished: ParserSettingsModel.adaptiveBeamWidth = parseInt(text, 10)
+                }
+
+                Text {
+                    text: Translations.id_adaptive_timing_stability_penalty
+                }
+
+                TextField {
+                    text: ParserSettingsModel.adaptiveTimingStabilityPenalty
+                    Layout.preferredWidth: 90
+                    validator: DoubleValidator { bottom: 0.0; top: 2.0; decimals: 2 }
+                    onEditingFinished: ParserSettingsModel.adaptiveTimingStabilityPenalty = parseFloat(text)
+                }
+            }
+        }
+
         Button {
-            anchors.top: sineCheckToleranceTextField.bottom
+            anchors.top: adaptiveParserSettingsGroup.visible ? adaptiveParserSettingsGroup.bottom : parserModeComboBox.bottom
             anchors.left: grid.left
             anchors.topMargin: parserSettingsDialog.margin_size * 2
             text: Translations.id_restore_defaults_button_text
@@ -258,7 +401,7 @@ Window {
             }
         }
         Button {
-            anchors.top: sineCheckToleranceTextField.bottom
+            anchors.top: adaptiveParserSettingsGroup.visible ? adaptiveParserSettingsGroup.bottom : parserModeComboBox.bottom
             anchors.right: grid.right
             anchors.topMargin: parserSettingsDialog.margin_size * 2
             text: Translations.id_ok_button_text

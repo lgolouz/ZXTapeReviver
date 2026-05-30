@@ -78,6 +78,7 @@ QtObject {
     property string id_waveform_shift_left:                  qsTrId("id_waveform_shift_left") + TranslationManager.translationChanged
     property string id_waveform_shift_right:                 qsTrId("id_waveform_shift_right") + TranslationManager.translationChanged
     property string id_reparse:                              qsTrId("id_reparse") + TranslationManager.translationChanged //Button caption
+    property string id_stop_parser:                          qsTrId("id_stop_parser") + TranslationManager.translationChanged //Button caption
     property string id_save_parsed:                          qsTrId("id_save_parsed") + TranslationManager.translationChanged //Button caption
     property string id_save_waveform:                        qsTrId("id_save_waveform") + TranslationManager.translationChanged //Button caption
     property string id_restore_waveform:                     qsTrId("id_restore_waveform") + TranslationManager.translationChanged //Button caption
@@ -106,6 +107,29 @@ QtObject {
     property string id_redo_action:                          qsTrId("id_redo_action") + TranslationManager.translationChanged //Button caption
     property string id_action_name:                          qsTrId("id_action_name") + TranslationManager.translationChanged
     property string id_sine_check_tolerance:                 qsTrId("id_sine_check_tolerance") + TranslationManager.translationChanged
+    property string id_parser_mode:                          qsTrId("id_parser_mode") + TranslationManager.translationChanged
+    property string id_parser_mode_standard:                 qsTrId("id_parser_mode_standard") + TranslationManager.translationChanged
+    property string id_parser_mode_experimental_adaptive:    qsTrId("id_parser_mode_experimental_adaptive") + TranslationManager.translationChanged
+    property string id_adaptive_parser_settings:             qsTrId("id_adaptive_parser_settings") + TranslationManager.translationChanged
+    property string id_adaptive_parser_preset:               qsTrId("id_adaptive_parser_preset") + TranslationManager.translationChanged
+    property string id_adaptive_parser_preset_basic:         qsTrId("id_adaptive_parser_preset_basic") + TranslationManager.translationChanged
+    property string id_adaptive_parser_preset_fast:          qsTrId("id_adaptive_parser_preset_fast") + TranslationManager.translationChanged
+    property string id_adaptive_parser_preset_accurate:      qsTrId("id_adaptive_parser_preset_accurate") + TranslationManager.translationChanged
+    property string id_adaptive_parser_preset_maximum:       qsTrId("id_adaptive_parser_preset_maximum") + TranslationManager.translationChanged
+    property string id_adaptive_alternative_mode:            qsTrId("id_adaptive_alternative_mode") + TranslationManager.translationChanged
+    property string id_adaptive_alternative_mode_smart:      qsTrId("id_adaptive_alternative_mode_smart") + TranslationManager.translationChanged
+    property string id_adaptive_alternative_mode_full:       qsTrId("id_adaptive_alternative_mode_full") + TranslationManager.translationChanged
+    property string id_adaptive_base_depth:                  qsTrId("id_adaptive_base_depth") + TranslationManager.translationChanged
+    property string id_adaptive_uncertain_depth:             qsTrId("id_adaptive_uncertain_depth") + TranslationManager.translationChanged
+    property string id_adaptive_max_depth:                   qsTrId("id_adaptive_max_depth") + TranslationManager.translationChanged
+    property string id_adaptive_beam_width:                  qsTrId("id_adaptive_beam_width") + TranslationManager.translationChanged
+    property string id_adaptive_timing_stability_penalty:    qsTrId("id_adaptive_timing_stability_penalty") + TranslationManager.translationChanged
+    property string id_parser_starting:                      qsTrId("id_parser_starting") + TranslationManager.translationChanged
+    property string id_parser_debug:                         qsTrId("id_parser_debug") + TranslationManager.translationChanged
+    property string id_start_parser_debug:                   qsTrId("id_start_parser_debug") + TranslationManager.translationChanged
+    property string id_next_parser_debug_step:               qsTrId("id_next_parser_debug_step") + TranslationManager.translationChanged
+    property string id_stop_parser_debug:                    qsTrId("id_stop_parser_debug") + TranslationManager.translationChanged
+    property string id_parser_debug_not_started:             qsTrId("id_parser_debug_not_started") + TranslationManager.translationChanged
     property string id_play_parsed_data:                     qsTrId("id_play_parsed_data") + TranslationManager.translationChanged
     property string id_stop_playing_parsed_data:             qsTrId("id_stop_playing_parsed_data") + TranslationManager.translationChanged
     property string id_pause_playing_parsed_data:            qsTrId("id_pause_playing_parsed_data") + TranslationManager.translationChanged

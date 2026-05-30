@@ -14,6 +14,16 @@
 #include "parsersettingsmodel.h"
 #include "sources/defines.h"
 #include <QScopedPointer>
+#include <algorithm>
+
+namespace {
+constexpr int c_defaultAdaptiveBaseDepth { 12 };
+constexpr int c_defaultAdaptiveUncertainDepth { 32 };
+constexpr int c_defaultAdaptiveMaxDepth { 64 };
+constexpr int c_defaultAdaptiveBeamWidth { 12 };
+constexpr double c_defaultAdaptiveTimingStabilityPenalty { 0.35 };
+constexpr ParserSettingsModel::AdaptiveAlternativeMode c_defaultAdaptiveAlternativeMode { ParserSettingsModel::AdaptiveSmartAlternatives };
+}
 
 ParserSettingsModel::ParserSettingsModel(QObject* parent) :
     QObject(parent),
@@ -33,7 +43,14 @@ ParserSettingsModel::ParserSettingsModel(QObject* parent) :
         zeroDelta,
         oneDelta,
         checkForAbnormalSine,
-        sineCheckTolerance }
+        sineCheckTolerance,
+        StandardParser,
+        c_defaultAdaptiveBaseDepth,
+        c_defaultAdaptiveUncertainDepth,
+        c_defaultAdaptiveMaxDepth,
+        c_defaultAdaptiveBeamWidth,
+        c_defaultAdaptiveTimingStabilityPenalty,
+        c_defaultAdaptiveAlternativeMode }
 {
 
 }
@@ -56,6 +73,50 @@ void ParserSettingsModel::restoreDefaultSettings()
     setOneDelta(oneDelta);
     setCheckForAbnormalSine(checkForAbnormalSine);
     setSineCheckTolerance(sineCheckTolerance);
+    setParserMode(StandardParser);
+    setAdaptiveBaseDepth(c_defaultAdaptiveBaseDepth);
+    setAdaptiveUncertainDepth(c_defaultAdaptiveUncertainDepth);
+    setAdaptiveMaxDepth(c_defaultAdaptiveMaxDepth);
+    setAdaptiveBeamWidth(c_defaultAdaptiveBeamWidth);
+    setAdaptiveTimingStabilityPenalty(c_defaultAdaptiveTimingStabilityPenalty);
+    setAdaptiveAlternativeMode(c_defaultAdaptiveAlternativeMode);
+}
+
+void ParserSettingsModel::applyAdaptiveParserPreset(AdaptiveParserPreset preset)
+{
+    switch (preset) {
+    case AdaptiveBasicPreset:
+        setAdaptiveBaseDepth(10);
+        setAdaptiveUncertainDepth(10);
+        setAdaptiveMaxDepth(10);
+        setAdaptiveBeamWidth(12);
+        setAdaptiveTimingStabilityPenalty(0.35);
+        break;
+
+    case AdaptiveFastPreset:
+        setAdaptiveBaseDepth(8);
+        setAdaptiveUncertainDepth(20);
+        setAdaptiveMaxDepth(32);
+        setAdaptiveBeamWidth(8);
+        setAdaptiveTimingStabilityPenalty(0.45);
+        break;
+
+    case AdaptiveAccuratePreset:
+        setAdaptiveBaseDepth(c_defaultAdaptiveBaseDepth);
+        setAdaptiveUncertainDepth(c_defaultAdaptiveUncertainDepth);
+        setAdaptiveMaxDepth(c_defaultAdaptiveMaxDepth);
+        setAdaptiveBeamWidth(c_defaultAdaptiveBeamWidth);
+        setAdaptiveTimingStabilityPenalty(c_defaultAdaptiveTimingStabilityPenalty);
+        break;
+
+    case AdaptiveMaximumPreset:
+        setAdaptiveBaseDepth(16);
+        setAdaptiveUncertainDepth(64);
+        setAdaptiveMaxDepth(128);
+        setAdaptiveBeamWidth(24);
+        setAdaptiveTimingStabilityPenalty(0.25);
+        break;
+    }
 }
 
 const ParserSettingsModel::ParserSettings& ParserSettingsModel::getParserSettings() const
@@ -140,6 +201,41 @@ bool ParserSettingsModel::getCheckForAbnormalSine() const
 
 double ParserSettingsModel::getSineCheckTolerance() const {
     return m_parserSettings.sineCheckTolerance;
+}
+
+ParserSettingsModel::ParserMode ParserSettingsModel::getParserMode() const
+{
+    return m_parserSettings.parserMode;
+}
+
+int ParserSettingsModel::getAdaptiveBaseDepth() const
+{
+    return m_parserSettings.adaptiveBaseDepth;
+}
+
+int ParserSettingsModel::getAdaptiveUncertainDepth() const
+{
+    return m_parserSettings.adaptiveUncertainDepth;
+}
+
+int ParserSettingsModel::getAdaptiveMaxDepth() const
+{
+    return m_parserSettings.adaptiveMaxDepth;
+}
+
+int ParserSettingsModel::getAdaptiveBeamWidth() const
+{
+    return m_parserSettings.adaptiveBeamWidth;
+}
+
+double ParserSettingsModel::getAdaptiveTimingStabilityPenalty() const
+{
+    return m_parserSettings.adaptiveTimingStabilityPenalty;
+}
+
+ParserSettingsModel::AdaptiveAlternativeMode ParserSettingsModel::getAdaptiveAlternativeMode() const
+{
+    return m_parserSettings.adaptiveAlternativeMode;
 }
 
 void ParserSettingsModel::setPilotHalfFreq(int freq)
@@ -266,6 +362,79 @@ void ParserSettingsModel::setSineCheckTolerance(double value) {
     if (m_parserSettings.sineCheckTolerance != value) {
         m_parserSettings.sineCheckTolerance = value;
         emit sineCheckToleranceChanged();
+    }
+}
+
+void ParserSettingsModel::setParserMode(ParserMode mode)
+{
+    if (m_parserSettings.parserMode != mode) {
+        m_parserSettings.parserMode = mode;
+        emit parserModeChanged();
+    }
+}
+
+void ParserSettingsModel::setAdaptiveBaseDepth(int depth)
+{
+    const int clampedDepth { std::clamp(depth, 2, 128) };
+    if (m_parserSettings.adaptiveBaseDepth != clampedDepth) {
+        m_parserSettings.adaptiveBaseDepth = clampedDepth;
+        if (m_parserSettings.adaptiveUncertainDepth < clampedDepth) {
+            m_parserSettings.adaptiveUncertainDepth = clampedDepth;
+            emit adaptiveUncertainDepthChanged();
+        }
+        if (m_parserSettings.adaptiveMaxDepth < m_parserSettings.adaptiveUncertainDepth) {
+            m_parserSettings.adaptiveMaxDepth = m_parserSettings.adaptiveUncertainDepth;
+            emit adaptiveMaxDepthChanged();
+        }
+        emit adaptiveBaseDepthChanged();
+    }
+}
+
+void ParserSettingsModel::setAdaptiveUncertainDepth(int depth)
+{
+    const int clampedDepth { std::clamp(depth, m_parserSettings.adaptiveBaseDepth, 128) };
+    if (m_parserSettings.adaptiveUncertainDepth != clampedDepth) {
+        m_parserSettings.adaptiveUncertainDepth = clampedDepth;
+        if (m_parserSettings.adaptiveMaxDepth < clampedDepth) {
+            m_parserSettings.adaptiveMaxDepth = clampedDepth;
+            emit adaptiveMaxDepthChanged();
+        }
+        emit adaptiveUncertainDepthChanged();
+    }
+}
+
+void ParserSettingsModel::setAdaptiveMaxDepth(int depth)
+{
+    const int clampedDepth { std::clamp(depth, m_parserSettings.adaptiveUncertainDepth, 128) };
+    if (m_parserSettings.adaptiveMaxDepth != clampedDepth) {
+        m_parserSettings.adaptiveMaxDepth = clampedDepth;
+        emit adaptiveMaxDepthChanged();
+    }
+}
+
+void ParserSettingsModel::setAdaptiveBeamWidth(int width)
+{
+    const int clampedWidth { std::clamp(width, 2, 64) };
+    if (m_parserSettings.adaptiveBeamWidth != clampedWidth) {
+        m_parserSettings.adaptiveBeamWidth = clampedWidth;
+        emit adaptiveBeamWidthChanged();
+    }
+}
+
+void ParserSettingsModel::setAdaptiveTimingStabilityPenalty(double penalty)
+{
+    const double clampedPenalty { std::clamp(penalty, 0.0, 2.0) };
+    if (m_parserSettings.adaptiveTimingStabilityPenalty != clampedPenalty) {
+        m_parserSettings.adaptiveTimingStabilityPenalty = clampedPenalty;
+        emit adaptiveTimingStabilityPenaltyChanged();
+    }
+}
+
+void ParserSettingsModel::setAdaptiveAlternativeMode(AdaptiveAlternativeMode mode)
+{
+    if (m_parserSettings.adaptiveAlternativeMode != mode) {
+        m_parserSettings.adaptiveAlternativeMode = mode;
+        emit adaptiveAlternativeModeChanged();
     }
 }
 

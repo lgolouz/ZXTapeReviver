@@ -33,6 +33,9 @@ ApplicationWindow {
     property int waveformPlaybackInitialWavePos: 0
     property int waveformPlaybackInitialCursorSample: 0
     property int waveformPlaybackActiveChannel: -1
+    property string parserDebugText: Translations.id_parser_debug_not_started
+    property bool parserDebugActive: false
+    property bool parserStartupPending: false
 
     visible: true
     width: 1600
@@ -64,6 +67,55 @@ ApplicationWindow {
     function setWaveformOperationMode(mode) {
         waveformControlCh0.operationMode = mode;
         waveformControlCh1.operationMode = mode;
+    }
+
+    function reparseWaveforms() {
+        parserStartupPending = false;
+        WaveformParser.clearParsingCancellation();
+        var parsedDataViewIdx = parsedDataView.currentRow;
+        waveformControlCh0.reparse();
+        if (!WaveformParser.parsingCancellationRequested) {
+            waveformControlCh1.reparse();
+        }
+        parsedDataView.selection.select(parsedDataViewIdx);
+        parsedDataView.currentRow = parsedDataViewIdx;
+    }
+
+    Timer {
+        id: parserStartupTimer
+
+        interval: 80
+        repeat: false
+
+        onTriggered: reparseWaveforms()
+    }
+
+    function followParserDebugSample(sample) {
+        if (sample === undefined || sample < 0) {
+            return;
+        }
+
+        var visibleSamples = waveformControlCh0.width * waveformControlCh0.xScaleFactor;
+        var idx = sample - visibleSamples * 0.35;
+        if (idx < 0) {
+            idx = 0;
+        }
+
+        waveformControlCh0.wavePos = waveformControlCh1.wavePos = idx;
+    }
+
+    function refreshParserDebugState(chNum) {
+        var state = WaveformParser.experimentalDebugState(chNum);
+        parserDebugActive = state.active === true;
+        parserDebugText = state.message !== undefined && state.message.length > 0
+                ? state.message
+                : Translations.id_parser_debug_not_started;
+        if (state.sample !== undefined) {
+            followParserDebugSample(state.sample);
+        }
+
+        waveformControlCh0.update();
+        waveformControlCh1.update();
     }
 
     function followWaveformPlayback(sample) {
@@ -125,6 +177,19 @@ ApplicationWindow {
         function onStoppedChanged() {
             if (WaveformPlayerModel.stopped && waveformPlaybackActiveChannel >= 0) {
                 finishWaveformPlayback();
+            }
+        }
+    }
+
+    Connections {
+        target: WaveformParser
+
+        function onExperimentalDebugChanged(chNum) {
+            if (chNum === channelsComboBox.currentIndex) {
+                refreshParserDebugState(chNum);
+            } else {
+                waveformControlCh0.update();
+                waveformControlCh1.update();
             }
         }
     }
@@ -391,8 +456,7 @@ ApplicationWindow {
     Connections {
         target: FileWorkerModel
         function onWavFileNameChanged() {
-            waveformControlCh0.reparse();
-            waveformControlCh1.reparse();
+            reparseWaveforms();
         }
     }
 
@@ -735,13 +799,11 @@ ApplicationWindow {
             anchors.rightMargin: 5
             anchors.topMargin: 15
             width: hZoomOutButton.width
+            enabled: !WaveformParser.parsingActive && !parserStartupPending
 
             onClicked: {
-                var parsedDataViewIdx = parsedDataView.currentRow;
-                waveformControlCh0.reparse();
-                waveformControlCh1.reparse();
-                parsedDataView.selection.select(parsedDataViewIdx);
-                parsedDataView.currentRow = parsedDataViewIdx;
+                parserStartupPending = true;
+                parserStartupTimer.restart();
             }
         }
 
@@ -749,7 +811,7 @@ ApplicationWindow {
             id: saveParsedDataButton
 
             text: Translations.id_save_parsed
-            anchors.top: reparseButton.bottom
+            anchors.top: parsingProgressPanel.bottom
             anchors.right: parent.right
             anchors.rightMargin: 5
             anchors.topMargin: 15
@@ -761,6 +823,75 @@ ApplicationWindow {
                 } else {
                     waveformControlCh1.saveTap();
                 }
+            }
+        }
+
+        Rectangle {
+            id: parsingProgressPanel
+
+            anchors {
+                top: reparseButton.bottom
+                right: parent.right
+                rightMargin: 5
+                topMargin: 5
+            }
+            width: hZoomOutButton.width
+            height: WaveformParser.parsingActive || parserStartupPending ? 118 : 0
+            visible: WaveformParser.parsingActive || parserStartupPending
+            color: "#202020"
+            border.color: "#666666"
+            clip: true
+
+            Text {
+                id: parsingProgressText
+
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    right: parent.right
+                    leftMargin: 4
+                    rightMargin: 4
+                    topMargin: 4
+                }
+                height: 34
+                text: parserStartupPending ? Translations.id_parser_starting : WaveformParser.parsingStatus
+                color: "white"
+                wrapMode: Text.WordWrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
+                font.pixelSize: 11
+            }
+
+            ProgressBar {
+                id: parsingProgressBar
+
+                anchors {
+                    top: parsingProgressText.bottom
+                    left: parent.left
+                    right: parent.right
+                    leftMargin: 4
+                    rightMargin: 4
+                    topMargin: 4
+                }
+                from: 0
+                to: 100
+                indeterminate: parserStartupPending || (WaveformParser.parsingActive && WaveformParser.parsingProgress <= 0)
+                value: parserStartupPending ? 0 : WaveformParser.parsingProgress
+            }
+
+            Button {
+                anchors {
+                    top: parsingProgressBar.bottom
+                    right: parent.right
+                    topMargin: 8
+                    rightMargin: 4
+                }
+                width: 70
+                height: 24
+                text: Translations.id_stop_parser
+                enabled: WaveformParser.parsingActive && !WaveformParser.parsingCancellationRequested
+
+                onClicked: WaveformParser.cancelParsing()
             }
         }
 
@@ -974,7 +1105,10 @@ ApplicationWindow {
                 right: parent.right
             }
 
-            onCurrentIndexChanged: parsedDataView.invalidate()
+            onCurrentIndexChanged: {
+                parsedDataView.invalidate();
+                refreshParserDebugState(currentIndex);
+            }
         }
 
         Button {
@@ -1057,12 +1191,131 @@ ApplicationWindow {
             }
         }
 
+        Rectangle {
+            id: parserDebugPanel
+
+            anchors {
+                top: toBlockEndButton.bottom
+                left: parent.left
+                right: parent.right
+                topMargin: 2
+            }
+            height: Math.min(250, parent.height * 0.32)
+            color: "#222222"
+            border.color: parserDebugActive ? "#70c8ff" : "#555555"
+            border.width: 1
+
+            Text {
+                id: parserDebugHeader
+
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    right: parent.right
+                    margins: 4
+                }
+                height: 18
+                text: Translations.id_parser_debug
+                color: "white"
+                font.bold: true
+                elide: Text.ElideRight
+            }
+
+            Button {
+                id: startParserDebugButton
+
+                anchors {
+                    top: parserDebugHeader.bottom
+                    left: parent.left
+                    right: parent.horizontalCenter
+                    margins: 4
+                    rightMargin: 2
+                }
+                text: Translations.id_start_parser_debug
+                enabled: !parserDebugActive
+
+                onClicked: {
+                    WaveformParser.startExperimentalDebug(channelsComboBox.currentIndex);
+                }
+            }
+
+            Button {
+                id: nextParserDebugButton
+
+                anchors {
+                    top: parserDebugHeader.bottom
+                    left: parent.horizontalCenter
+                    right: parent.right
+                    margins: 4
+                    leftMargin: 2
+                }
+                text: Translations.id_next_parser_debug_step
+                enabled: parserDebugActive
+
+                onClicked: {
+                    WaveformParser.nextExperimentalDebugStep();
+                }
+            }
+
+            Button {
+                id: stopParserDebugButton
+
+                anchors {
+                    top: startParserDebugButton.bottom
+                    left: parent.left
+                    right: parent.right
+                    margins: 4
+                }
+                text: Translations.id_stop_parser_debug
+                enabled: parserDebugActive
+
+                onClicked: {
+                    WaveformParser.stopExperimentalDebug();
+                }
+            }
+
+            ScrollView {
+                id: parserDebugDetailsScroll
+
+                anchors {
+                    top: stopParserDebugButton.bottom
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                    margins: 4
+                }
+                clip: true
+
+                TextArea {
+                    id: parserDebugDetails
+
+                    width: parserDebugDetailsScroll.availableWidth
+                    readOnly: true
+                    wrapMode: Text.WordWrap
+                    text: parserDebugText
+                    color: "white"
+                    selectedTextColor: "black"
+                    selectionColor: "#9fdcff"
+                    font.pixelSize: 11
+                    background: Rectangle {
+                        color: "#111111"
+                        border.color: "#444444"
+                    }
+                }
+
+                background: Rectangle {
+                    color: "#111111"
+                    border.color: "#444444"
+                }
+            }
+        }
+
         ZXTableControl {
             id: parsedDataView
 
-            height: parent.height * 0.4
+            height: parent.height * 0.25
             anchors {
-                top: toBlockEndButton.bottom
+                top: parserDebugPanel.bottom
                 left: parent.left
                 right: parent.right
                 topMargin: 2

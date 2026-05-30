@@ -22,6 +22,7 @@
 #include <QPainter>
 #include <QDebug>
 #include <QGuiApplication>
+#include <QVariantMap>
 #include "sources/translations/translations.h"
 #include "sources/models/actionsmodel.h"
 #include "sources/actions/editsampleaction.h"
@@ -244,6 +245,123 @@ void WaveformControl::paint(QPainter* painter) {
         painter->drawLine(QPointF(cursorX, 0), QPointF(cursorX, waveHeight));
     }
 
+    const auto debugState { mWavParser.experimentalDebugState(m_channelNumber) };
+    if (debugState.value("active").toBool()) {
+        const auto sampleToX = [pos, this](int sample) {
+            return (sample - pos) / getXScaleFactor();
+        };
+        const auto valueToY = [halfHeight, waveHeight, maxy](double value) {
+            return halfHeight - (value / maxy) * waveHeight;
+        };
+        const auto drawCandidate = [&](const QVariantMap& candidate, const QColor& color, bool selected) {
+            if (!candidate.value("valid").toBool()) {
+                return;
+            }
+
+            const int begin { candidate.value("begin").toInt() };
+            const int end { candidate.value("end").toInt() };
+            if (end < pos || begin > pos + scale) {
+                return;
+            }
+
+            const double left { std::clamp(sampleToX(begin), 0.0, bRect.width()) };
+            const double right { std::clamp(sampleToX(end), 0.0, bRect.width()) };
+            QRectF windowRect { QPointF(left, 0), QPointF(right, waveHeight) };
+            if (windowRect.width() < 2.0) {
+                windowRect.setWidth(2.0);
+            }
+
+            const auto drawReferenceWindow = [&]() {
+                const int referenceBegin { candidate.value("referenceBegin").toInt() };
+                const int expectedEnd { candidate.value("referenceExpectedEnd").toInt() };
+                const int minEnd { candidate.value("referenceMinEnd").toInt() };
+                const int maxEnd { candidate.value("referenceMaxEnd").toInt() };
+                if (maxEnd < pos || referenceBegin > pos + scale) {
+                    return;
+                }
+
+                const double refLeft { std::clamp(sampleToX(referenceBegin), 0.0, bRect.width()) };
+                const double expectedRight { std::clamp(sampleToX(expectedEnd), 0.0, bRect.width()) };
+                const double minRight { std::clamp(sampleToX(minEnd), 0.0, bRect.width()) };
+                const double maxRight { std::clamp(sampleToX(maxEnd), 0.0, bRect.width()) };
+                const double referenceY { candidate.value("bit").toInt() == 0 ? waveHeight - 34.0 : waveHeight - 44.0 };
+
+                QColor referenceColor { color };
+                referenceColor.setAlpha(190);
+                p.setColor(referenceColor);
+                p.setWidth(1);
+                p.setStyle(Qt::DotLine);
+                painter->setPen(p);
+                painter->drawLine(QPointF(refLeft, referenceY), QPointF(maxRight, referenceY));
+                painter->drawLine(QPointF(refLeft, referenceY - 5.0), QPointF(refLeft, referenceY + 5.0));
+                painter->drawLine(QPointF(minRight, referenceY - 5.0), QPointF(minRight, referenceY + 5.0));
+                painter->drawLine(QPointF(maxRight, referenceY - 5.0), QPointF(maxRight, referenceY + 5.0));
+
+                p.setStyle(Qt::SolidLine);
+                p.setWidth(2);
+                painter->setPen(p);
+                painter->drawLine(QPointF(refLeft, referenceY), QPointF(expectedRight, referenceY));
+            };
+            drawReferenceWindow();
+
+            QColor fillColor { color };
+            fillColor.setAlpha(selected ? 80 : 38);
+            painter->fillRect(windowRect, fillColor);
+
+            p.setStyle(Qt::SolidLine);
+            p.setWidth(selected ? 3 : 1);
+            p.setColor(color);
+            painter->setPen(p);
+            painter->drawRect(windowRect);
+
+            const double axisY { valueToY(candidate.value("axis").toDouble()) };
+            p.setWidth(selected ? 2 : 1);
+            p.setStyle(Qt::DashLine);
+            painter->setPen(p);
+            painter->drawLine(QPointF(left, axisY), QPointF(right, axisY));
+
+            p.setStyle(Qt::SolidLine);
+            painter->setPen(p);
+            painter->drawLine(QPointF(left, valueToY(candidate.value("upperLevel").toDouble())),
+                              QPointF(right, valueToY(candidate.value("upperLevel").toDouble())));
+            painter->drawLine(QPointF(left, valueToY(candidate.value("lowerLevel").toDouble())),
+                              QPointF(right, valueToY(candidate.value("lowerLevel").toDouble())));
+            painter->drawEllipse(QPointF(sampleToX(candidate.value("upperSample").toInt()),
+                                         valueToY(candidate.value("upperPointValue").toDouble())),
+                                 4.0, 4.0);
+            painter->drawEllipse(QPointF(sampleToX(candidate.value("lowerSample").toInt()),
+                                         valueToY(candidate.value("lowerPointValue").toDouble())),
+                                 4.0, 4.0);
+
+            p.setWidth(1);
+            p.setColor(m_customData.textColor());
+            painter->setPen(p);
+            painter->drawText(QRectF(left + 4.0, 22.0, 90.0, 18.0),
+                              QString("%1: %2")
+                                      .arg(candidate.value("bit").toInt())
+                                      .arg(candidate.value("score").toDouble(), 0, 'f', 3));
+        };
+
+        const QVariantMap selectedCandidate { debugState.value("selected").toMap() };
+        const bool hasSelectedCandidate { selectedCandidate.value("valid").toBool() };
+        const int selectedBit { hasSelectedCandidate ? selectedCandidate.value("bit").toInt() : -1 };
+        drawCandidate(debugState.value("zero").toMap(), QColor(80, 180, 255), selectedBit == 0);
+        drawCandidate(debugState.value("one").toMap(), QColor(255, 215, 64), selectedBit == 1);
+        if (hasSelectedCandidate && selectedBit != 0 && selectedBit != 1) {
+            drawCandidate(selectedCandidate, QColor(180, 220, 255), true);
+        }
+
+        const int sample { debugState.contains("sample") ? debugState.value("sample").toInt() : -1 };
+        if (sample >= pos && sample <= pos + scale) {
+            const double sampleX { sampleToX(sample) };
+            p.setStyle(Qt::SolidLine);
+            p.setWidth(2);
+            p.setColor(QColor(255, 255, 255, 210));
+            painter->setPen(p);
+            painter->drawLine(QPointF(sampleX, 0), QPointF(sampleX, waveHeight));
+        }
+    }
+
     if (m_operationMode == WaveformSelectionMode && m_rangeSelected) {
         painter->setBackground(QBrush(m_customData.rangeSelectionColor()));
         auto bRect = boundingRect();
@@ -349,6 +467,13 @@ void WaveformControl::mousePressEvent(QMouseEvent* event)
         return;
     }
     const auto mousePosition = roundedMousePosition(*event);
+
+    if (event->button() == Qt::LeftButton && event->modifiers().testFlag(Qt::ControlModifier)) {
+        mWavParser.inspectExperimentalDebugAt(m_channelNumber, getWavPositionByMouseX(mousePosition.x()));
+        event->accept();
+        update();
+        return;
+    }
 
     if (m_operationMode == WaveformPlaybackMode && event->button() == Qt::LeftButton) {
         setCursorSample(getWavPositionByMouseX(mousePosition.x()));

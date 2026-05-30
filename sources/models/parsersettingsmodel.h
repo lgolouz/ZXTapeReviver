@@ -36,11 +36,38 @@ class ParserSettingsModel : public QObject
     Q_PROPERTY(double oneDelta READ getOneDelta WRITE setOneDelta NOTIFY oneDeltaChanged)
     Q_PROPERTY(bool checkForAbnormalSine READ getCheckForAbnormalSine WRITE setCheckForAbnormalSine NOTIFY checkForAbnormalSineChanged)
     Q_PROPERTY(double sineCheckTolerance READ getSineCheckTolerance WRITE setSineCheckTolerance NOTIFY sineCheckToleranceChanged)
+    Q_PROPERTY(ParserMode parserMode READ getParserMode WRITE setParserMode NOTIFY parserModeChanged)
+    Q_PROPERTY(int adaptiveBaseDepth READ getAdaptiveBaseDepth WRITE setAdaptiveBaseDepth NOTIFY adaptiveBaseDepthChanged)
+    Q_PROPERTY(int adaptiveUncertainDepth READ getAdaptiveUncertainDepth WRITE setAdaptiveUncertainDepth NOTIFY adaptiveUncertainDepthChanged)
+    Q_PROPERTY(int adaptiveMaxDepth READ getAdaptiveMaxDepth WRITE setAdaptiveMaxDepth NOTIFY adaptiveMaxDepthChanged)
+    Q_PROPERTY(int adaptiveBeamWidth READ getAdaptiveBeamWidth WRITE setAdaptiveBeamWidth NOTIFY adaptiveBeamWidthChanged)
+    Q_PROPERTY(double adaptiveTimingStabilityPenalty READ getAdaptiveTimingStabilityPenalty WRITE setAdaptiveTimingStabilityPenalty NOTIFY adaptiveTimingStabilityPenaltyChanged)
+    Q_PROPERTY(AdaptiveAlternativeMode adaptiveAlternativeMode READ getAdaptiveAlternativeMode WRITE setAdaptiveAlternativeMode NOTIFY adaptiveAlternativeModeChanged)
 
 protected:
     explicit ParserSettingsModel(QObject* parent = nullptr);
 
 public:
+    enum ParserMode {
+        StandardParser,
+        ExperimentalAdaptiveParser
+    };
+    Q_ENUM(ParserMode)
+
+    enum AdaptiveParserPreset {
+        AdaptiveBasicPreset,
+        AdaptiveFastPreset,
+        AdaptiveAccuratePreset,
+        AdaptiveMaximumPreset
+    };
+    Q_ENUM(AdaptiveParserPreset)
+
+    enum AdaptiveAlternativeMode {
+        AdaptiveSmartAlternatives,
+        AdaptiveFullAlternatives
+    };
+    Q_ENUM(AdaptiveAlternativeMode)
+
     struct ParserSettings {
         int32_t pilotHalfFreq;
         int32_t pilotFreq;
@@ -58,6 +85,13 @@ public:
         double oneDelta;
         bool checkForAbnormalSine;
         double sineCheckTolerance;
+        ParserMode parserMode;
+        int32_t adaptiveBaseDepth;
+        int32_t adaptiveUncertainDepth;
+        int32_t adaptiveMaxDepth;
+        int32_t adaptiveBeamWidth;
+        double adaptiveTimingStabilityPenalty;
+        AdaptiveAlternativeMode adaptiveAlternativeMode;
     };
 
     virtual ~ParserSettingsModel() = default;
@@ -66,6 +100,7 @@ public:
     static ParserSettingsModel* instance();
 
     Q_INVOKABLE void restoreDefaultSettings();
+    Q_INVOKABLE void applyAdaptiveParserPreset(AdaptiveParserPreset preset);
 
     //Getters
     int getPilotHalfFreq() const;
@@ -84,6 +119,13 @@ public:
     double getOneDelta() const;
     bool getCheckForAbnormalSine() const;
     double getSineCheckTolerance() const;
+    ParserMode getParserMode() const;
+    int getAdaptiveBaseDepth() const;
+    int getAdaptiveUncertainDepth() const;
+    int getAdaptiveMaxDepth() const;
+    int getAdaptiveBeamWidth() const;
+    double getAdaptiveTimingStabilityPenalty() const;
+    AdaptiveAlternativeMode getAdaptiveAlternativeMode() const;
 
     //Setters
     void setPilotHalfFreq(int freq);
@@ -102,6 +144,13 @@ public:
     void setOneDelta(double delta);
     void setCheckForAbnormalSine(bool check);
     void setSineCheckTolerance(double value);
+    void setParserMode(ParserMode mode);
+    void setAdaptiveBaseDepth(int depth);
+    void setAdaptiveUncertainDepth(int depth);
+    void setAdaptiveMaxDepth(int depth);
+    void setAdaptiveBeamWidth(int width);
+    void setAdaptiveTimingStabilityPenalty(double penalty);
+    void setAdaptiveAlternativeMode(AdaptiveAlternativeMode mode);
 
 signals:
     void pilotHalfFreqChanged();
@@ -120,6 +169,13 @@ signals:
     void oneDeltaChanged();
     void checkForAbnormalSineChanged();
     void sineCheckToleranceChanged();
+    void parserModeChanged();
+    void adaptiveBaseDepthChanged();
+    void adaptiveUncertainDepthChanged();
+    void adaptiveMaxDepthChanged();
+    void adaptiveBeamWidthChanged();
+    void adaptiveTimingStabilityPenaltyChanged();
+    void adaptiveAlternativeModeChanged();
 
 private:
     ParserSettings m_parserSettings;

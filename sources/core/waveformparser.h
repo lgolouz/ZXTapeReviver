@@ -23,6 +23,7 @@
 #include "sources/core/parseddata.h"
 #include "sources/core/wavreader.h"
 #include "sources/defines.h"
+#include "sources/models/parsersettingsmodel.h"
 
 class WaveformParser : public QObject
 {
@@ -30,6 +31,10 @@ class WaveformParser : public QObject
 
     Q_PROPERTY(ZxTableModel* parsedChannel0 READ getParsedChannel0 NOTIFY parsedChannel0Changed)
     Q_PROPERTY(ZxTableModel* parsedChannel1 READ getParsedChannel1 NOTIFY parsedChannel1Changed)
+    Q_PROPERTY(bool parsingActive READ getParsingActive NOTIFY parsingProgressChanged)
+    Q_PROPERTY(int parsingProgress READ getParsingProgress NOTIFY parsingProgressChanged)
+    Q_PROPERTY(QString parsingStatus READ getParsingStatus NOTIFY parsingProgressChanged)
+    Q_PROPERTY(bool parsingCancellationRequested READ getParsingCancellationRequested NOTIFY parsingProgressChanged)
 
 public:
 //    enum SignalValue { ZERO, ONE, PILOT, SYNCHRO };
@@ -82,6 +87,22 @@ private:
     // QMap<uint, QVector<uint8_t>> mParsedWaveform;
     // QMap<uint, QVector<DataBlock>> mParsedData;
     QMap<uint, QSet<int>> mSelectedBlocks;
+    QVector<ParsedData::WaveformPart> m_experimentalDebugParsed;
+    uint m_experimentalDebugChannel;
+    bool m_experimentalDebugActive;
+    bool m_experimentalDebugManualInspection;
+    size_t m_experimentalDebugSample;
+    QVariantMap m_experimentalDebugState;
+    bool m_parsingActive;
+    bool m_parsingCancellationRequested;
+    int m_parsingProgress;
+    QString m_parsingStatus;
+
+    double scoreExperimentalWindow(const QWavVector& channel, size_t begin, size_t length, double* axis = nullptr, double* upperLevel = nullptr, double* lowerLevel = nullptr) const;
+    QVariantMap findExperimentalBitCandidate(const QWavVector& channel, size_t expectedBegin, uint8_t bit, const ParserSettingsModel::ParserSettings& parserSettings, double sampleRate) const;
+    QVariantMap findExperimentalPeriodCandidate(const QWavVector& channel, size_t expectedBegin, const ParserSettingsModel::ParserSettings& parserSettings, double sampleRate) const;
+    void setExperimentalDebugInactive(uint chNum, const QString& message = QString());
+    void setParsingProgress(bool active, int progress, const QString& status);
 
 protected:
     explicit WaveformParser(QObject* parent = nullptr);
@@ -125,14 +146,27 @@ public:
     Q_INVOKABLE int getBlockDataStart(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getBlockDataEnd(uint chNum, uint blockNum) const;
     Q_INVOKABLE int getPositionByAddress(uint chNum, uint blockNum, uint addr) const;
+    Q_INVOKABLE bool startExperimentalDebug(uint chNum);
+    Q_INVOKABLE bool nextExperimentalDebugStep();
+    Q_INVOKABLE bool inspectExperimentalDebugAt(uint chNum, int sample);
+    Q_INVOKABLE void stopExperimentalDebug();
+    Q_INVOKABLE QVariantMap experimentalDebugState(uint chNum) const;
+    Q_INVOKABLE void cancelParsing();
+    Q_INVOKABLE void clearParsingCancellation();
     //getters
     ParsedDataModel* getParsedChannel0() const;
     ParsedDataModel* getParsedChannel1() const;
+    bool getParsingActive() const;
+    bool getParsingCancellationRequested() const;
+    int getParsingProgress() const;
+    QString getParsingStatus() const;
 
 signals:
     void parsedChannel0Changed();
     void parsedChannel1Changed();
     void blockSelectionChanged(uint chNum);
+    void experimentalDebugChanged(uint chNum);
+    void parsingProgressChanged();
 };
 
 #endif // WAVEFORMPARSER_H
