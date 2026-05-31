@@ -23,6 +23,7 @@ constexpr int c_defaultAdaptiveMaxDepth { 64 };
 constexpr int c_defaultAdaptiveBeamWidth { 12 };
 constexpr double c_defaultAdaptiveTimingStabilityPenalty { 0.35 };
 constexpr ParserSettingsModel::AdaptiveAlternativeMode c_defaultAdaptiveAlternativeMode { ParserSettingsModel::AdaptiveSmartAlternatives };
+constexpr ParserSettingsModel::AdaptiveVirtualAxisMode c_defaultAdaptiveVirtualAxisMode { ParserSettingsModel::AdaptiveVirtualAxisMedianWindow };
 }
 
 ParserSettingsModel::ParserSettingsModel(QObject* parent) :
@@ -50,7 +51,8 @@ ParserSettingsModel::ParserSettingsModel(QObject* parent) :
         c_defaultAdaptiveMaxDepth,
         c_defaultAdaptiveBeamWidth,
         c_defaultAdaptiveTimingStabilityPenalty,
-        c_defaultAdaptiveAlternativeMode }
+        c_defaultAdaptiveAlternativeMode,
+        c_defaultAdaptiveVirtualAxisMode }
 {
 
 }
@@ -80,6 +82,7 @@ void ParserSettingsModel::restoreDefaultSettings()
     setAdaptiveBeamWidth(c_defaultAdaptiveBeamWidth);
     setAdaptiveTimingStabilityPenalty(c_defaultAdaptiveTimingStabilityPenalty);
     setAdaptiveAlternativeMode(c_defaultAdaptiveAlternativeMode);
+    setAdaptiveVirtualAxisMode(c_defaultAdaptiveVirtualAxisMode);
 }
 
 void ParserSettingsModel::applyAdaptiveParserPreset(AdaptiveParserPreset preset)
@@ -236,6 +239,11 @@ double ParserSettingsModel::getAdaptiveTimingStabilityPenalty() const
 ParserSettingsModel::AdaptiveAlternativeMode ParserSettingsModel::getAdaptiveAlternativeMode() const
 {
     return m_parserSettings.adaptiveAlternativeMode;
+}
+
+ParserSettingsModel::AdaptiveVirtualAxisMode ParserSettingsModel::getAdaptiveVirtualAxisMode() const
+{
+    return m_parserSettings.adaptiveVirtualAxisMode;
 }
 
 void ParserSettingsModel::setPilotHalfFreq(int freq)
@@ -435,6 +443,14 @@ void ParserSettingsModel::setAdaptiveAlternativeMode(AdaptiveAlternativeMode mod
     if (m_parserSettings.adaptiveAlternativeMode != mode) {
         m_parserSettings.adaptiveAlternativeMode = mode;
         emit adaptiveAlternativeModeChanged();
+    }
+}
+
+void ParserSettingsModel::setAdaptiveVirtualAxisMode(AdaptiveVirtualAxisMode mode)
+{
+    if (m_parserSettings.adaptiveVirtualAxisMode != mode) {
+        m_parserSettings.adaptiveVirtualAxisMode = mode;
+        emit adaptiveVirtualAxisModeChanged();
     }
 }
 

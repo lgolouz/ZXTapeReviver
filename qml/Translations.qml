@@ -110,6 +110,7 @@ QtObject {
     property string id_parser_mode:                          qsTrId("id_parser_mode") + TranslationManager.translationChanged
     property string id_parser_mode_standard:                 qsTrId("id_parser_mode_standard") + TranslationManager.translationChanged
     property string id_parser_mode_experimental_adaptive:    qsTrId("id_parser_mode_experimental_adaptive") + TranslationManager.translationChanged
+    property string id_parser_mode_experimental_virtual_axis: qsTrId("id_parser_mode_experimental_virtual_axis") + TranslationManager.translationChanged
     property string id_adaptive_parser_settings:             qsTrId("id_adaptive_parser_settings") + TranslationManager.translationChanged
     property string id_adaptive_parser_preset:               qsTrId("id_adaptive_parser_preset") + TranslationManager.translationChanged
     property string id_adaptive_parser_preset_basic:         qsTrId("id_adaptive_parser_preset_basic") + TranslationManager.translationChanged
@@ -119,6 +120,10 @@ QtObject {
     property string id_adaptive_alternative_mode:            qsTrId("id_adaptive_alternative_mode") + TranslationManager.translationChanged
     property string id_adaptive_alternative_mode_smart:      qsTrId("id_adaptive_alternative_mode_smart") + TranslationManager.translationChanged
     property string id_adaptive_alternative_mode_full:       qsTrId("id_adaptive_alternative_mode_full") + TranslationManager.translationChanged
+    property string id_adaptive_virtual_axis_mode:           qsTrId("id_adaptive_virtual_axis_mode") + TranslationManager.translationChanged
+    property string id_adaptive_virtual_axis_median:         qsTrId("id_adaptive_virtual_axis_median") + TranslationManager.translationChanged
+    property string id_adaptive_virtual_axis_percentile:     qsTrId("id_adaptive_virtual_axis_percentile") + TranslationManager.translationChanged
+    property string id_adaptive_virtual_axis_low_pass:       qsTrId("id_adaptive_virtual_axis_low_pass") + TranslationManager.translationChanged
     property string id_adaptive_base_depth:                  qsTrId("id_adaptive_base_depth") + TranslationManager.translationChanged
     property string id_adaptive_uncertain_depth:             qsTrId("id_adaptive_uncertain_depth") + TranslationManager.translationChanged
     property string id_adaptive_max_depth:                   qsTrId("id_adaptive_max_depth") + TranslationManager.translationChanged

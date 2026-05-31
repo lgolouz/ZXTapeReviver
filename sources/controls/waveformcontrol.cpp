@@ -326,6 +326,57 @@ void WaveformControl::paint(QPainter* painter) {
                               QPointF(right, valueToY(candidate.value("upperLevel").toDouble())));
             painter->drawLine(QPointF(left, valueToY(candidate.value("lowerLevel").toDouble())),
                               QPointF(right, valueToY(candidate.value("lowerLevel").toDouble())));
+
+            const QVariantList virtualAxisSamples { candidate.value("virtualAxisSamples").toList() };
+            if (virtualAxisSamples.size() >= 2) {
+                QPolygonF axisLine;
+                axisLine.reserve(virtualAxisSamples.size());
+                for (const QVariant& pointValue: virtualAxisSamples) {
+                    const QVariantMap point { pointValue.toMap() };
+                    axisLine << QPointF(sampleToX(point.value("sample").toInt()),
+                                        valueToY(point.value("value").toDouble()));
+                }
+
+                QColor virtualAxisColor { 255, 255, 255, 230 };
+                p.setColor(virtualAxisColor);
+                p.setWidth(selected ? 2 : 1);
+                p.setStyle(Qt::SolidLine);
+                painter->setPen(p);
+                painter->drawPolyline(axisLine);
+            }
+
+            const QVariantList virtualCrossings { candidate.value("virtualCrossings").toList() };
+            if (!virtualCrossings.empty()) {
+                p.setColor(QColor(200, 230, 255, 230));
+                p.setWidth(2);
+                p.setStyle(Qt::SolidLine);
+                painter->setPen(p);
+                for (const QVariant& pointValue: virtualCrossings) {
+                    const QVariantMap point { pointValue.toMap() };
+                    const QPointF crossing { sampleToX(point.value("sample").toInt()),
+                                             valueToY(point.value("value").toDouble()) };
+                    painter->drawLine(QPointF(crossing.x(), crossing.y() - 7.0),
+                                      QPointF(crossing.x(), crossing.y() + 7.0));
+                    painter->drawEllipse(crossing, 3.0, 3.0);
+                }
+            }
+
+            const QVariantList virtualHalfWaves { candidate.value("virtualHalfWaves").toList() };
+            if (!virtualHalfWaves.empty()) {
+                const double halfWaveY { waveHeight - 18.0 };
+                for (const QVariant& halfWaveValue: virtualHalfWaves) {
+                    const QVariantMap halfWave { halfWaveValue.toMap() };
+                    QColor halfWaveColor { halfWave.value("sign").toInt() > 0 ? QColor(0, 180, 0) : QColor(220, 0, 0) };
+                    halfWaveColor.setAlpha(220);
+                    p.setColor(halfWaveColor);
+                    p.setWidth(3);
+                    p.setStyle(Qt::SolidLine);
+                    painter->setPen(p);
+                    painter->drawLine(QPointF(sampleToX(halfWave.value("begin").toInt()), halfWaveY),
+                                      QPointF(sampleToX(halfWave.value("end").toInt()), halfWaveY));
+                }
+            }
+
             painter->drawEllipse(QPointF(sampleToX(candidate.value("upperSample").toInt()),
                                          valueToY(candidate.value("upperPointValue").toDouble())),
                                  4.0, 4.0);
@@ -345,6 +396,11 @@ void WaveformControl::paint(QPainter* painter) {
         const QVariantMap selectedCandidate { debugState.value("selected").toMap() };
         const bool hasSelectedCandidate { selectedCandidate.value("valid").toBool() };
         const int selectedBit { hasSelectedCandidate ? selectedCandidate.value("bit").toInt() : -1 };
+        p.setStyle(Qt::DashLine);
+        p.setWidth(1);
+        p.setColor(QColor(255, 255, 255, 150));
+        painter->setPen(p);
+        painter->drawLine(QPointF(0.0, valueToY(0.0)), QPointF(bRect.width(), valueToY(0.0)));
         drawCandidate(debugState.value("zero").toMap(), QColor(80, 180, 255), selectedBit == 0);
         drawCandidate(debugState.value("one").toMap(), QColor(255, 215, 64), selectedBit == 1);
         if (hasSelectedCandidate && selectedBit != 0 && selectedBit != 1) {

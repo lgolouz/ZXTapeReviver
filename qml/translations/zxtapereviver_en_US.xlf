@@ -127,6 +127,7 @@
 <trans-unit id="id_parser_mode"><source>Parser mode</source><target>Parser mode</target></trans-unit>
 <trans-unit id="id_parser_mode_standard"><source>Standard</source><target>Standard</target></trans-unit>
 <trans-unit id="id_parser_mode_experimental_adaptive"><source>Experimental adaptive</source><target>Experimental adaptive</target></trans-unit>
+<trans-unit id="id_parser_mode_experimental_virtual_axis"><source>Experimental adaptive + virtual axis slicing</source><target>Experimental adaptive + virtual axis slicing</target></trans-unit>
 <trans-unit id="id_adaptive_parser_settings"><source>Adaptive parser settings</source><target>Adaptive parser settings</target></trans-unit>
 <trans-unit id="id_adaptive_parser_preset"><source>Preset</source><target>Preset</target></trans-unit>
 <trans-unit id="id_adaptive_parser_preset_basic"><source>Basic</source><target>Basic</target></trans-unit>
@@ -136,6 +137,10 @@
 <trans-unit id="id_adaptive_alternative_mode"><source>Alternative mode</source><target>Alternative mode</target></trans-unit>
 <trans-unit id="id_adaptive_alternative_mode_smart"><source>Smart</source><target>Smart</target></trans-unit>
 <trans-unit id="id_adaptive_alternative_mode_full"><source>Full</source><target>Full</target></trans-unit>
+<trans-unit id="id_adaptive_virtual_axis_mode"><source>Virtual axis mode</source><target>Virtual axis mode</target></trans-unit>
+<trans-unit id="id_adaptive_virtual_axis_median"><source>Median in window</source><target>Median in window</target></trans-unit>
+<trans-unit id="id_adaptive_virtual_axis_percentile"><source>(Percentile 35 + 65) / 2</source><target>(Percentile 35 + 65) / 2</target></trans-unit>
+<trans-unit id="id_adaptive_virtual_axis_low_pass"><source>Low-pass median</source><target>Low-pass median</target></trans-unit>
 <trans-unit id="id_adaptive_base_depth"><source>Base depth</source><target>Base depth</target></trans-unit>
 <trans-unit id="id_adaptive_uncertain_depth"><source>Uncertain depth</source><target>Uncertain depth</target></trans-unit>
 <trans-unit id="id_adaptive_max_depth"><source>Max depth</source><target>Max depth</target></trans-unit>

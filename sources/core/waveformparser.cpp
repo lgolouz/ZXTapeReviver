@@ -34,6 +34,230 @@
 
 #define HARDCODED_DATA_SIGNAL_DELTA 0.75
 
+struct VirtualAxisData {
+    bool active { false };
+    size_t bucketSize { 1 };
+    QVector<double> axisBuckets;
+};
+
+static double medianOf(QVector<double> values, double fallback = 0.0)
+{
+    if (values.empty()) {
+        return fallback;
+    }
+
+    const auto middle { values.begin() + values.size() / 2 };
+    std::nth_element(values.begin(), middle, values.end());
+    return *middle;
+}
+
+static double percentileOf(QVector<double> values, double percentile, double fallback = 0.0)
+{
+    if (values.empty()) {
+        return fallback;
+    }
+
+    const qsizetype index { std::clamp<qsizetype>(static_cast<qsizetype>(std::lround((values.size() - 1) * percentile)), 0, values.size() - 1) };
+    const auto it { values.begin() + index };
+    std::nth_element(values.begin(), it, values.end());
+    return *it;
+}
+
+static double virtualAxisAt(const VirtualAxisData& virtualAxis, size_t sample)
+{
+    if (!virtualAxis.active || virtualAxis.axisBuckets.empty()) {
+        return 0.0;
+    }
+
+    const double bucketPosition { static_cast<double>(sample) / static_cast<double>(virtualAxis.bucketSize) };
+    const auto leftIndex { std::clamp<qsizetype>(static_cast<qsizetype>(std::floor(bucketPosition)), 0, virtualAxis.axisBuckets.size() - 1) };
+    const auto rightIndex { std::min<qsizetype>(leftIndex + 1, virtualAxis.axisBuckets.size() - 1) };
+    const double fraction { bucketPosition - std::floor(bucketPosition) };
+    return virtualAxis.axisBuckets.at(leftIndex) * (1.0 - fraction) + virtualAxis.axisBuckets.at(rightIndex) * fraction;
+}
+
+static VirtualAxisData buildVirtualAxisData(const QWavVector& channel,
+                                            double sampleRate,
+                                            ParserSettingsModel::AdaptiveVirtualAxisMode mode)
+{
+    VirtualAxisData result;
+    if (channel.empty()) {
+        return result;
+    }
+
+    result.active = true;
+    result.bucketSize = std::max<size_t>(32, static_cast<size_t>(std::lround(sampleRate / 500.0)));
+    const size_t bucketCount { (static_cast<size_t>(channel.size()) + result.bucketSize - 1) / result.bucketSize };
+    QVector<double> medians;
+    QVector<double> p35;
+    QVector<double> p65;
+    medians.reserve(static_cast<qsizetype>(bucketCount));
+    p35.reserve(static_cast<qsizetype>(bucketCount));
+    p65.reserve(static_cast<qsizetype>(bucketCount));
+
+    for (size_t bucket { 0 }; bucket < bucketCount; ++bucket) {
+        const size_t begin { bucket * result.bucketSize };
+        const size_t end { std::min<size_t>(static_cast<size_t>(channel.size()), begin + result.bucketSize) };
+        QVector<double> values;
+        values.reserve(static_cast<qsizetype>(end - begin));
+        for (size_t sample { begin }; sample < end; ++sample) {
+            values.append(channel.at(static_cast<qsizetype>(sample)));
+        }
+
+        medians.append(medianOf(values));
+        p35.append(percentileOf(values, 0.35));
+        p65.append(percentileOf(values, 0.65));
+    }
+
+    result.axisBuckets.resize(static_cast<qsizetype>(bucketCount));
+    constexpr int c_radius { 2 };
+    for (qsizetype bucket { 0 }; bucket < result.axisBuckets.size(); ++bucket) {
+        const qsizetype begin { std::max<qsizetype>(0, bucket - c_radius) };
+        const qsizetype end { std::min<qsizetype>(result.axisBuckets.size() - 1, bucket + c_radius) };
+
+        switch (mode) {
+        case ParserSettingsModel::AdaptiveVirtualAxisPercentile35_65: {
+            double lowSum { 0.0 };
+            double highSum { 0.0 };
+            for (qsizetype index { begin }; index <= end; ++index) {
+                lowSum += p35.at(index);
+                highSum += p65.at(index);
+            }
+            const double count { static_cast<double>(end - begin + 1) };
+            result.axisBuckets[bucket] = (lowSum / count + highSum / count) / 2.0;
+            break;
+        }
+
+        case ParserSettingsModel::AdaptiveVirtualAxisLowPassMedian:
+        case ParserSettingsModel::AdaptiveVirtualAxisMedianWindow: {
+            QVector<double> windowValues;
+            windowValues.reserve(end - begin + 1);
+            for (qsizetype index { begin }; index <= end; ++index) {
+                windowValues.append(medians.at(index));
+            }
+            result.axisBuckets[bucket] = medianOf(windowValues);
+            break;
+        }
+        }
+    }
+
+    if (mode == ParserSettingsModel::AdaptiveVirtualAxisLowPassMedian && !result.axisBuckets.empty()) {
+        constexpr double c_alpha { 0.18 };
+        for (qsizetype index { 1 }; index < result.axisBuckets.size(); ++index) {
+            result.axisBuckets[index] = result.axisBuckets.at(index - 1) * (1.0 - c_alpha) + result.axisBuckets.at(index) * c_alpha;
+        }
+        for (qsizetype index { result.axisBuckets.size() - 2 }; index >= 0; --index) {
+            result.axisBuckets[index] = result.axisBuckets.at(index + 1) * (1.0 - c_alpha) + result.axisBuckets.at(index) * c_alpha;
+            if (index == 0) {
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+
+static QVector<ParsedData::WaveformPart> parseChannelByVirtualAxis(const QWavVector& channel, const VirtualAxisData& virtualAxis)
+{
+    QVector<ParsedData::WaveformPart> result;
+    if (channel.empty()) {
+        return result;
+    }
+
+    size_t partBegin { 0 };
+    bool previousNegative { channel.at(0) < virtualAxisAt(virtualAxis, 0) };
+    for (size_t sample { 1 }; sample < static_cast<size_t>(channel.size()); ++sample) {
+        const bool negative { channel.at(static_cast<qsizetype>(sample)) < virtualAxisAt(virtualAxis, sample) };
+        if (negative == previousNegative) {
+            continue;
+        }
+
+        ParsedData::WaveformPart part;
+        part.begin = partBegin;
+        part.end = sample - 1;
+        part.length = sample - partBegin;
+        part.sign = previousNegative ? ParsedData::NEGATIVE : ParsedData::POSITIVE;
+        result.append(part);
+        partBegin = sample;
+        previousNegative = negative;
+    }
+
+    ParsedData::WaveformPart part;
+    part.begin = partBegin;
+    part.end = static_cast<size_t>(channel.size()) - 1;
+    part.length = static_cast<size_t>(channel.size()) - partBegin;
+    part.sign = previousNegative ? ParsedData::NEGATIVE : ParsedData::POSITIVE;
+    result.append(part);
+    return result;
+}
+
+static QVariantList virtualAxisSamplesForDebug(const VirtualAxisData& virtualAxis, size_t begin, size_t end)
+{
+    QVariantList result;
+    if (!virtualAxis.active || end < begin) {
+        return result;
+    }
+
+    const size_t length { end - begin + 1 };
+    const size_t step { std::max<size_t>(1, length / 96) };
+    for (size_t sample { begin }; sample <= end; sample += step) {
+        result.append(QVariantMap {
+            { "sample", static_cast<int>(sample) },
+            { "value", virtualAxisAt(virtualAxis, sample) },
+        });
+        if (std::numeric_limits<size_t>::max() - sample < step) {
+            break;
+        }
+    }
+
+    if (result.empty() || result.last().toMap().value("sample").toInt() != static_cast<int>(end)) {
+        result.append(QVariantMap {
+            { "sample", static_cast<int>(end) },
+            { "value", virtualAxisAt(virtualAxis, end) },
+        });
+    }
+    return result;
+}
+
+static void appendVirtualHalfWaveDebug(QVariantMap& candidate,
+                                       const QVector<ParsedData::WaveformPart>& parsed,
+                                       const VirtualAxisData& virtualAxis)
+{
+    if (!virtualAxis.active || !candidate.value("valid").toBool()) {
+        return;
+    }
+
+    const int firstIndex { candidate.value("firstPartIndex", -1).toInt() };
+    const int secondIndex { candidate.value("secondPartIndex", -1).toInt() };
+    if (firstIndex < 0 || secondIndex < firstIndex || secondIndex >= parsed.size()) {
+        return;
+    }
+
+    const size_t begin { static_cast<size_t>(candidate.value("begin").toInt()) };
+    const size_t end { static_cast<size_t>(candidate.value("end").toInt()) };
+    candidate["virtualAxisSamples"] = virtualAxisSamplesForDebug(virtualAxis, begin, end);
+
+    QVariantList crossings;
+    QVariantList halfWaves;
+    for (int index { firstIndex }; index <= secondIndex; ++index) {
+        const auto& part { parsed.at(index) };
+        halfWaves.append(QVariantMap {
+            { "begin", static_cast<int>(part.begin) },
+            { "end", static_cast<int>(part.end) },
+            { "sign", part.sign == ParsedData::POSITIVE ? 1 : -1 },
+        });
+        if (index > firstIndex) {
+            crossings.append(QVariantMap {
+                { "sample", static_cast<int>(part.begin) },
+                { "value", virtualAxisAt(virtualAxis, part.begin) },
+            });
+        }
+    }
+
+    candidate["virtualCrossings"] = crossings;
+    candidate["virtualHalfWaves"] = halfWaves;
+}
+
 WaveformParser::WaveformParser(QObject* parent) :
     QObject(parent),
     mWavReader(*WavReader::instance()),
@@ -1355,11 +1579,22 @@ void WaveformParser::parse(uint chNum)
     QCoreApplication::processEvents();
 
     QWavVector& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
+    const double sampleRate = mWavReader.getSampleRate();
+    const auto& parserSettings = ParserSettingsModel::instance()->getParserSettings();
+    VirtualAxisData virtualAxis;
+    const bool useVirtualAxisSlicing { parserSettings.parserMode == ParserSettingsModel::ExperimentalAdaptiveVirtualAxisParser };
+    if (useVirtualAxisSlicing) {
+        setParsingProgress(true, 0, QString("Channel %1: building virtual axis").arg(chNum + 1));
+        QCoreApplication::processEvents();
+        virtualAxis = buildVirtualAxisData(channel, sampleRate, parserSettings.adaptiveVirtualAxisMode);
+    }
+
     setParsingProgress(true, 0, QString("Channel %1: detecting half-waves").arg(chNum + 1));
     QCoreApplication::processEvents();
-    QVector<ParsedData::WaveformPart> parsed = parseChannel<QWavVectorType>(channel);
+    QVector<ParsedData::WaveformPart> parsed = useVirtualAxisSlicing
+            ? parseChannelByVirtualAxis(channel, virtualAxis)
+            : parseChannel<QWavVectorType>(channel);
 
-    const double sampleRate = mWavReader.getSampleRate();
     auto& parsedData = *getOrCreateParsedDataPtr(chNum);
     parsedData.clear(channel.size());
     mSelectedBlocks[chNum].clear();
@@ -1410,7 +1645,6 @@ void WaveformParser::parse(uint chNum)
     uint8_t bit = 0;
     uint8_t parity = 0;
 
-    const auto& parserSettings = ParserSettingsModel::instance()->getParserSettings();
     auto isSineNormal = [&parserSettings, sampleRate](const ParsedData::WaveformPart& b, const ParsedData::WaveformPart& e, bool zeroCheck) -> bool {
         if (parserSettings.checkForAbnormalSine) {
             return isFreqFitsInDelta(sampleRate, b.length, zeroCheck ? parserSettings.zeroHalfFreq : parserSettings.oneHalfFreq, zeroCheck ? parserSettings.zeroDelta : parserSettings.oneDelta, parserSettings.sineCheckTolerance) &&
@@ -1431,7 +1665,8 @@ void WaveformParser::parse(uint chNum)
     QElapsedTimer experimentalDebugTimer;
     experimentalDebugTimer.start();
     const auto publishExperimentalParseDebug = [&](size_t sample, const QVariantMap& periodCandidate, bool force = false) {
-        if (parserSettings.parserMode != ParserSettingsModel::ExperimentalAdaptiveParser) {
+        if (parserSettings.parserMode != ParserSettingsModel::ExperimentalAdaptiveParser &&
+                parserSettings.parserMode != ParserSettingsModel::ExperimentalAdaptiveVirtualAxisParser) {
             return;
         }
         if (m_experimentalDebugManualInspection) {
@@ -1443,86 +1678,89 @@ void WaveformParser::parse(uint chNum)
 
         const int bit { periodCandidate.contains("bit") ? periodCandidate.value("bit").toInt() : -1 };
         const bool valid { periodCandidate.value("valid").toBool() };
+        QVariantMap debugCandidate { periodCandidate };
+        appendVirtualHalfWaveDebug(debugCandidate, parsed, virtualAxis);
         m_experimentalDebugChannel = chNum;
         m_experimentalDebugActive = true;
         m_experimentalDebugSample = sample;
-        const QString detector { periodCandidate.value("detector").toString() };
+        const QString detector { debugCandidate.value("detector").toString() };
         const QString detectorLine {
             detector == "next pilot"
-                    ? QString("next pilot half-waves=%1").arg(periodCandidate.value("pilotHalfWaves").toInt())
+                    ? QString("next pilot half-waves=%1").arg(debugCandidate.value("pilotHalfWaves").toInt())
                             : detector == "pause"
                                     ? QString("pause detector rms=%1 rms ratio=%2")
-                                            .arg(periodCandidate.value("rms").toDouble(), 0, 'f', 4)
-                                            .arg(periodCandidate.value("rmsRatio").toDouble(), 0, 'f', 3)
+                                            .arg(debugCandidate.value("rms").toDouble(), 0, 'f', 4)
+                                            .arg(debugCandidate.value("rmsRatio").toDouble(), 0, 'f', 3)
                             : detector == "adaptive scan"
                                     ? QString("adaptive scan checked=%1 depth=%2 skip=%3")
-                                            .arg(periodCandidate.value("checkedHypotheses").toInt())
-                                            .arg(periodCandidate.value("pathDepth").toInt())
-                                            .arg(periodCandidate.value("skippedHalfWaves").toInt())
+                                            .arg(debugCandidate.value("checkedHypotheses").toInt())
+                                            .arg(debugCandidate.value("pathDepth").toInt())
+                                            .arg(debugCandidate.value("skippedHalfWaves").toInt())
                             : detector == "half-wave pair"
                                     ? QString("half-wave pair detector")
                                     : detector == "half-wave viterbi"
                                             ? QString("half-wave viterbi path=%1 depth=%2 skip=%3 score=%4 confidence=%5")
-                                                    .arg(periodCandidate.value("pathBits").toString())
-                                                    .arg(periodCandidate.value("pathDepth").toInt())
-                                                    .arg(periodCandidate.value("skippedHalfWaves").toInt())
-                                                    .arg(periodCandidate.value("pathScore").toDouble(), 0, 'f', 3)
-                                                    .arg(periodCandidate.value("pathConfidence").toDouble(), 0, 'f', 3)
+                                                    .arg(debugCandidate.value("pathBits").toString())
+                                                    .arg(debugCandidate.value("pathDepth").toInt())
+                                                    .arg(debugCandidate.value("skippedHalfWaves").toInt())
+                                                    .arg(debugCandidate.value("pathScore").toDouble(), 0, 'f', 3)
+                                                    .arg(debugCandidate.value("pathConfidence").toDouble(), 0, 'f', 3)
                                             : QString("period detector")
         };
         m_experimentalDebugState = {
             { "active", true },
             { "chNum", static_cast<int>(chNum) },
             { "sample", static_cast<int>(sample) },
-            { "followSample", periodCandidate.value("followSample", true).toBool() },
+            { "followSample", debugCandidate.value("followSample", true).toBool() },
             { "phase", QString("Live experimental parse") },
-            { "zero", bit == 0 ? periodCandidate : QVariantMap() },
-            { "one", bit == 1 ? periodCandidate : QVariantMap() },
-            { "period", periodCandidate },
-            { "selected", valid ? periodCandidate : QVariantMap() },
-            { "result", periodCandidate.value("crcMismatchStop").toBool()
+            { "zero", bit == 0 ? debugCandidate : QVariantMap() },
+            { "one", bit == 1 ? debugCandidate : QVariantMap() },
+            { "period", debugCandidate },
+            { "selected", valid ? debugCandidate : QVariantMap() },
+            { "result", debugCandidate.value("crcMismatchStop").toBool()
                     ? QString("Parser stopped on CRC mismatch")
-                    : periodCandidate.value("localRecheck").toBool()
+                    : debugCandidate.value("localRecheck").toBool()
                     ? QString("Candidate after local recheck")
                     : detector == "next pilot"
                     ? QString("Payload stopped before next pilot")
                     : detector == "pause"
                             ? QString("Payload stopped on pause")
                             : (valid ? QString("Candidate %1").arg(bit) : QString("No confident period")) },
-            { "message", QString("Live experimental parse\n%1\nbit=%2 score=%3 raw=%4 penalty=%5 zero=%6 one=%7 timing=%8 balance=%9 shape=%10 speed=%11 damaged=%12 shape-rescue=%13 zero-rescue=%14 local-recheck=%15 local-shape-rescue=%16\nhalves=%17/%18 begin=%19 end=%20 len=%21 axis=%22 range=%23\ncarrier ready=%24 range=%25 ratio=%26 score floor=%27 axis jump=%28/%29\ncrc stop=%30 calculated=0x%31 awaited=0x%32 bytes=%33\nsample=%34")
+            { "message", QString("Live experimental parse\n%1\nbit=%2 score=%3 raw=%4 penalty=%5 zero=%6 one=%7 timing=%8 balance=%9 shape=%10 speed=%11 damaged=%12 shape-rescue=%13 zero-rescue=%14 local-recheck=%15\nhalves=%16/%17 begin=%18 end=%19 len=%20 axis=%21 range=%22 zero-pair split=%23/%24\ncarrier ready=%25 range=%26 ratio=%27 score floor=%28 axis jump=%29/%30\ncrc stop=%31 calculated=0x%32 awaited=0x%33 bytes=%34\nsample=%35")
                     .arg(detectorLine)
                     .arg(bit)
-                    .arg(periodCandidate.value("score").toDouble(), 0, 'f', 3)
-                    .arg(periodCandidate.value("rawScore").toDouble(), 0, 'f', 3)
-                    .arg(periodCandidate.value("totalPenalty").toDouble(), 0, 'f', 3)
-                    .arg(periodCandidate.value("zeroScore").toDouble(), 0, 'f', 3)
-                    .arg(periodCandidate.value("oneScore").toDouble(), 0, 'f', 3)
-                    .arg(periodCandidate.value("timingScore").toDouble(), 0, 'f', 3)
-                    .arg(periodCandidate.value("balanceScore").toDouble(), 0, 'f', 3)
-                    .arg(periodCandidate.value("shapeScore").toDouble(), 0, 'f', 3)
-                    .arg(periodCandidate.value("speedRatio").toDouble(), 0, 'f', 3)
-                    .arg(periodCandidate.value("damagedReadable").toBool() ? QString("yes") : QString("no"))
-                    .arg(periodCandidate.value("shapeReadable").toBool() ? QString("yes") : QString("no"))
-                    .arg(periodCandidate.value("damagedZeroTimingRescue").toBool() ? QString("yes") : QString("no"))
-                    .arg(periodCandidate.value("localRecheck").toBool() ? QString("yes") : QString("no"))
-                    .arg(periodCandidate.value("localShapeRescue").toBool() ? QString("yes") : QString("no"))
-                    .arg(periodCandidate.value("firstHalfLength").toInt())
-                    .arg(periodCandidate.value("secondHalfLength").toInt())
-                    .arg(periodCandidate.value("begin").toInt())
-                    .arg(periodCandidate.value("end").toInt())
-                    .arg(periodCandidate.value("length").toInt())
-                    .arg(periodCandidate.value("axis").toDouble(), 0, 'f', 1)
-                    .arg(periodCandidate.value("range").toDouble(), 0, 'f', 1)
-                    .arg(periodCandidate.value("carrierReady").toBool() ? QString("yes") : QString("no"))
-                    .arg(periodCandidate.value("carrierRange").toDouble(), 0, 'f', 1)
-                    .arg(periodCandidate.value("rangeRatio").toDouble(), 0, 'f', 3)
-                    .arg(periodCandidate.value("scoreFloor").toDouble(), 0, 'f', 3)
-                    .arg(periodCandidate.value("axisJump").toDouble(), 0, 'f', 1)
-                    .arg(periodCandidate.value("axisTolerance").toDouble(), 0, 'f', 1)
-                    .arg(periodCandidate.value("crcMismatchStop").toBool() ? QString("yes") : QString("no"))
-                    .arg(periodCandidate.value("parityCalculated").toInt(), 2, 16, QLatin1Char('0'))
-                    .arg(periodCandidate.value("parityAwaited").toInt(), 2, 16, QLatin1Char('0'))
-                    .arg(periodCandidate.value("parsedBytes").toInt())
+                    .arg(debugCandidate.value("score").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("rawScore").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("totalPenalty").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("zeroScore").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("oneScore").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("timingScore").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("balanceScore").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("shapeScore").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("speedRatio").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("damagedReadable").toBool() ? QString("yes") : QString("no"))
+                    .arg(debugCandidate.value("shapeReadable").toBool() ? QString("yes") : QString("no"))
+                    .arg(debugCandidate.value("damagedZeroTimingRescue").toBool() ? QString("yes") : QString("no"))
+                    .arg(debugCandidate.value("localRecheck").toBool() ? QString("yes") : QString("no"))
+                    .arg(debugCandidate.value("firstHalfLength").toInt())
+                    .arg(debugCandidate.value("secondHalfLength").toInt())
+                    .arg(debugCandidate.value("begin").toInt())
+                    .arg(debugCandidate.value("end").toInt())
+                    .arg(debugCandidate.value("length").toInt())
+                    .arg(debugCandidate.value("axis").toDouble(), 0, 'f', 1)
+                    .arg(debugCandidate.value("range").toDouble(), 0, 'f', 1)
+                    .arg(debugCandidate.value("zeroPairSplitPenalty").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("zeroPairSplitScore").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("carrierReady").toBool() ? QString("yes") : QString("no"))
+                    .arg(debugCandidate.value("carrierRange").toDouble(), 0, 'f', 1)
+                    .arg(debugCandidate.value("rangeRatio").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("scoreFloor").toDouble(), 0, 'f', 3)
+                    .arg(debugCandidate.value("axisJump").toDouble(), 0, 'f', 1)
+                    .arg(debugCandidate.value("axisTolerance").toDouble(), 0, 'f', 1)
+                    .arg(debugCandidate.value("crcMismatchStop").toBool() ? QString("yes") : QString("no"))
+                    .arg(debugCandidate.value("parityCalculated").toInt(), 2, 16, QLatin1Char('0'))
+                    .arg(debugCandidate.value("parityAwaited").toInt(), 2, 16, QLatin1Char('0'))
+                    .arg(debugCandidate.value("parsedBytes").toInt())
                     .arg(static_cast<int>(sample)) },
         };
         emit experimentalDebugChanged(chNum);
@@ -1941,6 +2179,8 @@ void WaveformParser::parse(uint chNum)
                 { "zeroScore", 0.0 },
                 { "oneScore", 0.0 },
                 { "timingScore", 0.0 },
+                { "zeroPairSplitPenalty", 0.0 },
+                { "zeroPairSplitScore", 0.0 },
             };
             QVector<QVariantMap> rawCandidates;
             const auto appendCandidate = [&rawCandidates](const QVariantMap& candidate) {
@@ -1981,6 +2221,63 @@ void WaveformParser::parse(uint chNum)
                 }
                 return result;
             };
+            const auto zeroPairScore = [&](qsizetype pairBeginIndex) {
+                if (pairBeginIndex < 0 || pairBeginIndex + 1 >= parsed.size()) {
+                    return 0.0;
+                }
+
+                const auto& firstPart { parsed.at(pairBeginIndex) };
+                const auto& secondPart { parsed.at(pairBeginIndex + 1) };
+                if (firstPart.sign == secondPart.sign) {
+                    return 0.0;
+                }
+
+                const size_t firstLength { firstPart.length };
+                const size_t secondLength { secondPart.length };
+                const size_t pairLength { firstLength + secondLength };
+                const double timingScore {
+                    scoreLength(static_cast<double>(pairLength),
+                                zeroExpectedLength * candidateSpeedRatio,
+                                parserSettings.zeroDelta,
+                                HARDCODED_DATA_SIGNAL_DELTA)
+                };
+                const double balanceScore {
+                    1.0 - std::clamp(std::fabs(static_cast<double>(firstLength) - static_cast<double>(secondLength)) /
+                                      static_cast<double>(std::max<size_t>(1, std::max(firstLength, secondLength))) / 0.55,
+                                      0.0,
+                                      1.0)
+                };
+
+                return timingScore * 0.72 + balanceScore * 0.20 + 0.08;
+            };
+            const auto zeroPairSplitPenalty = [&](qsizetype beginIndex, qsizetype partsConsumed) {
+                if (partsConsumed < 4 || partsConsumed % 2 != 0) {
+                    return QPair<double, double> { 0.0, 0.0 };
+                }
+
+                double scoreSum { 0.0 };
+                double minScore { 1.0 };
+                int pairCount { 0 };
+                for (qsizetype offset { 0 }; offset < partsConsumed; offset += 2) {
+                    const double score { zeroPairScore(beginIndex + offset) };
+                    scoreSum += score;
+                    minScore = std::min(minScore, score);
+                    ++pairCount;
+                }
+
+                if (pairCount < 2) {
+                    return QPair<double, double> { 0.0, 0.0 };
+                }
+
+                const double averageScore { scoreSum / pairCount };
+                const double splitScore { std::min(minScore, averageScore) };
+                if (minScore < 0.78 || averageScore < 0.84) {
+                    return QPair<double, double> { 0.0, splitScore };
+                }
+
+                const double penalty { std::clamp(0.35 + (averageScore - 0.84) * 0.7, 0.35, 0.55) };
+                return QPair<double, double> { penalty, splitScore };
+            };
 
             constexpr qsizetype c_maxPhysicalPartsPerBit { 8 };
             for (qsizetype partsConsumed { 2 }; partsConsumed <= c_maxPhysicalPartsPerBit && partIndex + partsConsumed - 1 < parsed.size(); ++partsConsumed) {
@@ -2009,8 +2306,9 @@ void WaveformParser::parse(uint chNum)
                     const bool oneHalfNormal { isSineNormal(first, endPart, false) };
                     const double zeroRawScore { zeroScore * 0.70 + balanceScore * 0.22 + polarityScore * 0.08 };
                     const double oneRawScore { oneScore * 0.70 + balanceScore * 0.22 + polarityScore * 0.08 };
+                    const auto zeroSplit { zeroPairSplitPenalty(partIndex, partsConsumed) };
                     const double zeroPenalty { (zeroHalfNormal ? 0.0 : 0.10) + mergePenalty + splitPenalty };
-                    const double onePenalty { (oneHalfNormal ? 0.0 : 0.10) + mergePenalty + splitPenalty };
+                    const double onePenalty { (oneHalfNormal ? 0.0 : 0.10) + mergePenalty + splitPenalty + zeroSplit.first };
                     const double zeroTotal { std::max(0.0, zeroRawScore - zeroPenalty) };
                     const double oneTotal { std::max(0.0, oneRawScore - onePenalty) };
                     const uint8_t bit { oneTotal > zeroTotal ? uint8_t { 1 } : uint8_t { 0 } };
@@ -2081,144 +2379,12 @@ void WaveformParser::parse(uint chNum)
                     candidate["physicalParts"] = static_cast<int>(partsConsumed);
                     candidate["mergePenalty"] = mergePenalty;
                     candidate["splitPenalty"] = splitPenalty;
+                    candidate["zeroPairSplitPenalty"] = zeroSplit.first;
+                    candidate["zeroPairSplitScore"] = zeroSplit.second;
                     candidate["damagedZeroTimingRescue"] = damagedZeroTimingRescue && effectiveScore > score;
                     appendCandidate(candidate);
                 }
             }
-
-            const auto partIndexByEndSample = [&parsed](size_t sample) {
-                auto it { std::lower_bound(parsed.begin(), parsed.end(), sample, [](const ParsedData::WaveformPart& part, size_t value) {
-                    return part.end < value;
-                }) };
-                return it == parsed.end() ? parsed.size() - 1 : std::distance(parsed.begin(), it);
-            };
-            const auto appendVirtualAxisCandidate = [&](uint8_t bit) {
-                const auto& first { parsed.at(partIndex) };
-                const int expectedLength { bit == 0
-                        ? static_cast<int>(std::lround(zeroExpectedLength * candidateSpeedRatio))
-                        : static_cast<int>(std::lround(oneExpectedLength * candidateSpeedRatio)) };
-                const int lengthRadius { std::max(3, expectedLength / 5) };
-                const int minLength { std::max(8, expectedLength - lengthRadius) };
-                const int maxLength { std::max(minLength, expectedLength + lengthRadius) };
-                QVariantMap bestVirtualCandidate;
-                double bestVirtualQuality { 0.0 };
-
-                for (int length { minLength }; length <= maxLength; ++length) {
-                    if (first.begin + static_cast<size_t>(length) > static_cast<size_t>(channel.size())) {
-                        break;
-                    }
-
-                    double axis { 0.0 };
-                    double upperLevel { 0.0 };
-                    double lowerLevel { 0.0 };
-                    const double shapeScore { this->scoreExperimentalWindow(channel, first.begin, static_cast<size_t>(length), &axis, &upperLevel, &lowerLevel) };
-                    if (shapeScore <= 0.0) {
-                        continue;
-                    }
-
-                    int upperSample { static_cast<int>(first.begin) };
-                    int lowerSample { static_cast<int>(first.begin) };
-                    double upperValue { channel.at(static_cast<qsizetype>(first.begin)) };
-                    double lowerValue { upperValue };
-                    for (size_t sample { first.begin + 1 }; sample < first.begin + static_cast<size_t>(length); ++sample) {
-                        const double value { channel.at(static_cast<qsizetype>(sample)) };
-                        if (value > upperValue) {
-                            upperValue = value;
-                            upperSample = static_cast<int>(sample);
-                        }
-                        if (value < lowerValue) {
-                            lowerValue = value;
-                            lowerSample = static_cast<int>(sample);
-                        }
-                    }
-
-                    const auto signOfSample = [&channel, axis](size_t sample) {
-                        const double value { channel.at(static_cast<qsizetype>(sample)) - axis };
-                        return value >= 0.0 ? 1 : -1;
-                    };
-                    const size_t middleSample { first.begin + static_cast<size_t>(length / 2) };
-                    size_t splitSample { middleSample };
-                    size_t bestSplitDistance { std::numeric_limits<size_t>::max() };
-                    for (size_t sample { first.begin + 1 }; sample < first.begin + static_cast<size_t>(length); ++sample) {
-                        if (signOfSample(sample - 1) == signOfSample(sample)) {
-                            continue;
-                        }
-
-                        const size_t distance { sample > middleSample ? sample - middleSample : middleSample - sample };
-                        if (distance < bestSplitDistance) {
-                            bestSplitDistance = distance;
-                            splitSample = sample;
-                        }
-                    }
-
-                    const size_t firstHalfLength { std::max<size_t>(1, splitSample - first.begin) };
-                    const size_t secondHalfLength { std::max<size_t>(1, first.begin + static_cast<size_t>(length) - splitSample) };
-                    const double balanceScore {
-                        1.0 - std::clamp(std::fabs(static_cast<double>(firstHalfLength) - static_cast<double>(secondHalfLength)) /
-                                          static_cast<double>(std::max<size_t>(1, std::max(firstHalfLength, secondHalfLength))) / 0.75,
-                                          0.0,
-                                          1.0)
-                    };
-                    const double timingScore { bit == 0
-                            ? scoreLength(static_cast<double>(length), zeroExpectedLength * candidateSpeedRatio, parserSettings.zeroDelta, HARDCODED_DATA_SIGNAL_DELTA)
-                            : scoreLength(static_cast<double>(length), oneExpectedLength * candidateSpeedRatio, HARDCODED_DATA_SIGNAL_DELTA, parserSettings.oneDelta) };
-                    const double rawScore { shapeScore * 0.62 + timingScore * 0.30 + balanceScore * 0.08 };
-                    const double lengthPenalty { std::fabs(length - expectedLength) / static_cast<double>(std::max(1, expectedLength)) * 0.10 };
-                    const double score { std::max(0.0, rawScore - lengthPenalty) };
-                    const double quality { score + shapeScore * 0.10 + timingScore * 0.08 };
-                    if (score <= 0.0 || (!bestVirtualCandidate.empty() && quality <= bestVirtualQuality)) {
-                        continue;
-                    }
-
-                    const size_t endSample { first.begin + static_cast<size_t>(length) - 1 };
-                    const qsizetype secondPartIndex { partIndexByEndSample(endSample) };
-                    const qsizetype splitPartIndex { partIndexByEndSample(splitSample) };
-                    QVariantMap candidate { best };
-                    candidate["valid"] = true;
-                    candidate["bit"] = bit;
-                    candidate["begin"] = static_cast<int>(first.begin);
-                    candidate["end"] = static_cast<int>(endSample);
-                    candidate["length"] = length;
-                    candidate["expectedLength"] = expectedLength;
-                    candidate["score"] = score;
-                    candidate["rawScore"] = rawScore;
-                    candidate["totalPenalty"] = lengthPenalty;
-                    candidate["axis"] = axis;
-                    candidate["upperLevel"] = upperLevel;
-                    candidate["lowerLevel"] = lowerLevel;
-                    candidate["range"] = upperValue - lowerValue;
-                    candidate["upperSample"] = upperSample;
-                    candidate["lowerSample"] = lowerSample;
-                    candidate["upperPointValue"] = upperValue;
-                    candidate["lowerPointValue"] = lowerValue;
-                    candidate["shapeScore"] = shapeScore;
-                    candidate["balanceScore"] = balanceScore;
-                    candidate["zeroScore"] = bit == 0 ? score : 0.0;
-                    candidate["oneScore"] = bit == 1 ? score : 0.0;
-                    candidate["timingScore"] = timingScore;
-                    candidate["firstHalfLength"] = static_cast<int>(firstHalfLength);
-                    candidate["secondHalfLength"] = static_cast<int>(secondHalfLength);
-                    candidate["zeroHalfNormal"] = true;
-                    candidate["oneHalfNormal"] = true;
-                    candidate["firstPartIndex"] = static_cast<int>(partIndex);
-                    candidate["secondPartIndex"] = static_cast<int>(secondPartIndex);
-                    candidate["splitPartIndex"] = static_cast<int>(splitPartIndex);
-                    candidate["physicalParts"] = static_cast<int>(std::max<qsizetype>(1, secondPartIndex - partIndex + 1));
-                    candidate["mergePenalty"] = 0.0;
-                    candidate["splitPenalty"] = 0.0;
-                    candidate["virtualAxisCandidate"] = true;
-                    candidate["detector"] = QString("virtual-axis");
-                    bestVirtualCandidate = std::move(candidate);
-                    bestVirtualQuality = quality;
-                }
-
-                if (!bestVirtualCandidate.empty()) {
-                    appendCandidate(bestVirtualCandidate);
-                }
-            };
-            appendVirtualAxisCandidate(0);
-            appendVirtualAxisCandidate(1);
-
             constexpr qsizetype c_maxAlternatives { 8 };
             return ExperimentalAdaptiveParser::selectAlternatives(rawCandidates,
                                                                   parserSettings.adaptiveAlternativeMode,
@@ -2512,28 +2678,17 @@ void WaveformParser::parse(uint chNum)
                 (!carrierReady || rangeRatio >= 0.10) &&
                 axisJump <= axisTolerance
             };
-            const bool localShapeRescue {
-                candidateMap.value("localRecheck").toBool() &&
-                candidateMap.value("valid").toBool() &&
-                shapeScore >= 0.90 &&
-                timingScore >= 0.68 &&
-                pathConfidence >= 0.50 &&
-                (!carrierReady || rangeRatio >= 0.24) &&
-                axisJump <= axisTolerance
-            };
             const bool periodAccepted {
                 candidateMap.value("valid").toBool() &&
                 (candidateScore >= c_minScore ||
                  (candidateScore >= 0.48 && pathConfidence >= 0.66) ||
                  damagedButReadable ||
-                 shapeReadable ||
-                 localShapeRescue)
+                 shapeReadable)
             };
             const bool carrierAccepted {
                 !carrierReady ||
                 damagedButReadable ||
                 shapeReadable ||
-                localShapeRescue ||
                 ((rangeRatio >= c_minRangeRatio || candidateScore >= 0.86) &&
                  candidateScore >= scoreFloor &&
                  axisJump <= axisTolerance)
@@ -2549,13 +2704,12 @@ void WaveformParser::parse(uint chNum)
             candidateMap["axisTolerance"] = axisTolerance;
             candidateMap["damagedReadable"] = damagedButReadable;
             candidateMap["shapeReadable"] = shapeReadable;
-            candidateMap["localShapeRescue"] = localShapeRescue;
             candidateMap["balanceScore"] = balanceScore;
 
             result.map = std::move(candidateMap);
             result.candidate = periodCandidateToBitCandidate(result.map);
             result.accepted = result.candidate.valid && periodAccepted && carrierAccepted;
-            result.suspicious = damagedButReadable || shapeReadable || localShapeRescue || candidateScore < c_minScore || pathConfidence < 0.70;
+            result.suspicious = damagedButReadable || shapeReadable || candidateScore < c_minScore || pathConfidence < 0.70;
             result.candidateRange = candidateRange;
             result.candidateAxis = candidateAxis;
             result.candidateScore = candidateScore;
@@ -2777,12 +2931,6 @@ void WaveformParser::parse(uint chNum)
                 experimentalData.append(experimentalByte);
                 experimentalWaveformData.append(lastBytePart);
                 experimentalParity ^= experimentalByte;
-                parsedData.updateDataSnapshot(experimentalData,
-                                              experimentalDataMapping,
-                                              startSample,
-                                              lastSample,
-                                              experimentalWaveformData,
-                                              calculatedParity());
                 experimentalByte = 0;
             }
         }
@@ -2879,7 +3027,8 @@ void WaveformParser::parse(uint chNum)
             break;
 
         case DATA_SIGNAL:
-            if (parserSettings.parserMode == ParserSettingsModel::ExperimentalAdaptiveParser) {
+            if (parserSettings.parserMode == ParserSettingsModel::ExperimentalAdaptiveParser ||
+                    parserSettings.parserMode == ParserSettingsModel::ExperimentalAdaptiveVirtualAxisParser) {
                 const qsizetype experimentalStartPart { it != parsed.end() ? std::distance(parsed.begin(), it) : std::distance(parsed.begin(), prevIt) + 1 };
                 const size_t endSample { decodeExperimentalData(experimentalStartPart) };
                 it = std::find_if(it, parsed.end(), [endSample](const ParsedData::WaveformPart& p) {
@@ -3047,7 +3196,13 @@ bool WaveformParser::startExperimentalDebug(uint chNum)
     const auto isSynchroSecondHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p, double deltaDivider = 1.0) {
         return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroSecondHalfFreq, parserSettings.synchroDelta, deltaDivider);
     };
-    m_experimentalDebugParsed = parseChannel<QWavVectorType>(*channel);
+    const bool useVirtualAxisSlicing { parserSettings.parserMode == ParserSettingsModel::ExperimentalAdaptiveVirtualAxisParser };
+    const VirtualAxisData virtualAxis { useVirtualAxisSlicing
+            ? buildVirtualAxisData(*channel, sampleRate, parserSettings.adaptiveVirtualAxisMode)
+            : VirtualAxisData {} };
+    m_experimentalDebugParsed = useVirtualAxisSlicing
+            ? parseChannelByVirtualAxis(*channel, virtualAxis)
+            : parseChannel<QWavVectorType>(*channel);
     auto it { m_experimentalDebugParsed.begin() };
     while (it != m_experimentalDebugParsed.end()) {
         it = std::find_if(it, m_experimentalDebugParsed.end(), isPilotHalfFreq);

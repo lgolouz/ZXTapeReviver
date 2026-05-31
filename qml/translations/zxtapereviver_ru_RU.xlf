@@ -127,6 +127,7 @@
 <trans-unit id="id_parser_mode"><source>Parser mode</source><target>Режим парсера</target></trans-unit>
 <trans-unit id="id_parser_mode_standard"><source>Standard</source><target>Стандартный</target></trans-unit>
 <trans-unit id="id_parser_mode_experimental_adaptive"><source>Experimental adaptive</source><target>Экспериментальный адаптивный</target></trans-unit>
+<trans-unit id="id_parser_mode_experimental_virtual_axis"><source>Experimental adaptive + virtual axis slicing</source><target>Экспериментальный адаптивный + виртуальная ось</target></trans-unit>
 <trans-unit id="id_adaptive_parser_settings"><source>Adaptive parser settings</source><target>Настройки адаптивного парсера</target></trans-unit>
 <trans-unit id="id_adaptive_parser_preset"><source>Preset</source><target>Пресет</target></trans-unit>
 <trans-unit id="id_adaptive_parser_preset_basic"><source>Basic</source><target>Базовый</target></trans-unit>
@@ -136,6 +137,10 @@
 <trans-unit id="id_adaptive_alternative_mode"><source>Alternative mode</source><target>Режим альтернатив</target></trans-unit>
 <trans-unit id="id_adaptive_alternative_mode_smart"><source>Smart</source><target>Умный</target></trans-unit>
 <trans-unit id="id_adaptive_alternative_mode_full"><source>Full</source><target>Полный</target></trans-unit>
+<trans-unit id="id_adaptive_virtual_axis_mode"><source>Virtual axis mode</source><target>Режим виртуальной оси</target></trans-unit>
+<trans-unit id="id_adaptive_virtual_axis_median"><source>Median in window</source><target>Медиана в окне</target></trans-unit>
+<trans-unit id="id_adaptive_virtual_axis_percentile"><source>(Percentile 35 + 65) / 2</source><target>(Перцентиль 35 + 65) / 2</target></trans-unit>
+<trans-unit id="id_adaptive_virtual_axis_low_pass"><source>Low-pass median</source><target>Low-pass от медианы</target></trans-unit>
 <trans-unit id="id_adaptive_base_depth"><source>Base depth</source><target>Базовая глубина</target></trans-unit>
 <trans-unit id="id_adaptive_uncertain_depth"><source>Uncertain depth</source><target>Глубина для спорных мест</target></trans-unit>
 <trans-unit id="id_adaptive_max_depth"><source>Max depth</source><target>Максимальная глубина</target></trans-unit>

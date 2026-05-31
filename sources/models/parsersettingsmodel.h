@@ -43,6 +43,7 @@ class ParserSettingsModel : public QObject
     Q_PROPERTY(int adaptiveBeamWidth READ getAdaptiveBeamWidth WRITE setAdaptiveBeamWidth NOTIFY adaptiveBeamWidthChanged)
     Q_PROPERTY(double adaptiveTimingStabilityPenalty READ getAdaptiveTimingStabilityPenalty WRITE setAdaptiveTimingStabilityPenalty NOTIFY adaptiveTimingStabilityPenaltyChanged)
     Q_PROPERTY(AdaptiveAlternativeMode adaptiveAlternativeMode READ getAdaptiveAlternativeMode WRITE setAdaptiveAlternativeMode NOTIFY adaptiveAlternativeModeChanged)
+    Q_PROPERTY(AdaptiveVirtualAxisMode adaptiveVirtualAxisMode READ getAdaptiveVirtualAxisMode WRITE setAdaptiveVirtualAxisMode NOTIFY adaptiveVirtualAxisModeChanged)
 
 protected:
     explicit ParserSettingsModel(QObject* parent = nullptr);
@@ -50,7 +51,8 @@ protected:
 public:
     enum ParserMode {
         StandardParser,
-        ExperimentalAdaptiveParser
+        ExperimentalAdaptiveParser,
+        ExperimentalAdaptiveVirtualAxisParser
     };
     Q_ENUM(ParserMode)
 
@@ -67,6 +69,13 @@ public:
         AdaptiveFullAlternatives
     };
     Q_ENUM(AdaptiveAlternativeMode)
+
+    enum AdaptiveVirtualAxisMode {
+        AdaptiveVirtualAxisMedianWindow,
+        AdaptiveVirtualAxisPercentile35_65,
+        AdaptiveVirtualAxisLowPassMedian
+    };
+    Q_ENUM(AdaptiveVirtualAxisMode)
 
     struct ParserSettings {
         int32_t pilotHalfFreq;
@@ -92,6 +101,7 @@ public:
         int32_t adaptiveBeamWidth;
         double adaptiveTimingStabilityPenalty;
         AdaptiveAlternativeMode adaptiveAlternativeMode;
+        AdaptiveVirtualAxisMode adaptiveVirtualAxisMode;
     };
 
     virtual ~ParserSettingsModel() = default;
@@ -126,6 +136,7 @@ public:
     int getAdaptiveBeamWidth() const;
     double getAdaptiveTimingStabilityPenalty() const;
     AdaptiveAlternativeMode getAdaptiveAlternativeMode() const;
+    AdaptiveVirtualAxisMode getAdaptiveVirtualAxisMode() const;
 
     //Setters
     void setPilotHalfFreq(int freq);
@@ -151,6 +162,7 @@ public:
     void setAdaptiveBeamWidth(int width);
     void setAdaptiveTimingStabilityPenalty(double penalty);
     void setAdaptiveAlternativeMode(AdaptiveAlternativeMode mode);
+    void setAdaptiveVirtualAxisMode(AdaptiveVirtualAxisMode mode);
 
 signals:
     void pilotHalfFreqChanged();
@@ -176,6 +188,7 @@ signals:
     void adaptiveBeamWidthChanged();
     void adaptiveTimingStabilityPenaltyChanged();
     void adaptiveAlternativeModeChanged();
+    void adaptiveVirtualAxisModeChanged();
 
 private:
     ParserSettings m_parserSettings;

@@ -262,10 +262,14 @@ Window {
             anchors.left: grid.left
             model: [
                 Translations.id_parser_mode_standard,
-                Translations.id_parser_mode_experimental_adaptive
+                Translations.id_parser_mode_experimental_adaptive,
+                Translations.id_parser_mode_experimental_virtual_axis
             ]
             currentIndex: ParserSettingsModel.parserMode
             onActivated: ParserSettingsModel.parserMode = currentIndex
+            ToolTip.visible: hovered
+            ToolTip.delay: 500
+            ToolTip.text: currentText
 
             Connections {
                 target: ParserSettingsModel
@@ -281,7 +285,8 @@ Window {
             anchors.top: parserModeComboBox.bottom
             anchors.left: grid.left
             anchors.topMargin: 5
-            visible: ParserSettingsModel.parserMode === ParserSettingsModel.ExperimentalAdaptiveParser
+            visible: ParserSettingsModel.parserMode === ParserSettingsModel.ExperimentalAdaptiveParser ||
+                     ParserSettingsModel.parserMode === ParserSettingsModel.ExperimentalAdaptiveVirtualAxisParser
 
             GridLayout {
                 columns: 2
@@ -330,6 +335,31 @@ Window {
                         target: ParserSettingsModel
                         function onAdaptiveAlternativeModeChanged() {
                             adaptiveAlternativeModeComboBox.currentIndex = ParserSettingsModel.adaptiveAlternativeMode
+                        }
+                    }
+                }
+
+                Text {
+                    text: Translations.id_adaptive_virtual_axis_mode
+                    visible: ParserSettingsModel.parserMode === ParserSettingsModel.ExperimentalAdaptiveVirtualAxisParser
+                }
+
+                ComboBox {
+                    id: adaptiveVirtualAxisModeComboBox
+                    Layout.preferredWidth: 220
+                    visible: ParserSettingsModel.parserMode === ParserSettingsModel.ExperimentalAdaptiveVirtualAxisParser
+                    model: [
+                        Translations.id_adaptive_virtual_axis_median,
+                        Translations.id_adaptive_virtual_axis_percentile,
+                        Translations.id_adaptive_virtual_axis_low_pass
+                    ]
+                    currentIndex: ParserSettingsModel.adaptiveVirtualAxisMode
+                    onActivated: ParserSettingsModel.adaptiveVirtualAxisMode = currentIndex
+
+                    Connections {
+                        target: ParserSettingsModel
+                        function onAdaptiveVirtualAxisModeChanged() {
+                            adaptiveVirtualAxisModeComboBox.currentIndex = ParserSettingsModel.adaptiveVirtualAxisMode
                         }
                     }
                 }
