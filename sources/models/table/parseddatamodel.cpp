@@ -244,14 +244,16 @@ QHash<int, QByteArray> ParsedDataModel::roleNames() const {
 void ParsedDataModel::invalidateItems() {
     beginResetModel();
 
-    for (const auto& i: m_items) {
-        i->setUpdated(false);
-    }
+    m_items.clear();
 
     endResetModel();
 }
 
 void ParsedDataModel::removeOutdatedItems() {
+    if (m_items.empty()) {
+        return;
+    }
+
     beginResetModel();
 
     m_items.remove_if([](const auto& i) { return !i->updated(); });

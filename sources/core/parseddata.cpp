@@ -13,6 +13,7 @@
 
 #include "parseddata.h"
 #include "sources/translations/translations.h"
+#include <algorithm>
 
 ParsedData::ParsedData(QObject* parent) :
     ParsedDataModel({
@@ -61,6 +62,10 @@ void ParsedData::fillParsedWaveform(const ParsedData::WaveformPart& begin, const
 
 void ParsedData::storeData(QVector<uint8_t>&& data, QMap<size_t, uint>&& dataMapping, size_t begin, size_t end, QVector<ParsedData::WaveformPart>&& waveformData, uint8_t parity)
 {
+    if (data.empty()) {
+        return;
+    }
+
     DataBlock db;
     db.dataStart = begin;
     db.dataEnd = end;
@@ -73,6 +78,40 @@ void ParsedData::storeData(QVector<uint8_t>&& data, QMap<size_t, uint>&& dataMap
     //Storing parsed data block
     db.data = std::move(data);
 
-    mParsedData->emplace_back(QSharedPointer<DataBlock>::create(db));
+    storeDataBlock(std::move(db));
+}
+
+void ParsedData::updateDataSnapshot(const QVector<uint8_t>& data, const QMap<size_t, uint>& dataMapping, size_t begin, size_t end, const QVector<ParsedData::WaveformPart>& waveformData, uint8_t parity)
+{
+    if (data.empty()) {
+        return;
+    }
+
+    DataBlock db;
+    db.dataStart = begin;
+    db.dataEnd = end;
+    db.dataMapping = dataMapping;
+    db.waveformData = waveformData;
+    db.parityAwaited = data.last();
+    db.parityCalculated = parity;
+    db.state = parity == db.parityAwaited ? DataState::OK : DataState::R_TAPE_LOADING_ERROR;
+    db.data = data;
+
+    storeDataBlock(std::move(db));
+}
+
+void ParsedData::storeDataBlock(DataBlock&& dataBlock)
+{
+    auto existingBlockIt { std::find_if(mParsedData->begin(), mParsedData->end(), [&dataBlock](const QSharedPointer<DataBlock>& block) {
+        return !block.isNull() && block->dataStart == dataBlock.dataStart;
+    }) };
+
+    if (existingBlockIt != mParsedData->end()) {
+        **existingBlockIt = std::move(dataBlock);
+        addData(*existingBlockIt);
+        return;
+    }
+
+    mParsedData->emplace_back(QSharedPointer<DataBlock>::create(std::move(dataBlock)));
     addData(mParsedData->last());
 }

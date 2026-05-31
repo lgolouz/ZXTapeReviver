@@ -1489,7 +1489,7 @@ void WaveformParser::parse(uint chNum)
                     : detector == "pause"
                             ? QString("Payload stopped on pause")
                             : (valid ? QString("Candidate %1").arg(bit) : QString("No confident period")) },
-            { "message", QString("Live experimental parse\n%1\nbit=%2 score=%3 raw=%4 penalty=%5 zero=%6 one=%7 timing=%8 balance=%9 shape=%10 speed=%11 damaged=%12 shape-rescue=%13 zero-rescue=%14 local-recheck=%15\nhalves=%16/%17 begin=%18 end=%19 len=%20 axis=%21 range=%22\ncarrier ready=%23 range=%24 ratio=%25 score floor=%26 axis jump=%27/%28\ncrc stop=%29 calculated=0x%30 awaited=0x%31 bytes=%32\nsample=%33")
+            { "message", QString("Live experimental parse\n%1\nbit=%2 score=%3 raw=%4 penalty=%5 zero=%6 one=%7 timing=%8 balance=%9 shape=%10 speed=%11 damaged=%12 shape-rescue=%13 zero-rescue=%14 local-recheck=%15 local-shape-rescue=%16\nhalves=%17/%18 begin=%19 end=%20 len=%21 axis=%22 range=%23\ncarrier ready=%24 range=%25 ratio=%26 score floor=%27 axis jump=%28/%29\ncrc stop=%30 calculated=0x%31 awaited=0x%32 bytes=%33\nsample=%34")
                     .arg(detectorLine)
                     .arg(bit)
                     .arg(periodCandidate.value("score").toDouble(), 0, 'f', 3)
@@ -1505,6 +1505,7 @@ void WaveformParser::parse(uint chNum)
                     .arg(periodCandidate.value("shapeReadable").toBool() ? QString("yes") : QString("no"))
                     .arg(periodCandidate.value("damagedZeroTimingRescue").toBool() ? QString("yes") : QString("no"))
                     .arg(periodCandidate.value("localRecheck").toBool() ? QString("yes") : QString("no"))
+                    .arg(periodCandidate.value("localShapeRescue").toBool() ? QString("yes") : QString("no"))
                     .arg(periodCandidate.value("firstHalfLength").toInt())
                     .arg(periodCandidate.value("secondHalfLength").toInt())
                     .arg(periodCandidate.value("begin").toInt())
@@ -2084,6 +2085,140 @@ void WaveformParser::parse(uint chNum)
                     appendCandidate(candidate);
                 }
             }
+
+            const auto partIndexByEndSample = [&parsed](size_t sample) {
+                auto it { std::lower_bound(parsed.begin(), parsed.end(), sample, [](const ParsedData::WaveformPart& part, size_t value) {
+                    return part.end < value;
+                }) };
+                return it == parsed.end() ? parsed.size() - 1 : std::distance(parsed.begin(), it);
+            };
+            const auto appendVirtualAxisCandidate = [&](uint8_t bit) {
+                const auto& first { parsed.at(partIndex) };
+                const int expectedLength { bit == 0
+                        ? static_cast<int>(std::lround(zeroExpectedLength * candidateSpeedRatio))
+                        : static_cast<int>(std::lround(oneExpectedLength * candidateSpeedRatio)) };
+                const int lengthRadius { std::max(3, expectedLength / 5) };
+                const int minLength { std::max(8, expectedLength - lengthRadius) };
+                const int maxLength { std::max(minLength, expectedLength + lengthRadius) };
+                QVariantMap bestVirtualCandidate;
+                double bestVirtualQuality { 0.0 };
+
+                for (int length { minLength }; length <= maxLength; ++length) {
+                    if (first.begin + static_cast<size_t>(length) > static_cast<size_t>(channel.size())) {
+                        break;
+                    }
+
+                    double axis { 0.0 };
+                    double upperLevel { 0.0 };
+                    double lowerLevel { 0.0 };
+                    const double shapeScore { this->scoreExperimentalWindow(channel, first.begin, static_cast<size_t>(length), &axis, &upperLevel, &lowerLevel) };
+                    if (shapeScore <= 0.0) {
+                        continue;
+                    }
+
+                    int upperSample { static_cast<int>(first.begin) };
+                    int lowerSample { static_cast<int>(first.begin) };
+                    double upperValue { channel.at(static_cast<qsizetype>(first.begin)) };
+                    double lowerValue { upperValue };
+                    for (size_t sample { first.begin + 1 }; sample < first.begin + static_cast<size_t>(length); ++sample) {
+                        const double value { channel.at(static_cast<qsizetype>(sample)) };
+                        if (value > upperValue) {
+                            upperValue = value;
+                            upperSample = static_cast<int>(sample);
+                        }
+                        if (value < lowerValue) {
+                            lowerValue = value;
+                            lowerSample = static_cast<int>(sample);
+                        }
+                    }
+
+                    const auto signOfSample = [&channel, axis](size_t sample) {
+                        const double value { channel.at(static_cast<qsizetype>(sample)) - axis };
+                        return value >= 0.0 ? 1 : -1;
+                    };
+                    const size_t middleSample { first.begin + static_cast<size_t>(length / 2) };
+                    size_t splitSample { middleSample };
+                    size_t bestSplitDistance { std::numeric_limits<size_t>::max() };
+                    for (size_t sample { first.begin + 1 }; sample < first.begin + static_cast<size_t>(length); ++sample) {
+                        if (signOfSample(sample - 1) == signOfSample(sample)) {
+                            continue;
+                        }
+
+                        const size_t distance { sample > middleSample ? sample - middleSample : middleSample - sample };
+                        if (distance < bestSplitDistance) {
+                            bestSplitDistance = distance;
+                            splitSample = sample;
+                        }
+                    }
+
+                    const size_t firstHalfLength { std::max<size_t>(1, splitSample - first.begin) };
+                    const size_t secondHalfLength { std::max<size_t>(1, first.begin + static_cast<size_t>(length) - splitSample) };
+                    const double balanceScore {
+                        1.0 - std::clamp(std::fabs(static_cast<double>(firstHalfLength) - static_cast<double>(secondHalfLength)) /
+                                          static_cast<double>(std::max<size_t>(1, std::max(firstHalfLength, secondHalfLength))) / 0.75,
+                                          0.0,
+                                          1.0)
+                    };
+                    const double timingScore { bit == 0
+                            ? scoreLength(static_cast<double>(length), zeroExpectedLength * candidateSpeedRatio, parserSettings.zeroDelta, HARDCODED_DATA_SIGNAL_DELTA)
+                            : scoreLength(static_cast<double>(length), oneExpectedLength * candidateSpeedRatio, HARDCODED_DATA_SIGNAL_DELTA, parserSettings.oneDelta) };
+                    const double rawScore { shapeScore * 0.62 + timingScore * 0.30 + balanceScore * 0.08 };
+                    const double lengthPenalty { std::fabs(length - expectedLength) / static_cast<double>(std::max(1, expectedLength)) * 0.10 };
+                    const double score { std::max(0.0, rawScore - lengthPenalty) };
+                    const double quality { score + shapeScore * 0.10 + timingScore * 0.08 };
+                    if (score <= 0.0 || (!bestVirtualCandidate.empty() && quality <= bestVirtualQuality)) {
+                        continue;
+                    }
+
+                    const size_t endSample { first.begin + static_cast<size_t>(length) - 1 };
+                    const qsizetype secondPartIndex { partIndexByEndSample(endSample) };
+                    const qsizetype splitPartIndex { partIndexByEndSample(splitSample) };
+                    QVariantMap candidate { best };
+                    candidate["valid"] = true;
+                    candidate["bit"] = bit;
+                    candidate["begin"] = static_cast<int>(first.begin);
+                    candidate["end"] = static_cast<int>(endSample);
+                    candidate["length"] = length;
+                    candidate["expectedLength"] = expectedLength;
+                    candidate["score"] = score;
+                    candidate["rawScore"] = rawScore;
+                    candidate["totalPenalty"] = lengthPenalty;
+                    candidate["axis"] = axis;
+                    candidate["upperLevel"] = upperLevel;
+                    candidate["lowerLevel"] = lowerLevel;
+                    candidate["range"] = upperValue - lowerValue;
+                    candidate["upperSample"] = upperSample;
+                    candidate["lowerSample"] = lowerSample;
+                    candidate["upperPointValue"] = upperValue;
+                    candidate["lowerPointValue"] = lowerValue;
+                    candidate["shapeScore"] = shapeScore;
+                    candidate["balanceScore"] = balanceScore;
+                    candidate["zeroScore"] = bit == 0 ? score : 0.0;
+                    candidate["oneScore"] = bit == 1 ? score : 0.0;
+                    candidate["timingScore"] = timingScore;
+                    candidate["firstHalfLength"] = static_cast<int>(firstHalfLength);
+                    candidate["secondHalfLength"] = static_cast<int>(secondHalfLength);
+                    candidate["zeroHalfNormal"] = true;
+                    candidate["oneHalfNormal"] = true;
+                    candidate["firstPartIndex"] = static_cast<int>(partIndex);
+                    candidate["secondPartIndex"] = static_cast<int>(secondPartIndex);
+                    candidate["splitPartIndex"] = static_cast<int>(splitPartIndex);
+                    candidate["physicalParts"] = static_cast<int>(std::max<qsizetype>(1, secondPartIndex - partIndex + 1));
+                    candidate["mergePenalty"] = 0.0;
+                    candidate["splitPenalty"] = 0.0;
+                    candidate["virtualAxisCandidate"] = true;
+                    candidate["detector"] = QString("virtual-axis");
+                    bestVirtualCandidate = std::move(candidate);
+                    bestVirtualQuality = quality;
+                }
+
+                if (!bestVirtualCandidate.empty()) {
+                    appendCandidate(bestVirtualCandidate);
+                }
+            };
+            appendVirtualAxisCandidate(0);
+            appendVirtualAxisCandidate(1);
+
             constexpr qsizetype c_maxAlternatives { 8 };
             return ExperimentalAdaptiveParser::selectAlternatives(rawCandidates,
                                                                   parserSettings.adaptiveAlternativeMode,
@@ -2377,17 +2512,28 @@ void WaveformParser::parse(uint chNum)
                 (!carrierReady || rangeRatio >= 0.10) &&
                 axisJump <= axisTolerance
             };
+            const bool localShapeRescue {
+                candidateMap.value("localRecheck").toBool() &&
+                candidateMap.value("valid").toBool() &&
+                shapeScore >= 0.90 &&
+                timingScore >= 0.68 &&
+                pathConfidence >= 0.50 &&
+                (!carrierReady || rangeRatio >= 0.24) &&
+                axisJump <= axisTolerance
+            };
             const bool periodAccepted {
                 candidateMap.value("valid").toBool() &&
                 (candidateScore >= c_minScore ||
                  (candidateScore >= 0.48 && pathConfidence >= 0.66) ||
                  damagedButReadable ||
-                 shapeReadable)
+                 shapeReadable ||
+                 localShapeRescue)
             };
             const bool carrierAccepted {
                 !carrierReady ||
                 damagedButReadable ||
                 shapeReadable ||
+                localShapeRescue ||
                 ((rangeRatio >= c_minRangeRatio || candidateScore >= 0.86) &&
                  candidateScore >= scoreFloor &&
                  axisJump <= axisTolerance)
@@ -2403,12 +2549,13 @@ void WaveformParser::parse(uint chNum)
             candidateMap["axisTolerance"] = axisTolerance;
             candidateMap["damagedReadable"] = damagedButReadable;
             candidateMap["shapeReadable"] = shapeReadable;
+            candidateMap["localShapeRescue"] = localShapeRescue;
             candidateMap["balanceScore"] = balanceScore;
 
             result.map = std::move(candidateMap);
             result.candidate = periodCandidateToBitCandidate(result.map);
             result.accepted = result.candidate.valid && periodAccepted && carrierAccepted;
-            result.suspicious = damagedButReadable || shapeReadable || candidateScore < c_minScore || pathConfidence < 0.70;
+            result.suspicious = damagedButReadable || shapeReadable || localShapeRescue || candidateScore < c_minScore || pathConfidence < 0.70;
             result.candidateRange = candidateRange;
             result.candidateAxis = candidateAxis;
             result.candidateScore = candidateScore;
@@ -2630,6 +2777,12 @@ void WaveformParser::parse(uint chNum)
                 experimentalData.append(experimentalByte);
                 experimentalWaveformData.append(lastBytePart);
                 experimentalParity ^= experimentalByte;
+                parsedData.updateDataSnapshot(experimentalData,
+                                              experimentalDataMapping,
+                                              startSample,
+                                              lastSample,
+                                              experimentalWaveformData,
+                                              calculatedParity());
                 experimentalByte = 0;
             }
         }

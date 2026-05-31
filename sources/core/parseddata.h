@@ -31,6 +31,7 @@ public:
     void endParse(); // should be called just after the end of the parse process
 
     void storeData(QVector<uint8_t>&& data, QMap<size_t, uint>&& dataMapping, size_t begin, size_t end, QVector<ParsedData::WaveformPart>&& waveformData, uint8_t parity);
+    void updateDataSnapshot(const QVector<uint8_t>& data, const QMap<size_t, uint>& dataMapping, size_t begin, size_t end, const QVector<ParsedData::WaveformPart>& waveformData, uint8_t parity);
     void clear(size_t size = 0);
     void fillParsedWaveform(const ParsedData::WaveformPart& p, uint8_t val);
     void fillParsedWaveform(const ParsedData::WaveformPart& p, uint8_t val, size_t begin, uint8_t begin_val, size_t end, uint8_t end_val);
@@ -42,6 +43,8 @@ public:
     Q_ALWAYS_INLINE QSharedPointer<QVector<uint8_t>> getParsedWaveform() const { return mParsedWaveform; }
 
 private:
+    void storeDataBlock(DataBlock&& dataBlock);
+
     QSharedPointer<QVector<uint8_t>> mParsedWaveform;
     QSharedPointer<QVector<QSharedPointer<DataBlock>>> mParsedData;
 };
