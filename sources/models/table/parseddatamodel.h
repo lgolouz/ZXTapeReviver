@@ -14,7 +14,7 @@
 #ifndef PARSEDDATAMODEL_H
 #define PARSEDDATAMODEL_H
 
-#include <QWeakPointer>
+#include <QSharedPointer>
 #include "sources/models/base/zxtablemodel.h"
 
 class ParsedDataModel : public ZxTableModel
@@ -103,7 +103,7 @@ protected:
     protected:
         bool m_updated; //flag to know if the item updated (or newly created) or not. All not updated items should be deleted after data parsing pass
         bool m_checked; //flag to know if the item has been checked by user
-        QWeakPointer<DataBlock> m_dataBlock;
+        QSharedPointer<DataBlock> m_dataBlock;
     };
 
     void addData(QSharedPointer<DataBlock> block);

@@ -1482,12 +1482,14 @@ void WaveformParser::parse(uint chNum)
             { "selected", valid ? periodCandidate : QVariantMap() },
             { "result", periodCandidate.value("crcMismatchStop").toBool()
                     ? QString("Parser stopped on CRC mismatch")
+                    : periodCandidate.value("localRecheck").toBool()
+                    ? QString("Candidate after local recheck")
                     : detector == "next pilot"
                     ? QString("Payload stopped before next pilot")
                     : detector == "pause"
                             ? QString("Payload stopped on pause")
                             : (valid ? QString("Candidate %1").arg(bit) : QString("No confident period")) },
-            { "message", QString("Live experimental parse\n%1\nbit=%2 score=%3 raw=%4 penalty=%5 zero=%6 one=%7 timing=%8 balance=%9 shape=%10 speed=%11 damaged=%12 shape-rescue=%13 zero-rescue=%14\nhalves=%15/%16 begin=%17 end=%18 len=%19 axis=%20 range=%21\ncarrier ready=%22 range=%23 ratio=%24 score floor=%25 axis jump=%26/%27\ncrc stop=%28 calculated=0x%29 awaited=0x%30 bytes=%31\nsample=%32")
+            { "message", QString("Live experimental parse\n%1\nbit=%2 score=%3 raw=%4 penalty=%5 zero=%6 one=%7 timing=%8 balance=%9 shape=%10 speed=%11 damaged=%12 shape-rescue=%13 zero-rescue=%14 local-recheck=%15\nhalves=%16/%17 begin=%18 end=%19 len=%20 axis=%21 range=%22\ncarrier ready=%23 range=%24 ratio=%25 score floor=%26 axis jump=%27/%28\ncrc stop=%29 calculated=0x%30 awaited=0x%31 bytes=%32\nsample=%33")
                     .arg(detectorLine)
                     .arg(bit)
                     .arg(periodCandidate.value("score").toDouble(), 0, 'f', 3)
@@ -1502,6 +1504,7 @@ void WaveformParser::parse(uint chNum)
                     .arg(periodCandidate.value("damagedReadable").toBool() ? QString("yes") : QString("no"))
                     .arg(periodCandidate.value("shapeReadable").toBool() ? QString("yes") : QString("no"))
                     .arg(periodCandidate.value("damagedZeroTimingRescue").toBool() ? QString("yes") : QString("no"))
+                    .arg(periodCandidate.value("localRecheck").toBool() ? QString("yes") : QString("no"))
                     .arg(periodCandidate.value("firstHalfLength").toInt())
                     .arg(periodCandidate.value("secondHalfLength").toInt())
                     .arg(periodCandidate.value("begin").toInt())
@@ -2333,6 +2336,135 @@ void WaveformParser::parse(uint chNum)
             return path;
         };
 
+        struct ExperimentalCandidateAssessment {
+            QVariantMap map;
+            ExperimentalBitCandidate candidate;
+            bool accepted { false };
+            bool suspicious { false };
+            double candidateRange { 0.0 };
+            double candidateAxis { 0.0 };
+            double candidateScore { 0.0 };
+            double quality { 0.0 };
+        };
+
+        const auto assessExperimentalCandidate = [&](QVariantMap candidateMap) {
+            ExperimentalCandidateAssessment result;
+            const double candidateRange { candidateMap.value("range").toDouble() };
+            const double candidateAxis { candidateMap.value("axis").toDouble() };
+            const double candidateScore { candidateMap.value("score").toDouble() };
+            const bool carrierReady { acceptedBits >= c_carrierWarmupBits && carrierRange > 0.0 };
+            const double rangeRatio { carrierReady ? candidateRange / carrierRange : 1.0 };
+            const double scoreFloor { carrierReady ? std::max(c_minScore, carrierScore - c_scoreDropTolerance) : c_minScore };
+            const double axisJump { carrierReady ? std::fabs(candidateAxis - carrierAxis) : 0.0 };
+            const double axisTolerance { carrierReady ? std::max(carrierRange * 2.0, candidateRange * 3.0) : std::numeric_limits<double>::max() };
+            const double pathConfidence { candidateMap.value("pathConfidence").toDouble() };
+            const double timingScore { candidateMap.value("timingScore").toDouble() };
+            const double balanceScore { candidateMap.value("balanceScore").toDouble() };
+            const double shapeScore { candidateMap.value("shapeScore").toDouble() };
+            const bool shapeReadable {
+                candidateMap.value("valid").toBool() &&
+                shapeScore >= 0.70 &&
+                balanceScore >= 0.58 &&
+                pathConfidence >= 0.45 &&
+                timingScore >= 0.32 &&
+                (!carrierReady || rangeRatio >= 0.10) &&
+                axisJump <= axisTolerance
+            };
+            const bool damagedButReadable {
+                candidateMap.value("valid").toBool() &&
+                timingScore >= 0.76 &&
+                pathConfidence >= 0.62 &&
+                (!carrierReady || rangeRatio >= 0.10) &&
+                axisJump <= axisTolerance
+            };
+            const bool periodAccepted {
+                candidateMap.value("valid").toBool() &&
+                (candidateScore >= c_minScore ||
+                 (candidateScore >= 0.48 && pathConfidence >= 0.66) ||
+                 damagedButReadable ||
+                 shapeReadable)
+            };
+            const bool carrierAccepted {
+                !carrierReady ||
+                damagedButReadable ||
+                shapeReadable ||
+                ((rangeRatio >= c_minRangeRatio || candidateScore >= 0.86) &&
+                 candidateScore >= scoreFloor &&
+                 axisJump <= axisTolerance)
+            };
+
+            candidateMap["carrierReady"] = carrierReady;
+            candidateMap["carrierRange"] = carrierRange;
+            candidateMap["carrierAxis"] = carrierAxis;
+            candidateMap["carrierScore"] = carrierScore;
+            candidateMap["rangeRatio"] = rangeRatio;
+            candidateMap["scoreFloor"] = scoreFloor;
+            candidateMap["axisJump"] = axisJump;
+            candidateMap["axisTolerance"] = axisTolerance;
+            candidateMap["damagedReadable"] = damagedButReadable;
+            candidateMap["shapeReadable"] = shapeReadable;
+            candidateMap["balanceScore"] = balanceScore;
+
+            result.map = std::move(candidateMap);
+            result.candidate = periodCandidateToBitCandidate(result.map);
+            result.accepted = result.candidate.valid && periodAccepted && carrierAccepted;
+            result.suspicious = damagedButReadable || shapeReadable || candidateScore < c_minScore || pathConfidence < 0.70;
+            result.candidateRange = candidateRange;
+            result.candidateAxis = candidateAxis;
+            result.candidateScore = candidateScore;
+            result.quality = candidateScore + pathConfidence * 0.18 + timingScore * 0.14 + balanceScore * 0.08 + shapeScore * 0.08;
+            return result;
+        };
+
+        const auto findLocalRecheckCandidate = [&](const ExperimentalCandidateAssessment& currentAssessment) {
+            ExperimentalCandidateAssessment best;
+            const bool currentWeak {
+                !currentAssessment.accepted ||
+                currentAssessment.candidateScore < c_minScore ||
+                currentAssessment.map.value("pathConfidence").toDouble() < 0.58 ||
+                currentAssessment.map.value("balanceScore").toDouble() < 0.28
+            };
+            if (!currentWeak) {
+                return best;
+            }
+
+            const auto localCandidates { buildHalfWaveCandidates(currentPartIndex, speedRatio) };
+            for (auto localMap: localCandidates) {
+                localMap["localRecheck"] = true;
+                if (localMap.value("pathConfidence").toDouble() <= 0.0) {
+                    localMap["pathConfidence"] = localMap.value("score").toDouble();
+                }
+
+                auto assessment { assessExperimentalCandidate(std::move(localMap)) };
+                if (!assessment.accepted) {
+                    continue;
+                }
+
+                const bool sameStart {
+                    assessment.map.value("firstPartIndex").toInt() == currentPartIndex &&
+                    assessment.candidate.begin == (currentPartIndex >= 0 && currentPartIndex < parsed.size() ? parsed.at(currentPartIndex).begin : assessment.candidate.begin)
+                };
+                if (!sameStart) {
+                    continue;
+                }
+
+                const bool strongEnough {
+                    !currentAssessment.accepted ||
+                    assessment.quality > currentAssessment.quality + 0.12 ||
+                    (assessment.candidateScore >= c_minScore && currentAssessment.candidateScore < 0.48)
+                };
+                if (!strongEnough) {
+                    continue;
+                }
+
+                if (!best.accepted || assessment.quality > best.quality) {
+                    best = std::move(assessment);
+                }
+            }
+
+            return best;
+        };
+
         while (currentPartIndex + 1 < parsed.size() && currentSample < static_cast<size_t>(channel.size())) {
             if (m_parsingCancellationRequested) {
                 break;
@@ -2407,69 +2539,23 @@ void WaveformParser::parse(uint chNum)
                         ? path.firstCandidate
                         : buildHalfWaveCandidate(currentPartIndex, speedRatio)
             };
-            const double candidateRange { periodCandidateMap.value("range").toDouble() };
-            const double candidateAxis { periodCandidateMap.value("axis").toDouble() };
-            const double candidateScore { periodCandidateMap.value("score").toDouble() };
-            const bool carrierReady { acceptedBits >= c_carrierWarmupBits && carrierRange > 0.0 };
-            const double rangeRatio { carrierReady ? candidateRange / carrierRange : 1.0 };
-            const double scoreFloor { carrierReady ? std::max(c_minScore, carrierScore - c_scoreDropTolerance) : c_minScore };
-            const double axisJump { carrierReady ? std::fabs(candidateAxis - carrierAxis) : 0.0 };
-            const double axisTolerance { carrierReady ? std::max(carrierRange * 2.0, candidateRange * 3.0) : std::numeric_limits<double>::max() };
-            const double pathConfidence { periodCandidateMap.value("pathConfidence").toDouble() };
-            const double timingScore { periodCandidateMap.value("timingScore").toDouble() };
-            const double balanceScore { periodCandidateMap.value("balanceScore").toDouble() };
-            const double shapeScore { periodCandidateMap.value("shapeScore").toDouble() };
-            const bool shapeReadable {
-                periodCandidateMap.value("valid").toBool() &&
-                shapeScore >= 0.70 &&
-                balanceScore >= 0.58 &&
-                pathConfidence >= 0.45 &&
-                timingScore >= 0.32 &&
-                (!carrierReady || rangeRatio >= 0.10) &&
-                axisJump <= axisTolerance
-            };
-            const bool damagedButReadable {
-                periodCandidateMap.value("valid").toBool() &&
-                timingScore >= 0.76 &&
-                pathConfidence >= 0.62 &&
-                (!carrierReady || rangeRatio >= 0.10) &&
-                axisJump <= axisTolerance
-            };
-            const bool periodAccepted {
-                periodCandidateMap.value("valid").toBool() &&
-                (candidateScore >= c_minScore ||
-                 (candidateScore >= 0.48 && pathConfidence >= 0.66) ||
-                 damagedButReadable ||
-                 shapeReadable)
-            };
-            const bool carrierAccepted {
-                !carrierReady ||
-                damagedButReadable ||
-                shapeReadable ||
-                ((rangeRatio >= c_minRangeRatio || candidateScore >= 0.86) &&
-                 candidateScore >= scoreFloor &&
-                 axisJump <= axisTolerance)
-            };
-            periodCandidateMap["carrierReady"] = carrierReady;
-            periodCandidateMap["carrierRange"] = carrierRange;
-            periodCandidateMap["carrierAxis"] = carrierAxis;
-            periodCandidateMap["carrierScore"] = carrierScore;
-            periodCandidateMap["rangeRatio"] = rangeRatio;
-            periodCandidateMap["scoreFloor"] = scoreFloor;
-            periodCandidateMap["axisJump"] = axisJump;
-            periodCandidateMap["axisTolerance"] = axisTolerance;
-            periodCandidateMap["damagedReadable"] = damagedButReadable;
-            periodCandidateMap["shapeReadable"] = shapeReadable;
-            periodCandidateMap["balanceScore"] = balanceScore;
+            auto assessment { assessExperimentalCandidate(std::move(periodCandidateMap)) };
+            auto localAssessment { findLocalRecheckCandidate(assessment) };
+            if (localAssessment.accepted) {
+                addAutoSuspiciousPoint(assessment.candidate.valid ? assessment.candidate.begin : currentSample);
+                assessment = std::move(localAssessment);
+            }
+            periodCandidateMap = assessment.map;
             publishExperimentalParseDebug(currentSample, periodCandidateMap);
-            const auto periodCandidate { periodCandidateToBitCandidate(periodCandidateMap) };
             ExperimentalBitCandidate candidate;
-            if (periodCandidate.valid && periodAccepted && carrierAccepted) {
-                candidate = periodCandidate;
-                if (damagedButReadable || shapeReadable || candidateScore < c_minScore || pathConfidence < 0.70) {
+            if (assessment.accepted) {
+                candidate = assessment.candidate;
+                if (assessment.suspicious) {
                     addAutoSuspiciousPoint(candidate.begin);
                 }
             } else {
+                const double timingScore { periodCandidateMap.value("timingScore").toDouble() };
+                const double pathConfidence { periodCandidateMap.value("pathConfidence").toDouble() };
                 const int suspiciousBegin { periodCandidateMap.value("begin", static_cast<int>(currentSample)).toInt() };
                 if (suspiciousBegin >= 0 &&
                         (periodCandidateMap.value("valid").toBool() ||
@@ -2523,14 +2609,14 @@ void WaveformParser::parse(uint chNum)
             currentPartIndex = candidate.secondPartIndex + 1;
             currentSample = currentPartIndex >= 0 && currentPartIndex < parsed.size() ? parsed.at(currentPartIndex).begin : bitPart.end + 1;
             if (carrierRange <= 0.0) {
-                carrierRange = candidateRange;
-                carrierAxis = candidateAxis;
-                carrierScore = candidateScore;
+                carrierRange = assessment.candidateRange;
+                carrierAxis = assessment.candidateAxis;
+                carrierScore = assessment.candidateScore;
             } else {
                 const double alpha { acceptedBits < c_carrierWarmupBits ? 1.0 / static_cast<double>(acceptedBits + 1) : 0.08 };
-                carrierRange = carrierRange * (1.0 - alpha) + candidateRange * alpha;
-                carrierAxis = carrierAxis * (1.0 - alpha) + candidateAxis * alpha;
-                carrierScore = carrierScore * (1.0 - alpha) + candidateScore * alpha;
+                carrierRange = carrierRange * (1.0 - alpha) + assessment.candidateRange * alpha;
+                carrierAxis = carrierAxis * (1.0 - alpha) + assessment.candidateAxis * alpha;
+                carrierScore = carrierScore * (1.0 - alpha) + assessment.candidateScore * alpha;
             }
             const double bitExpectedLength { static_cast<double>(candidate.bit == 0 ? zeroExpectedLength : oneExpectedLength) };
             const double observedSpeedRatio { static_cast<double>(bitPart.length) / std::max(1.0, bitExpectedLength) };

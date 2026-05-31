@@ -37,8 +37,8 @@ ParsedDataModel::DataItem::DataItem(QSharedPointer<DataBlock> dataBlock, bool up
 }
 
 bool ParsedDataModel::DataItem::operator== (const DataItem& b) const {
-    auto mdataBlock = m_dataBlock.lock();
-    auto bmdataBlock = b.m_dataBlock.lock();
+    auto mdataBlock = m_dataBlock;
+    auto bmdataBlock = b.m_dataBlock;
     if (mdataBlock != nullptr && mdataBlock->waveformData.size() > 0) {
         if (bmdataBlock != nullptr && bmdataBlock->waveformData.size() > 0) {
             return mdataBlock->waveformData.front().begin == bmdataBlock->waveformData.front().begin;
@@ -49,8 +49,8 @@ bool ParsedDataModel::DataItem::operator== (const DataItem& b) const {
 }
 
 bool ParsedDataModel::DataItem::operator< (const DataItem& b) const {
-    auto mdataBlock = m_dataBlock.lock();
-    auto bmdataBlock = b.m_dataBlock.lock();
+    auto mdataBlock = m_dataBlock;
+    auto bmdataBlock = b.m_dataBlock;
     if (mdataBlock != nullptr && mdataBlock->waveformData.size() > 0) {
         if (bmdataBlock != nullptr && bmdataBlock->waveformData.size() > 0) {
             return mdataBlock->waveformData.front().begin < bmdataBlock->waveformData.front().begin;
@@ -77,7 +77,7 @@ void ParsedDataModel::DataItem::setUpdated(bool b) {
 }
 
 QSharedPointer<ParsedDataModel::DataBlock> ParsedDataModel::DataItem::dataBlock() const {
-    return m_dataBlock.lock();
+    return m_dataBlock;
 }
 
 void ParsedDataModel::DataItem::setDataBlock(QSharedPointer<DataBlock> b) {
@@ -136,7 +136,12 @@ QMap<int, QVariant> ParsedDataModel::getBlockData(const size_t idx) const {
     if (itm == nullptr) {
         return { };
     }
-    const auto& i { *itm->dataBlock() };
+    const auto dataBlock { itm->dataBlock() };
+    if (dataBlock.isNull()) {
+        return { };
+    }
+
+    const auto& i { *dataBlock };
     std::decay_t<decltype(getBlockData(idx))> m { };
 
     //m.insert("block", QVariantMap { {"blockSelected", blockNumber < (unsigned) mSelectedBlocks.size() ? mSelectedBlocks[blockNumber] : (mSelectedBlocks.append(true), true)}, {"blockNumber", blockNumber++} });
@@ -190,8 +195,11 @@ QVariant ParsedDataModel::data(const QModelIndex& index, int role) const {
         return { };
     }
 
-    qDebug() << index.column();
     const auto blockData { getBlockData(index.row()) };
+    if (blockData.empty()) {
+        return {};
+    }
+
     switch (role) {
         case Qt::DisplayRole: {
             switch (index.column()) {
