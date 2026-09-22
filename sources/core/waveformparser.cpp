@@ -24,6 +24,8 @@
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QEventLoop>
+#include <QSaveFile>
+#include <QtEndian>
 #include <algorithm>
 #include <atomic>
 #include <cmath>
@@ -3444,35 +3446,52 @@ WaveformParser::SaveTapResult WaveformParser::saveTap(uint chNum, const QString&
         return { SaveTapResultCode::NoParsedData, {} };
     }
 
-    QFile f(fileName.isEmpty() ? QString("tape_%1_%2.tap").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")).arg(chNum ? "R" : "L") : fileName);
-    if (f.exists() && !f.remove()) {
-        qDebug() << "Cannot remove existing TAP file:" << f.fileName() << f.errorString();
-        return { SaveTapResultCode::CannotRemoveExistingFile, f.errorString() };
+    const auto parsedDataSPtr { parsedDataPtr->getParsedData() };
+    const auto& parsedData { *parsedDataSPtr };
+    const auto selectedBlockSet { mSelectedBlocks.value(chNum) };
+    bool hasBlocks { false };
+    // Validate every exported block before touching the destination file.
+    for (qsizetype i = 0; i < parsedData.size(); ++i) {
+        if (!selectedBlockSet.empty() && !selectedBlockSet.contains(i)) {
+            continue;
+        }
+        const auto& block { parsedData.at(i) };
+        if (block.isNull() || block->data.empty()) {
+            return { SaveTapResultCode::InvalidBlock, QString::number(i + 1) };
+        }
+        if (block->data.size() > std::numeric_limits<uint16_t>::max()) {
+            return { SaveTapResultCode::BlockTooLarge, QString::number(i + 1) };
+        }
+        hasBlocks = true;
+    }
+    if (!hasBlocks) {
+        return { SaveTapResultCode::NoParsedData, {} };
     }
 
+    QSaveFile f(fileName.isEmpty() ? QString("tape_%1_%2.tap").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")).arg(chNum ? "R" : "L") : fileName);
+    f.setDirectWriteFallback(false);
     if (!f.open(QIODevice::WriteOnly)) {
         qDebug() << "Cannot open TAP file for writing:" << f.fileName() << f.errorString();
         return { SaveTapResultCode::CannotOpenFile, f.errorString() };
     }
 
-    auto parsedDataSPtr { parsedDataPtr->getParsedData() };
-    auto& parsedData = *parsedDataSPtr.data();
-    const auto selectedBlockSet { mSelectedBlocks.value(chNum) };
-
-    for (auto i = 0; i < parsedData.size(); ++i) {
+    for (qsizetype i = 0; i < parsedData.size(); ++i) {
         if (!selectedBlockSet.empty() && !selectedBlockSet.contains(i)) {
             continue;
         }
 
-        QByteArray b;
         const auto& data { parsedData.at(i)->data };
-        const uint16_t size = data.size();
-        b.append(reinterpret_cast<const char *>(&size), sizeof(size));
-        b.append(reinterpret_cast<const char *>(data.data()), size);
-        f.write(b);
+        const auto size { static_cast<uint16_t>(data.size()) };
+        const auto littleEndianSize { qToLittleEndian(size) };
+        if (f.write(reinterpret_cast<const char*>(&littleEndianSize), sizeof(littleEndianSize)) != sizeof(littleEndianSize) ||
+                f.write(reinterpret_cast<const char*>(data.constData()), size) != size) {
+            return { SaveTapResultCode::CannotWriteFile, f.errorString() };
+        }
     }
 
-    f.close();
+    if (!f.commit()) {
+        return { SaveTapResultCode::CannotCommitFile, f.errorString() };
+    }
     return {};
 }
 

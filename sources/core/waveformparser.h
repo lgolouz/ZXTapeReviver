@@ -114,8 +114,11 @@ public:
     enum class SaveTapResultCode {
         Success,
         NoParsedData,
-        CannotRemoveExistingFile,
-        CannotOpenFile
+        CannotOpenFile,
+        InvalidBlock,
+        BlockTooLarge,
+        CannotWriteFile,
+        CannotCommitFile
     };
     Q_ENUM(SaveTapResultCode)
 

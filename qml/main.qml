@@ -427,11 +427,9 @@ ApplicationWindow {
                 else {
                     waveformControlCh1.saveTap(saveFileDialog.currentFile);
                 }
-                console.log("Tap saved: " + saveFileDialog.currentFile)
             }
             else {
                 FileWorkerModel.saveWaveformFileByUrl(saveFileDialog.currentFile);
-                console.log("Waveform saved: " + saveFileDialog.currentFile);
             }
         }
     }
@@ -448,10 +446,16 @@ ApplicationWindow {
         switch (errorCode) {
         case WaveformParser.NoParsedData:
             return Translations.id_no_parsed_data_for_selected_channel;
-        case WaveformParser.CannotRemoveExistingFile:
-            return Translations.id_cannot_replace_tap_file.arg(details);
         case WaveformParser.CannotOpenFile:
             return Translations.id_cannot_open_tap_file_for_writing.arg(details);
+        case WaveformParser.InvalidBlock:
+            return Translations.id_invalid_tap_block.arg(details);
+        case WaveformParser.BlockTooLarge:
+            return Translations.id_tap_block_too_large.arg(details);
+        case WaveformParser.CannotWriteFile:
+            return Translations.id_cannot_write_file.arg(details);
+        case WaveformParser.CannotCommitFile:
+            return Translations.id_cannot_commit_file.arg(details);
         default:
             return details;
         }
@@ -462,10 +466,41 @@ ApplicationWindow {
         saveTapErrorDialog.open();
     }
 
+    function showSaveWaveformError(fileName, errorCode, details) {
+        var reason;
+        switch (errorCode) {
+        case WavReader.NoWaveform:
+            reason = Translations.id_no_waveform_to_save;
+            break;
+        case WavReader.InvalidChannelData:
+            reason = Translations.id_invalid_waveform_data;
+            break;
+        case WavReader.WaveformTooLarge:
+            reason = Translations.id_waveform_too_large;
+            break;
+        case WavReader.CannotOpenFile:
+            reason = Translations.id_cannot_open_tap_file_for_writing.arg(details);
+            break;
+        case WavReader.CannotWriteFile:
+            reason = Translations.id_cannot_write_file.arg(details);
+            break;
+        case WavReader.CannotCommitFile:
+            reason = Translations.id_cannot_commit_file.arg(details);
+            break;
+        default:
+            reason = details;
+        }
+        saveTapErrorDialog.text = Translations.id_cannot_save_wfm_file.arg(fileName).arg(reason);
+        saveTapErrorDialog.open();
+    }
+
     Connections {
         target: FileWorkerModel
         function onWavFileNameChanged() {
             reparseWaveforms();
+        }
+        function onSaveWaveformFailed(fileName, error, details) {
+            mainWindow.showSaveWaveformError(fileName, error, details);
         }
     }
 
@@ -507,6 +542,9 @@ ApplicationWindow {
             onSaveTapFailed: (fileName, error, details) => {
                 mainWindow.showSaveTapError(fileName, error, details);
             }
+            onSaveWaveformFailed: (fileName, error, details) => {
+                mainWindow.showSaveWaveformError(fileName, error, details);
+            }
         }
 
         WaveformControl {
@@ -532,6 +570,9 @@ ApplicationWindow {
 
             onSaveTapFailed: (fileName, error, details) => {
                 mainWindow.showSaveTapError(fileName, error, details);
+            }
+            onSaveWaveformFailed: (fileName, error, details) => {
+                mainWindow.showSaveWaveformError(fileName, error, details);
             }
         }
 

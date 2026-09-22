@@ -51,6 +51,7 @@ public:
 
 signals:
     void wavFileNameChanged();
+    void saveWaveformFailed(const QString& fileName, WavReader::SaveWaveformResultCode error, const QString& details);
 
 private:
     QString m_wavFileName;

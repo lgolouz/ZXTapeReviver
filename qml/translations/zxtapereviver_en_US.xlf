@@ -162,7 +162,14 @@
 <trans-unit id="id_playing_parsed_data_window_header"><source>Playing parsed data</source><target>Playing parsed data</target></trans-unit>
 <trans-unit id="id_cannot_save_tap_file"><source>Cannot save TAP file:&#10;%1&#10;&#10;%2</source><target>Cannot save TAP file:&#10;%1&#10;&#10;%2</target></trans-unit>
 <trans-unit id="id_no_parsed_data_for_selected_channel"><source>No parsed data for selected channel.</source><target>No parsed data for selected channel.</target></trans-unit>
-<trans-unit id="id_cannot_replace_tap_file"><source>Cannot replace existing file: %1</source><target>Cannot replace existing file: %1</target></trans-unit>
+<trans-unit id="id_invalid_tap_block"><source>Block %1 is empty or invalid.</source><target>Block %1 is empty or invalid.</target></trans-unit>
+<trans-unit id="id_tap_block_too_large"><source>Block %1 exceeds the TAP limit of 65535 bytes (including flag and checksum).</source><target>Block %1 exceeds the TAP limit of 65535 bytes (including flag and checksum).</target></trans-unit>
+<trans-unit id="id_cannot_write_file"><source>Cannot write file: %1</source><target>Cannot write file: %1</target></trans-unit>
+<trans-unit id="id_cannot_commit_file"><source>Cannot finalize saving the file: %1</source><target>Cannot finalize saving the file: %1</target></trans-unit>
+<trans-unit id="id_cannot_save_wfm_file"><source>Cannot save WFM file:&#10;%1&#10;&#10;%2</source><target>Cannot save WFM file:&#10;%1&#10;&#10;%2</target></trans-unit>
+<trans-unit id="id_no_waveform_to_save"><source>No waveform to save.</source><target>No waveform to save.</target></trans-unit>
+<trans-unit id="id_invalid_waveform_data"><source>The waveform contains missing or empty channels.</source><target>The waveform contains missing or empty channels.</target></trans-unit>
+<trans-unit id="id_waveform_too_large"><source>The data exceeds the WFM size limit.</source><target>The data exceeds the WFM size limit.</target></trans-unit>
 <trans-unit id="id_cannot_open_tap_file_for_writing"><source>Cannot open file for writing: %1</source><target>Cannot open file for writing: %1</target></trans-unit>
   </body>
  </file>

@@ -21,6 +21,7 @@
 #include <QPen>
 #include <QPainter>
 #include <QDebug>
+#include <QDateTime>
 #include <QGuiApplication>
 #include <QVariantMap>
 #include "sources/translations/translations.h"
@@ -760,6 +761,9 @@ void WaveformControl::reparse()
 void WaveformControl::saveTap(const QString& fileUrl)
 {
     QString fileName = fileUrl.isEmpty() ? fileUrl : QUrl(fileUrl).toLocalFile();
+    if (fileName.isEmpty()) {
+        fileName = QString("tape_%1_%2.tap").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")).arg(m_channelNumber ? "R" : "L");
+    }
     const auto result { mWavParser.saveTap(m_channelNumber, fileName) };
     if (!result.succeeded()) {
         emit saveTapFailed(fileName, result.code, result.details);
@@ -768,7 +772,11 @@ void WaveformControl::saveTap(const QString& fileUrl)
 
 void WaveformControl::saveWaveform()
 {
-    mWavReader.saveWaveform();
+    const QString fileName { QString("waveform_%1.wfm").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz")) };
+    const auto result { mWavReader.saveWaveform(fileName) };
+    if (!result.succeeded()) {
+        emit saveWaveformFailed(fileName, result.code, result.details);
+    }
 }
 
 void WaveformControl::repairWaveform()

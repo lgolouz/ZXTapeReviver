@@ -148,6 +148,13 @@ QtObject {
     property string id_block_status:                         qsTrId("id_block_status") + TranslationManager.translationChanged
     property string id_cannot_save_tap_file:                 qsTrId("id_cannot_save_tap_file") + TranslationManager.translationChanged
     property string id_no_parsed_data_for_selected_channel:  qsTrId("id_no_parsed_data_for_selected_channel") + TranslationManager.translationChanged
-    property string id_cannot_replace_tap_file:              qsTrId("id_cannot_replace_tap_file") + TranslationManager.translationChanged
+    property string id_invalid_tap_block:                    qsTrId("id_invalid_tap_block") + TranslationManager.translationChanged
+    property string id_tap_block_too_large:                  qsTrId("id_tap_block_too_large") + TranslationManager.translationChanged
+    property string id_cannot_write_file:                    qsTrId("id_cannot_write_file") + TranslationManager.translationChanged
+    property string id_cannot_commit_file:                   qsTrId("id_cannot_commit_file") + TranslationManager.translationChanged
+    property string id_cannot_save_wfm_file:                 qsTrId("id_cannot_save_wfm_file") + TranslationManager.translationChanged
+    property string id_no_waveform_to_save:                  qsTrId("id_no_waveform_to_save") + TranslationManager.translationChanged
+    property string id_invalid_waveform_data:                qsTrId("id_invalid_waveform_data") + TranslationManager.translationChanged
+    property string id_waveform_too_large:                   qsTrId("id_waveform_too_large") + TranslationManager.translationChanged
     property string id_cannot_open_tap_file_for_writing:     qsTrId("id_cannot_open_tap_file_for_writing") + TranslationManager.translationChanged
 }

@@ -97,6 +97,7 @@ signals:
     void cannotSetMeasurementPoint();
     void frequency(int freq);
     void saveTapFailed(const QString& fileName, WaveformParser::SaveTapResultCode error, const QString& details);
+    void saveWaveformFailed(const QString& fileName, WavReader::SaveWaveformResultCode error, const QString& details);
 
 private:
     enum ClickStates {

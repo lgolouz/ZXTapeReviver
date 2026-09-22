@@ -136,6 +136,24 @@ public:
     };
     Q_ENUM(ErrorCodesEnum)
 
+    enum class SaveWaveformResultCode {
+        Success,
+        NoWaveform,
+        InvalidChannelData,
+        WaveformTooLarge,
+        CannotOpenFile,
+        CannotWriteFile,
+        CannotCommitFile
+    };
+    Q_ENUM(SaveWaveformResultCode)
+
+    struct SaveWaveformResult {
+        SaveWaveformResultCode code { SaveWaveformResultCode::Success };
+        QString details;
+
+        bool succeeded() const { return code == SaveWaveformResultCode::Success; }
+    };
+
     virtual ~WavReader() override;
 
     uint getNumberOfChannels() const;
@@ -151,7 +169,7 @@ public:
 
     void loadTap(const QString& fname);
     void loadWaveform(const QString& fname);
-    void saveWaveform(const QString& fname = QString()) const;
+    SaveWaveformResult saveWaveform(const QString& fname = QString()) const;
     void shiftWaveform(uint chNum);
     void storeWaveform(uint chNum);
     void restoreWaveform(uint chNum);

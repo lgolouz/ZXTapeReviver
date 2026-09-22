@@ -15,6 +15,7 @@
 #include "sources/core/waveformparser.h"
 #include <QUrl>
 #include <QDebug>
+#include <QDateTime>
 
 FileWorkerModel::FileWorkerModel(QObject* parent) :
     QObject(parent),
@@ -88,7 +89,14 @@ FileWorkerModel::FileWorkerModel(QObject* parent) :
 /*FileWorkerModel::FileWorkerResults*/ int FileWorkerModel::saveWaveformFile(const QString& fileName)
 {
     auto& r = *WavReader::instance();
-    r.saveWaveform(fileName);
+    const QString destination { fileName.isEmpty()
+            ? QString("waveform_%1.wfm").arg(QDateTime::currentDateTime().toString("dd.MM.yyyy hh-mm-ss.zzz"))
+            : fileName };
+    const auto result { r.saveWaveform(destination) };
+    if (!result.succeeded()) {
+        emit saveWaveformFailed(destination, result.code, result.details);
+        return FW_ERR;
+    }
     return FW_OK;
 }
 
