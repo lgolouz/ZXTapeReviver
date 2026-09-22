@@ -37,3 +37,19 @@ Coverage:
 - Model reset and action-state notifications, checked with QAbstractItemModelTester.
 - Failed file opens preserve history; retained actions cannot modify a new document.
 - Invalid channels and sample indices, including undo after a channel shrinks.
+
+# WAV decoding regression tests
+
+Build `wavreader-tests.pro` in a separate build directory and run
+`./release/wavreader-tests.exe -o results.txt,txt` with the same environment.
+
+- Matching internal amplitudes for PCM8/16/24/32 and float32, mono and stereo.
+- Signed extrema, zero and fractional low-level PCM24/32 samples.
+- Float headroom is preserved; NaN, infinity and scale overflow are rejected.
+- Invalid float bit depths and incomplete interleaved frames are rejected.
+- WFM round trips preserve decoded internal amplitudes without scaling twice.
+
+Internal samples use PCM16 amplitude units stored as floats. Existing WFM files
+remain raw sample snapshots and are not automatically rescaled: old files may
+already contain edited data in the former format-dependent scale. Reimport the
+original WAV to obtain corrected decoding for those files.

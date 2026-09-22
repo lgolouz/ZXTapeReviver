@@ -29,12 +29,6 @@ class WavReader : public QObject
 private:
 //Disable struct alignment
 #pragma pack(push, 1)
-    struct Int24 {
-        uint8_t b0;
-        uint8_t b1;
-        uint8_t b2;
-    };
-
     struct WavChunk
     {
         uint32_t chunkId;

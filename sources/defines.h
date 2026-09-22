@@ -16,7 +16,9 @@
 
 #include <QVector>
 
+// Internal amplitude uses PCM16 units; float preserves fractional high-resolution samples.
 using QWavVectorType = float;
+constexpr QWavVectorType waveformFullScale { 32768.0f };
 using QWavVector = QVector<QWavVectorType>;
 
 template<typename T>

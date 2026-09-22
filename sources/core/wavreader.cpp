@@ -21,6 +21,9 @@
 #include <QDebug>
 #include <QScopeGuard>
 #include <QSaveFile>
+#include <QtEndian>
+#include <bit>
+#include <cmath>
 #include <limits>
 
 WavReader::WavReader(QObject* parent) :
@@ -65,7 +68,8 @@ WavReader::ErrorCodesEnum WavReader::open()
                 }
 
                 if ((fmtHeader->compressionCode != 1 && fmtHeader->compressionCode != 3) || (fmtHeader->numberOfChannels != 1 && fmtHeader->numberOfChannels != 2) ||
-                   (fmtHeader->significantBitsPerSample != 8 && fmtHeader->significantBitsPerSample != 16 && fmtHeader->significantBitsPerSample != 24 && fmtHeader->significantBitsPerSample != 32)
+                   (fmtHeader->significantBitsPerSample != 8 && fmtHeader->significantBitsPerSample != 16 && fmtHeader->significantBitsPerSample != 24 && fmtHeader->significantBitsPerSample != 32) ||
+                   (fmtHeader->compressionCode == 3 && fmtHeader->significantBitsPerSample != 32)
                    ) {
                     mWavFile.close();
                     return UnsupportedWavFormat;
@@ -99,37 +103,45 @@ WavReader::ErrorCodesEnum WavReader::open()
 
 QWavVectorType WavReader::getSample(QByteArray& buf, size_t& bufIndex, uint dataSize, uint compressionCode) const
 {
-       QWavVectorType r { };
-       void* v;
-       v = reinterpret_cast<void*>(getData(buf, bufIndex, dataSize));
-
-       switch (dataSize) {
-           case 1:
-               r = (*reinterpret_cast<uint8_t*>(v) - 128) * 258.;
-               break;
-
-           case 2:
-               r = *reinterpret_cast<int16_t*>(v);
-               break;
-
-           case 3:
-               {
-                   Int24* t;
-                   t = reinterpret_cast<Int24*>(v);
-                   r = ((t->b2 << 16) | (t->b1 << 8) | t->b0);
-               }
-               break;
-
-           case 4:
-               r = compressionCode == 3 ? *reinterpret_cast<float*>(v) : *reinterpret_cast<int32_t*>(v);
-               break;
-
-           default:
-               qDebug() << "Unsupported data size";
-               break;
-       }
-
-       return r;
+    const auto data = getData(buf, bufIndex, dataSize);
+    // Convert every source format to the same PCM16 amplitude scale, stored as float.
+    // This is a fixed unit conversion, not normalization by the recording's peak level.
+    // WAV stores the least significant byte first. qFromLittleEndian also handles
+    // unaligned addresses, so the buffer need not be aligned for int16_t/int32_t access.
+    switch (dataSize) {
+        case 1:
+            // PCM8 is unsigned: 128 is silence. Subtract 128 to center it at zero,
+            // then multiply by 2^(16-8): [0, 255] becomes [-32768, 32512].
+            return (static_cast<int>(data[0]) - 128) * 256.0f;
+        case 2:
+            // Signed PCM16 already uses our internal units; only decode byte order.
+            return qFromLittleEndian<qint16>(data);
+        case 3: {
+            // Assemble the three bytes into a positive 32-bit value first.
+            qint32 sample = data[0] | (qint32(data[1]) << 8) | (qint32(data[2]) << 16);
+            // Bit 23 (0x800000) is the PCM24 sign bit. If set, subtract 2^24 to
+            // recover the signed value: e.g. 0xFFFFFF becomes -1, not 16777215.
+            if (sample & 0x800000) {
+                sample -= 0x1000000;
+            }
+            // Divide by 2^(24-16). Float division preserves the low 8 bits as a
+            // fractional part; an integer division or shift would discard them.
+            return sample / 256.0f;
+        }
+        case 4:
+            if (compressionCode == 3) {
+                // Format 3 is IEEE float, not integer PCM. bit_cast interprets the
+                // decoded bits as float (it does not numerically convert the integer).
+                // Map nominal full scale +/-1 to +/-32768; preserve any headroom
+                // beyond that range here and clip only when sending audio to the device.
+                return std::bit_cast<float>(qFromLittleEndian<quint32>(data)) * waveformFullScale;
+            }
+            // Signed PCM32: divide by 2^(32-16). Use floating-point division to
+            // retain fractional sample values, subject to the precision of float storage.
+            return static_cast<QWavVectorType>(qFromLittleEndian<qint32>(data) / 65536.0);
+        default:
+            return 0.0f;
+    }
 }
 
 QWavVector* WavReader::createVector(size_t bytesPerSample, size_t size)
@@ -145,33 +157,41 @@ WavReader::ErrorCodesEnum WavReader::read()
     }
 
     QByteArray buf { mWavFile.read(mCurrentChunk.chunkDataSize) };
-    if (buf.size() < static_cast<int>(mCurrentChunk.chunkDataSize)) {
+    if (buf.size() < static_cast<qint64>(mCurrentChunk.chunkDataSize)) {
         return InsufficientData;
     }
 
-    mChannel0.reset(nullptr);
-    mChannel1.reset(nullptr);
-
     size_t bytesPerSample = mWavFormatHeader.significantBitsPerSample / 8;
-    size_t numSamples = mCurrentChunk.chunkDataSize / (bytesPerSample * mWavFormatHeader.numberOfChannels);
+    const size_t frameSize = bytesPerSample * mWavFormatHeader.numberOfChannels;
+    if (buf.size() % frameSize != 0) {
+        return InsufficientData;
+    }
+    size_t numSamples = mCurrentChunk.chunkDataSize / frameSize;
 
-    mChannel0.reset(createVector(bytesPerSample, numSamples));
+    QSharedPointer<QWavVector> channel0(createVector(bytesPerSample, numSamples));
+    QSharedPointer<QWavVector> channel1;
     if (mWavFormatHeader.numberOfChannels == 2) {
-        mChannel1.reset(createVector(bytesPerSample, numSamples));
+        channel1.reset(createVector(bytesPerSample, numSamples));
     }
 
     size_t bufIndex = 0;
     QVector<size_t> channelBufIndex(mWavFormatHeader.numberOfChannels, 0);
     for (size_t i = 0; i < numSamples; ++i) {
         for (int channelNum = 0; channelNum < mWavFormatHeader.numberOfChannels; ++channelNum) {
-            auto& channel = channelNum == 0 ? mChannel0 : mChannel1;
+            auto& channel = channelNum == 0 ? channel0 : channel1;
             auto& cbi = channelBufIndex[channelNum];
 
-            channel->operator[](cbi) = getSample(buf, bufIndex, bytesPerSample, mWavFormatHeader.compressionCode);
+            const auto sample = getSample(buf, bufIndex, bytesPerSample, mWavFormatHeader.compressionCode);
+            if (!std::isfinite(sample)) {
+                return InvalidWavFormat;
+            }
+            channel->operator[](cbi) = sample;
             ++cbi;
         }
     }
 
+    mChannel0 = channel0;
+    mChannel1 = channel1;
     WaveFormModel::instance()->initialize({ getChannel0(), getChannel1() });
     emit numberOfChannelsChanged();
     return Ok;

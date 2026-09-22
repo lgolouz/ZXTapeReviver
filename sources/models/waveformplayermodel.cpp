@@ -27,40 +27,26 @@ class WaveformAudioDevice : public QIODevice
 {
     QSharedPointer<QWavVector> m_channel;
     qsizetype m_currentSample;
-    bool m_normalizedFloat;
-
-    static int16_t toAudioSample(QWavVectorType sample, bool normalizedFloat)
+    static int16_t toAudioSample(QWavVectorType sample)
     {
-        const float scaledSample { normalizedFloat ? sample * 32767.0f : sample };
-        return static_cast<int16_t>(std::clamp(std::lround(scaledSample),
-                                               static_cast<long>(std::numeric_limits<int16_t>::min()),
-                                               static_cast<long>(std::numeric_limits<int16_t>::max())));
-    }
-
-    bool detectNormalizedFloat() const
-    {
-        if (m_channel.isNull() || m_currentSample >= m_channel->size()) {
-            return false;
+        if (!std::isfinite(sample)) {
+            return 0;
         }
-
-        constexpr qsizetype probeSamples { 4096 };
-        const qsizetype endSample { std::min(m_currentSample + probeSamples, m_channel->size()) };
-        float maxAbsSample { 0.0f };
-        for (qsizetype sample { m_currentSample }; sample < endSample; ++sample) {
-            maxAbsSample = std::max(maxAbsSample, std::fabs(m_channel->at(sample)));
-        }
-
-        return maxAbsSample > 0.0f && maxAbsSample <= 1.0f;
+        // Internal samples are floats in PCM16 units, but the audio device needs int16_t.
+        // Editing or importing float audio can produce values outside [-32768, 32767].
+        // First clip to that range, then round the fractional part, then convert to int16_t.
+        // Clipping BEFORE lround also prevents a very large sample from overflowing long.
+        return static_cast<int16_t>(std::lround(std::clamp(sample,
+                static_cast<float>(std::numeric_limits<int16_t>::min()),
+                static_cast<float>(std::numeric_limits<int16_t>::max()))));
     }
 
 public:
     WaveformAudioDevice(QSharedPointer<QWavVector> channel, int startSample, QObject* parent = nullptr) :
         QIODevice(parent),
         m_channel(channel),
-        m_currentSample(std::max(0, startSample)),
-        m_normalizedFloat(false)
+        m_currentSample(std::max(0, startSample))
     {
-        m_normalizedFloat = detectNormalizedFloat();
     }
 
     qint64 readData(char* data, qint64 maxSize) override
@@ -74,7 +60,7 @@ public:
         const qsizetype samplesToRead { std::min(requestedSamples, availableSamples) };
         int16_t* out { reinterpret_cast<int16_t*>(data) };
         for (qsizetype i { 0 }; i < samplesToRead; ++i) {
-            out[i] = toAudioSample(m_channel->at(m_currentSample + i), m_normalizedFloat);
+            out[i] = toAudioSample(m_channel->at(m_currentSample + i));
         }
 
         m_currentSample += samplesToRead;

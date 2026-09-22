@@ -1328,8 +1328,7 @@ double WaveformParser::scoreExperimentalWindow(const QWavVector& channel, size_t
         bestPlateauScore = std::max(bestPlateauScore, scorePlateauPolarity(split, -1));
     }
 
-    const bool normalizedFloat { std::max(std::fabs(*minIt), std::fabs(*maxIt)) <= 2.0 };
-    const double amplitudeScale { normalizedFloat ? 0.25 : 2500.0 };
+    const double amplitudeScale { 2500.0 }; // Internal samples always use PCM16 amplitude units.
     const double amplitudeScore { std::clamp(range / amplitudeScale, 0.0, 1.0) };
     const double shapeScore { std::max(bestScore, bestPlateauScore) };
     return std::clamp(shapeScore * 0.9 + amplitudeScore * 0.1, 0.0, 1.0);
@@ -1934,8 +1933,7 @@ void WaveformParser::parse(uint chNum)
             bestPlateauScore = std::max(bestPlateauScore, scorePlateauPolarity(split, -1));
         }
 
-        const bool normalizedFloat { std::max(std::fabs(*minIt), std::fabs(*maxIt)) <= 2.0 };
-        const double amplitudeScale { normalizedFloat ? 0.25 : 2500.0 };
+        const double amplitudeScale { 2500.0 }; // Internal samples always use PCM16 amplitude units.
         const double amplitudeScore { std::clamp(range / amplitudeScale, 0.0, 1.0) };
         const double shapeScore { std::max(bestScore, bestPlateauScore) };
         return std::clamp(shapeScore * 0.9 + amplitudeScore * 0.1, 0.0, 1.0);
