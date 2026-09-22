@@ -57,6 +57,7 @@ public:
     Q_INVOKABLE void removeAction();
     Q_INVOKABLE void redoAction();
     Q_INVOKABLE void shiftWaveform(double offset);
+    Q_INVOKABLE void centerWaveformByVirtualAxis(int channel, int sampleRate, int axisMode);
 
 signals:
     void actionsChanged();

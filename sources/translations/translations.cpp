@@ -24,6 +24,7 @@ const char* ID_HEADER                = QT_TRID_NOOP("id_header");
 const char* ID_CODE                  = QT_TRID_NOOP("id_code");
 const char* ID_EDIT_ACTION           = QT_TRID_NOOP("id_edit_action");
 const char* ID_SHIFT_WAVEFORM_ACTION = QT_TRID_NOOP("id_shift_waveform_action");
+const char* ID_CENTER_WAVEFORM_ACTION = QT_TRID_NOOP("id_center_waveform_action");
 const char* ID_PARITY_MESSAGE        = QT_TRID_NOOP("id_parity_message");
 const char* ID_BLOCK_NUMBER          = QT_TRID_NOOP("id_block_number");
 const char* ID_BLOCK_TYPE            = QT_TRID_NOOP("id_block_type");
@@ -51,6 +52,7 @@ void Translations::retranslate()
     id_timeline_sec = qtTrId(ID_TIMELINE_SEC);
     id_edit_action = qtTrId(ID_EDIT_ACTION);
     id_shift_waveform_action = qtTrId(ID_SHIFT_WAVEFORM_ACTION);
+    id_center_waveform_action = qtTrId(ID_CENTER_WAVEFORM_ACTION);
     id_parity_message = qtTrId(ID_PARITY_MESSAGE);
     id_block_number = qtTrId(ID_BLOCK_NUMBER);
     id_block_type = qtTrId(ID_BLOCK_TYPE);

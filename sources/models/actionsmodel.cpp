@@ -13,6 +13,8 @@
 
 #include "actionsmodel.h"
 #include <QVariantMap>
+#include <algorithm>
+#include "sources/actions/centerwaveformaction.h"
 #include "sources/actions/shiftwaveformaction.h"
 
 ActionsModel::ActionsModel(QObject* parent) :
@@ -63,6 +65,15 @@ void ActionsModel::shiftWaveform(double offset) {
     addAction(QSharedPointer<ShiftWaveFormAction>::create(0, ShiftWaveFormActionParams { static_cast<QWavVectorType>(offset) }));
 }
 
+void ActionsModel::centerWaveformByVirtualAxis(int channel, int sampleRate, int axisMode)
+{
+    addAction(QSharedPointer<CenterWaveformAction>::create(
+            channel,
+            CenterWaveformActionParams {
+                    static_cast<uint32_t>(std::max(0, sampleRate)),
+                    static_cast<ParserSettingsModel::AdaptiveVirtualAxisMode>(axisMode)
+            }));
+}
 
 QVariantList ActionsModel::getActions() const {
     QVariantList result;

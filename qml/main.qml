@@ -288,6 +288,15 @@ ApplicationWindow {
                 text: Translations.id_reparse_menu_item
             }
 
+            MenuItem {
+                text: Translations.id_center_waveform_virtual_axis_menu_item
+                onTriggered: {
+                    getSelectedWaveform().centerWaveformByVirtualAxis();
+                    waveformControlCh0.update();
+                    waveformControlCh1.update();
+                }
+            }
+
             MenuSeparator { }
 
             MenuItem {

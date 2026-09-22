@@ -26,6 +26,7 @@ extern const char* ID_HEADER;
 extern const char* ID_CODE;
 extern const char* ID_EDIT_ACTION;
 extern const char* ID_SHIFT_WAVEFORM_ACTION;
+extern const char* ID_CENTER_WAVEFORM_ACTION;
 extern const char* ID_PARITY_MESSAGE;
 extern const char* ID_BLOCK_NUMBER;
 extern const char* ID_BLOCK_TYPE;
@@ -42,6 +43,7 @@ struct Translations final {
     QString id_timeline_sec;
     QString id_edit_action;
     QString id_shift_waveform_action;
+    QString id_center_waveform_action;
     QString id_parity_message;
     QString id_block_number;
     QString id_block_type;

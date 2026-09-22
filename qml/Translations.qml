@@ -40,6 +40,7 @@ QtObject {
     property string id_waveform_menu_item:                   qsTrId("id_waveform_menu_item") + TranslationManager.translationChanged
     property string id_restore_view_menu_item:               qsTrId("id_restore_view_menu_item") + TranslationManager.translationChanged
     property string id_reparse_menu_item:                    qsTrId("id_reparse_menu_item") + TranslationManager.translationChanged
+    property string id_center_waveform_virtual_axis_menu_item: qsTrId("id_center_waveform_virtual_axis_menu_item") + TranslationManager.translationChanged
     property string id_parser_settings_menu_item:            qsTrId("id_parser_settings_menu_item") + TranslationManager.translationChanged
     property string id_help_menu_item:                       qsTrId("id_help_menu_item") + TranslationManager.translationChanged
     property string id_about_menu_item:                      qsTrId("id_about_menu_item") + TranslationManager.translationChanged

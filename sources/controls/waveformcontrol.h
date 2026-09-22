@@ -80,6 +80,7 @@ public:
     Q_INVOKABLE void repairWaveform();
     Q_INVOKABLE void restoreWaveform();
     Q_INVOKABLE void shiftWaveform();
+    Q_INVOKABLE void centerWaveformByVirtualAxis();
     Q_INVOKABLE void copySelectedToAnotherChannel();
 
 signals:

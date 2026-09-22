@@ -79,6 +79,7 @@ DEFINES += TRANSLATION_IDS_HEADER="\\\"$${TRANSLATIONS_GENERATED_FILENAME_H}\\\"
 
 SOURCES += \
         sources/actions/actionbase.cpp \
+        sources/actions/centerwaveformaction.cpp \
         sources/actions/editsampleaction.cpp \
         sources/actions/shiftwaveformaction.cpp \
         sources/core/experimentaladaptiveparser.cpp \
@@ -103,6 +104,7 @@ SOURCES += \
 
 HEADERS += \
     sources/actions/actionbase.h \
+    sources/actions/centerwaveformaction.h \
     sources/actions/editsampleaction.h \
     sources/actions/shiftwaveformaction.h \
     sources/core/experimentaladaptiveparser.h \

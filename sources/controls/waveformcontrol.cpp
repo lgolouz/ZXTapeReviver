@@ -25,6 +25,7 @@
 #include <QVariantMap>
 #include "sources/translations/translations.h"
 #include "sources/models/actionsmodel.h"
+#include "sources/models/parsersettingsmodel.h"
 #include "sources/actions/editsampleaction.h"
 
 namespace {
@@ -795,6 +796,15 @@ void WaveformControl::restoreWaveform()
 void WaveformControl::shiftWaveform()
 {
     mWavReader.shiftWaveform(m_channelNumber);
+    update();
+}
+
+void WaveformControl::centerWaveformByVirtualAxis()
+{
+    const auto& parserSettings { ParserSettingsModel::instance()->getParserSettings() };
+    ActionsModel::instance()->centerWaveformByVirtualAxis(static_cast<int>(m_channelNumber),
+                                                          static_cast<int>(mWavReader.getSampleRate()),
+                                                          static_cast<int>(parserSettings.adaptiveVirtualAxisMode));
     update();
 }
 

@@ -14,6 +14,8 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
  <file source-language="en-US" target-language="ru-RU">
   <body>
+<trans-unit id="id_center_waveform_virtual_axis_menu_item"><source>Center waveform by virtual axis</source><target>Центровать волну по виртуальной оси</target></trans-unit>
+<trans-unit id="id_center_waveform_action"><source>Center waveform by virtual axis</source><target>Центровка волны по виртуальной оси</target></trans-unit>
 <trans-unit id="id_close_button_text"><source>Close</source><target>Закрыть</target></trans-unit>
 <trans-unit id="id_ok_button_text"><source>OK</source><target>ОК</target></trans-unit>
 <trans-unit id="id_restore_defaults_button_text"><source>Restore defaults</source><target>По умолчанию</target></trans-unit>
