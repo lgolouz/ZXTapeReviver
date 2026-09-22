@@ -34,6 +34,10 @@ class WaveformAudioDevice : public QIODevice
         }
         // Internal samples are floats in PCM16 units, but the audio device needs int16_t.
         // Editing or importing float audio can produce values outside [-32768, 32767].
+        // clamp(value, min, max) returns min below the range, max above it, or the
+        // unchanged value inside it: 40000 -> 32767, -50000 -> -32768, 123.7 -> 123.7.
+        // This clips individual output samples, not rescales the whole waveform.
+        // Only the audio output is converted; the editor's stored samples stay unchanged.
         // First clip to that range, then round the fractional part, then convert to int16_t.
         // Clipping BEFORE lround also prevents a very large sample from overflowing long.
         return static_cast<int16_t>(std::lround(std::clamp(sample,
