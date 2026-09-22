@@ -24,3 +24,16 @@ Coverage:
 
 Disk-full/short-write fault injection is not part of this suite. The Windows
 sharing-lock test is skipped on other platforms. Tests use temporary files only.
+
+# Undo/redo regression tests
+
+Build `actions-tests.pro` in a separate build directory using the same commands
+and environment as above, then run `./release/actions-tests.exe -o results.txt,txt`.
+
+Coverage:
+
+- Undo/redo and new edits in the same document, including separate channels.
+- WAV/TAP/WFM loading and reopening the same file clear undo and redo histories.
+- Model reset and action-state notifications, checked with QAbstractItemModelTester.
+- Failed file opens preserve history; retained actions cannot modify a new document.
+- Invalid channels and sample indices, including undo after a channel shrinks.

@@ -298,7 +298,10 @@ unsigned WavReader::calculateOnesInByte (uint8_t n) {
 
 void WavReader::loadTap(const QString& fname) {
     QFile f(fname);
-    f.open(QIODevice::ReadOnly);
+    if (!f.open(QIODevice::ReadOnly)) {
+        qDebug() << "Cannot open TAP file:" << fname << f.errorString();
+        return;
+    }
     const auto guard = qScopeGuard([&f](){ f.close(); });
 
     const size_t fSize = f.size();

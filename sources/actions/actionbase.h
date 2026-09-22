@@ -22,6 +22,7 @@ class ActionBase
 {
     const int m_channel;
     const QString m_actionName;
+    const quint64 m_documentRevision;
 
 public:
     ActionBase(int channel, const QString& name = { });

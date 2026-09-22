@@ -12,10 +12,12 @@
 //*******************************************************************************
 
 #include "actionbase.h"
+#include "sources/models/waveformmodel.h"
 
 ActionBase::ActionBase(int channel, const QString& name) :
     m_channel(channel),
-    m_actionName(name)
+    m_actionName(name),
+    m_documentRevision(WaveFormModel::instance()->documentRevision())
 {
 
 }
@@ -29,5 +31,6 @@ const QString& ActionBase::actionName() const {
 }
 
 bool ActionBase::isActionValid(const QSharedPointer<QWavVector>& wf) const {
-    return !wf.isNull();
+    // A retained action must not modify another document after the history resets.
+    return !wf.isNull() && m_documentRevision == WaveFormModel::instance()->documentRevision();
 }

@@ -54,6 +54,7 @@ public:
     Q_INVOKABLE int columnWidthProvider(int column) const;
 
     void addAction(QSharedPointer<ActionBase> action);
+    void clear();
     Q_INVOKABLE void removeAction();
     Q_INVOKABLE void redoAction();
     Q_INVOKABLE void shiftWaveform(double offset);

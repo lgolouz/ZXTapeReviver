@@ -35,6 +35,9 @@ bool ShiftWaveFormAction::apply() {
 
 void ShiftWaveFormAction::undo() {
     auto wf { WaveFormModel::instance()->getChannel(channel()) };
+    if (!isActionValid(wf)) {
+        return;
+    }
     std::for_each(wf->begin(), wf->end(), [this](QWavVectorType& itm) {
         itm -= m_params.offsetValue;
     });

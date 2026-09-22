@@ -21,6 +21,7 @@
 class WaveFormModel final
 {
     QVector<QSharedPointer<QWavVector>> m_channels;
+    quint64 m_documentRevision { 0 };
 
 private:
     WaveFormModel();
@@ -37,6 +38,7 @@ public:
 
     void initialize(QPair<QSharedPointer<QWavVector>, QSharedPointer<QWavVector>> channels);
     QSharedPointer<QWavVector> getChannel(int channel);
+    quint64 documentRevision() const;
 };
 
 #endif // WAVEFORMMODEL_H

@@ -34,7 +34,9 @@ bool EditSampleAction::apply() {
 
 void EditSampleAction::undo() {
     auto wf { WaveFormModel::instance()->getChannel(channel()) };
-    wf->operator[](m_params.sample) = m_params.previousValue;
+    if (isActionValid(wf)) {
+        wf->operator[](m_params.sample) = m_params.previousValue;
+    }
 }
 
 bool EditSampleAction::isActionValid(const QSharedPointer<QWavVector>& wf) const {

@@ -34,6 +34,18 @@ void ActionsModel::addAction(QSharedPointer<ActionBase> action) {
     }
 }
 
+void ActionsModel::clear() {
+    if (m_actions.isEmpty() && m_redoActions.isEmpty()) {
+        return;
+    }
+
+    beginResetModel();
+    m_actions.clear();
+    m_redoActions.clear();
+    endResetModel();
+    emit actionsChanged();
+}
+
 void ActionsModel::removeAction() {
     if (!m_actions.isEmpty()) {
         const int row { static_cast<int>(m_actions.size() - 1) };
