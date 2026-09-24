@@ -18,6 +18,7 @@
 #include <QVariantMap>
 #include <QVector>
 #include "sources/core/parseddata.h"
+#include "sources/core/signallengthranges.h"
 #include "sources/core/wavreader.h"
 #include "sources/models/parsersettingsmodel.h"
 
@@ -94,6 +95,7 @@ private:
     BitCandidate periodCandidateToBitCandidate(const QVariantMap& periodCandidate) const;
 
     Context m_context;
+    SignalLengthRanges m_lengthRanges;
 };
 
 #endif // EXPERIMENTALADAPTIVEPARSER_H

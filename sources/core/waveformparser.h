@@ -78,10 +78,6 @@ private:
         return result;
     }
 
-    //Helper methods intended to use in case of change we can made them only once
-    Q_ALWAYS_INLINE bool isZeroFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
-    Q_ALWAYS_INLINE bool isOneFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const;
-
     WavReader& mWavReader;
     QMap<uint, ParsedData*> m_parsedData;
     // QMap<uint, QVector<uint8_t>> mParsedWaveform;

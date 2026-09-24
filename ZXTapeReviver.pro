@@ -109,6 +109,7 @@ HEADERS += \
     sources/actions/shiftwaveformaction.h \
     sources/core/experimentaladaptiveparser.h \
     sources/core/parseddata.h \
+    sources/core/signallengthranges.h \
     sources/defines.h \
     sources/models/actionsmodel.h \
     sources/models/dataplayermodel.h \

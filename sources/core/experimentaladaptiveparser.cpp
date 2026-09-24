@@ -23,7 +23,10 @@
 #define HARDCODED_DATA_SIGNAL_DELTA 0.75
 
 ExperimentalAdaptiveParser::ExperimentalAdaptiveParser(Context context) :
-    m_context(std::move(context))
+    m_context(std::move(context)),
+    m_lengthRanges(m_context.parserSettings
+                   ? SignalLengthRanges::fromSettings(*m_context.parserSettings, m_context.sampleRate, HARDCODED_DATA_SIGNAL_DELTA)
+                   : SignalLengthRanges { })
 {
 }
 
@@ -31,8 +34,8 @@ bool ExperimentalAdaptiveParser::isSineNormal(const ParsedData::WaveformPart& b,
 {
     const auto& parserSettings { *m_context.parserSettings };
     if (parserSettings.checkForAbnormalSine) {
-        return isFreqFitsInDelta(m_context.sampleRate, b.length, zeroCheck ? parserSettings.zeroHalfFreq : parserSettings.oneHalfFreq, zeroCheck ? parserSettings.zeroDelta : parserSettings.oneDelta, parserSettings.sineCheckTolerance) &&
-               isFreqFitsInDelta(m_context.sampleRate, e.length, zeroCheck ? parserSettings.zeroHalfFreq : parserSettings.oneHalfFreq, zeroCheck ? parserSettings.zeroDelta : parserSettings.oneDelta, parserSettings.sineCheckTolerance);
+        const auto& range { m_lengthRanges.halfSine(zeroCheck) };
+        return range.contains(b.length) && range.contains(e.length);
     }
 
     return true;
@@ -40,8 +43,7 @@ bool ExperimentalAdaptiveParser::isSineNormal(const ParsedData::WaveformPart& b,
 
 bool ExperimentalAdaptiveParser::isPilotHalfFreq(const ParsedData::WaveformPart& part) const
 {
-    const auto& parserSettings { *m_context.parserSettings };
-    return isFreqFitsInDelta(m_context.sampleRate, part.length, parserSettings.pilotHalfFreq, parserSettings.pilotDelta, 1.0);
+    return m_lengthRanges.pilotHalf.contains(part.length);
 }
 
 ExperimentalAdaptiveParser::BitCandidate ExperimentalAdaptiveParser::periodCandidateToBitCandidate(const QVariantMap& periodCandidate) const

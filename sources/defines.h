@@ -15,6 +15,7 @@
 #define DEFINES_H
 
 #include <QVector>
+#include <limits>
 
 // Internal amplitude uses PCM16 units; float preserves fractional high-resolution samples.
 using QWavVectorType = float;
@@ -26,23 +27,35 @@ inline bool lessThanZero(T t) {
     return t < 0;
 }
 
-Q_ALWAYS_INLINE bool isFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDelta, double deltaDivider = 1.0) {
-    if (length == 0) {
-        return false;
+// Allowed duration of a signal part, in samples.
+struct LengthRange {
+    double min { std::numeric_limits<double>::infinity() };
+    double max { 0.0 };
+
+    Q_ALWAYS_INLINE bool contains(double length) const {
+        return length >= min && length <= max;
     }
-    const double freq = static_cast<double>(sampleRate) / length;
-    const double delta = signalFreq * (signalDelta / deltaDivider);
-    return freq >= (signalFreq - delta) && freq <= (signalFreq + delta);
+};
+
+// Frequency range [signalFreq * (1 - deltaBelow), signalFreq * (1 + deltaAbove)] converted to durations:
+// the higher frequency bound gives the shorter length. A non-positive lower frequency bound leaves the
+// length unbounded from above; a non-positive signal frequency gives an empty range.
+// Bounds are widened by a relative epsilon so a length that lands exactly on a bound stays inside it.
+inline LengthRange freqToLengthRange(double sampleRate, double signalFreq, double deltaBelow, double deltaAbove) {
+    constexpr double boundEpsilon { 1e-9 };
+    const double highestFreq { signalFreq * (1.0 + deltaAbove) };
+    const double lowestFreq { signalFreq * (1.0 - deltaBelow) };
+    if (signalFreq <= 0.0 || highestFreq <= 0.0) {
+        return { };
+    }
+    return {
+        sampleRate / highestFreq * (1.0 - boundEpsilon),
+        lowestFreq > 0.0 ? sampleRate / lowestFreq * (1.0 + boundEpsilon) : std::numeric_limits<double>::infinity()
+    };
 }
 
-Q_ALWAYS_INLINE bool isFreqFitsInDelta2(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) {
-    if (length == 0) {
-        return false;
-    }
-    const double freq = static_cast<double>(sampleRate) / length;
-    const double deltaB = signalFreq * signalDeltaBelow;
-    const double deltaA = signalFreq * signalDeltaAbove;
-    return freq >= (signalFreq - deltaB) && freq <= (signalFreq + deltaA);
+inline LengthRange freqToLengthRange(double sampleRate, double signalFreq, double delta) {
+    return freqToLengthRange(sampleRate, signalFreq, delta, delta);
 }
 
 enum SignalFrequencies {

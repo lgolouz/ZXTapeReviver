@@ -13,6 +13,7 @@
 
 #include "waveformparser.h"
 #include "sources/core/experimentaladaptiveparser.h"
+#include "sources/core/signallengthranges.h"
 #include "sources/models/parsersettingsmodel.h"
 #include "sources/models/suspiciouspointsmodel.h"
 #include <QPointer>
@@ -1090,11 +1091,12 @@ void WaveformParser::repairWaveform2(uint chNum) {
 
     const auto& parserSettings = ParserSettingsModel::instance()->getParserSettings();
     const double sampleRate = mWavReader.getSampleRate();
+    const auto lengthRanges { SignalLengthRanges::fromSettings(parserSettings, sampleRate, HARDCODED_DATA_SIGNAL_DELTA) };
     for (auto it { parsed.begin() }; it != parsed.end();) {
         auto itprev = it++;
         if (it != parsed.end()) {
-            bool isZero = isZeroFreqFitsInDelta(sampleRate, (*it).length + (*itprev).length, parserSettings.zeroFreq, parserSettings.zeroDelta, HARDCODED_DATA_SIGNAL_DELTA);
-            bool isOne = isOneFreqFitsInDelta(sampleRate, (*it).length + (*itprev).length, parserSettings.oneFreq, HARDCODED_DATA_SIGNAL_DELTA, parserSettings.oneDelta);
+            bool isZero = lengthRanges.zero.contains((*it).length + (*itprev).length);
+            bool isOne = lengthRanges.one.contains((*it).length + (*itprev).length);
             if (isZero || isOne) {
                 auto it1 = std::next(channel.begin(), (*itprev).begin);
                 auto it2 = std::next(channel.begin(), (*it).end);
@@ -1135,16 +1137,6 @@ QSharedPointer<QVector<QSharedPointer<ParsedData::DataBlock>>> WaveformParser::g
 {
     auto p = getParsedDataPtr(chNum);
     return p == nullptr ? QSharedPointer<QVector<QSharedPointer<ParsedData::DataBlock>>> { } : p->getParsedData();
-}
-
-inline bool WaveformParser::isZeroFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const
-{
-    return isFreqFitsInDelta2(sampleRate, length, signalFreq, signalDeltaBelow, signalDeltaAbove);
-}
-
-inline bool WaveformParser::isOneFreqFitsInDelta(uint32_t sampleRate, uint32_t length, uint32_t signalFreq, double signalDeltaBelow, double signalDeltaAbove) const
-{
-    return isFreqFitsInDelta2(sampleRate, length, signalFreq, signalDeltaBelow, signalDeltaAbove);
 }
 
 void WaveformParser::setParsingProgress(bool active, int progress, const QString& status)
@@ -1582,6 +1574,7 @@ void WaveformParser::parse(uint chNum)
     QWavVector& channel = *(chNum == 0 ? mWavReader.getChannel0() : mWavReader.getChannel1());
     const double sampleRate = mWavReader.getSampleRate();
     const auto& parserSettings = ParserSettingsModel::instance()->getParserSettings();
+    const auto lengthRanges { SignalLengthRanges::fromSettings(parserSettings, sampleRate, HARDCODED_DATA_SIGNAL_DELTA) };
     VirtualAxisData virtualAxis;
     const bool useVirtualAxisSlicing { parserSettings.parserMode == ParserSettingsModel::ExperimentalAdaptiveVirtualAxisParser };
     if (useVirtualAxisSlicing) {
@@ -1646,22 +1639,22 @@ void WaveformParser::parse(uint chNum)
     uint8_t bit = 0;
     uint8_t parity = 0;
 
-    auto isSineNormal = [&parserSettings, sampleRate](const ParsedData::WaveformPart& b, const ParsedData::WaveformPart& e, bool zeroCheck) -> bool {
+    auto isSineNormal = [&parserSettings, &lengthRanges](const ParsedData::WaveformPart& b, const ParsedData::WaveformPart& e, bool zeroCheck) -> bool {
         if (parserSettings.checkForAbnormalSine) {
-            return isFreqFitsInDelta(sampleRate, b.length, zeroCheck ? parserSettings.zeroHalfFreq : parserSettings.oneHalfFreq, zeroCheck ? parserSettings.zeroDelta : parserSettings.oneDelta, parserSettings.sineCheckTolerance) &&
-                   isFreqFitsInDelta(sampleRate, e.length, zeroCheck ? parserSettings.zeroHalfFreq : parserSettings.oneHalfFreq, zeroCheck ? parserSettings.zeroDelta : parserSettings.oneDelta, parserSettings.sineCheckTolerance);
+            const auto& range { lengthRanges.halfSine(zeroCheck) };
+            return range.contains(b.length) && range.contains(e.length);
         }
         return true;
     };
 
-    const auto isPilotHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p) -> bool {
-        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.pilotHalfFreq, parserSettings.pilotDelta, 1.0);
+    const auto isPilotHalfFreq = [&lengthRanges](const ParsedData::WaveformPart& p) -> bool {
+        return lengthRanges.pilotHalf.contains(p.length);
     };
-    const auto isSynchroFirstHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p, double deltaDivider = 1.0) -> bool {
-        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroFirstHalfFreq, parserSettings.synchroDelta, deltaDivider);
+    const auto isSynchroFirstHalfFreq = [&lengthRanges](const ParsedData::WaveformPart& p) -> bool {
+        return lengthRanges.synchroFirstHalf.contains(p.length);
     };
-    const auto isSynchroSecondHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p, double deltaDivider = 1.0) -> bool {
-        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroSecondHalfFreq, parserSettings.synchroDelta, deltaDivider);
+    const auto isSynchroSecondHalfFreq = [&lengthRanges](const ParsedData::WaveformPart& p) -> bool {
+        return lengthRanges.synchroSecondHalf.contains(p.length);
     };
     QElapsedTimer experimentalDebugTimer;
     experimentalDebugTimer.start();
@@ -2980,7 +2973,7 @@ void WaveformParser::parse(uint chNum)
                     (parserSettings.preciseSynchroCheck && isSynchroFirstHalfFreq(*it)) ||
                     (!parserSettings.preciseSynchroCheck &&
                      (itnext != parsed.end() &&
-                      isFreqFitsInDelta(sampleRate, it->length + itnext->length, parserSettings.synchroFreq, parserSettings.synchroDelta, 1.0))))
+                      lengthRanges.synchro.contains(it->length + itnext->length))))
                 {
                     auto eIt = std::prev(it);
                     //Mark parsed waveform as pilot-tone and sets the begin and end bounds
@@ -3060,7 +3053,7 @@ void WaveformParser::parse(uint chNum)
                 };
 
                 //"0" - ZERO
-                if (isZeroFreqFitsInDelta(sampleRate, len, parserSettings.zeroFreq, parserSettings.zeroDelta, HARDCODED_DATA_SIGNAL_DELTA) && isSineNormal(*prevIt, *it, true)) {
+                if (lengthRanges.zero.contains(len) && isSineNormal(*prevIt, *it, true)) {
                     //Mark parsed waveform as "0"-bit and sets the begin and end bounds
                     parsedData.fillParsedWaveform(*prevIt, *it, ParsedData::zeroBit | ParsedData::sequenceMiddle,
                                                   ParsedData::zeroBit | ParsedData::sequenceBegin | (bitIndex == 0 ? ParsedData::byteBound : 0),
@@ -3084,7 +3077,7 @@ void WaveformParser::parse(uint chNum)
                     }
                 }
                 // "1" - ONE
-                else if (isOneFreqFitsInDelta(sampleRate, len, parserSettings.oneFreq, HARDCODED_DATA_SIGNAL_DELTA, parserSettings.oneDelta) && isSineNormal(*prevIt, *it, false)) {
+                else if (lengthRanges.one.contains(len) && isSineNormal(*prevIt, *it, false)) {
                     //Mark parsed waveform as "1"-bit and sets the begin and end bounds
                     parsedData.fillParsedWaveform(*prevIt, *it, ParsedData::oneBit | ParsedData::sequenceMiddle,
                                                   ParsedData::oneBit | ParsedData::sequenceBegin | (bitIndex == 0 ? ParsedData::byteBound : 0),
@@ -3187,14 +3180,15 @@ bool WaveformParser::startExperimentalDebug(uint chNum)
 
     const double sampleRate { static_cast<double>(mWavReader.getSampleRate()) };
     const auto& parserSettings { ParserSettingsModel::instance()->getParserSettings() };
-    const auto isPilotHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p) {
-        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.pilotHalfFreq, parserSettings.pilotDelta, 1.0);
+    const auto lengthRanges { SignalLengthRanges::fromSettings(parserSettings, sampleRate, HARDCODED_DATA_SIGNAL_DELTA) };
+    const auto isPilotHalfFreq = [&lengthRanges](const ParsedData::WaveformPart& p) {
+        return lengthRanges.pilotHalf.contains(p.length);
     };
-    const auto isSynchroFirstHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p, double deltaDivider = 1.0) {
-        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroFirstHalfFreq, parserSettings.synchroDelta, deltaDivider);
+    const auto isSynchroFirstHalfFreq = [&lengthRanges](const ParsedData::WaveformPart& p) {
+        return lengthRanges.synchroFirstHalf.contains(p.length);
     };
-    const auto isSynchroSecondHalfFreq = [&parserSettings, sampleRate](const ParsedData::WaveformPart& p, double deltaDivider = 1.0) {
-        return isFreqFitsInDelta(sampleRate, p.length, parserSettings.synchroSecondHalfFreq, parserSettings.synchroDelta, deltaDivider);
+    const auto isSynchroSecondHalfFreq = [&lengthRanges](const ParsedData::WaveformPart& p) {
+        return lengthRanges.synchroSecondHalf.contains(p.length);
     };
     const bool useVirtualAxisSlicing { parserSettings.parserMode == ParserSettingsModel::ExperimentalAdaptiveVirtualAxisParser };
     const VirtualAxisData virtualAxis { useVirtualAxisSlicing
@@ -3222,7 +3216,7 @@ bool WaveformParser::startExperimentalDebug(uint chNum)
             (parserSettings.preciseSynchroCheck && isSynchroFirstHalfFreq(*it)) ||
             (!parserSettings.preciseSynchroCheck &&
              (itnext != m_experimentalDebugParsed.end() &&
-              isFreqFitsInDelta(sampleRate, it->length + itnext->length, parserSettings.synchroFreq, parserSettings.synchroDelta, 1.0)))
+              lengthRanges.synchro.contains(it->length + itnext->length)))
         };
 
         if (syncFound && itnext != m_experimentalDebugParsed.end() &&
